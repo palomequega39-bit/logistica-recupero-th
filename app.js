@@ -1,27 +1,14 @@
 let ordenes = [];
 let filtradas = [];
 
-const dropzone = document.getElementById("dropzone");
-const input = document.getElementById("fileInput");
-
-// DRAG & DROP
-dropzone.onclick = () => input.click();
-
-dropzone.ondragover = e => {
-  e.preventDefault();
-  dropzone.style.background = "#1e293b";
+// FILE
+document.getElementById("dropzone").onclick = () => {
+  document.getElementById("fileInput").click();
 };
 
-dropzone.ondragleave = () => {
-  dropzone.style.background = "";
+document.getElementById("fileInput").onchange = e => {
+  leerArchivo(e.target.files[0]);
 };
-
-dropzone.ondrop = e => {
-  e.preventDefault();
-  leerArchivo(e.dataTransfer.files[0]);
-};
-
-input.onchange = e => leerArchivo(e.target.files[0]);
 
 function leerArchivo(file){
   Papa.parse(file,{
@@ -32,6 +19,7 @@ function leerArchivo(file){
   });
 }
 
+// DATA
 function procesar(data){
 
   const map = {};
@@ -40,13 +28,7 @@ function procesar(data){
     if(!r.Orden) return;
 
     if(!map[r.Orden]){
-      map[r.Orden]={
-        ...r,
-        detalles:[],
-        dev:(r.Devolucion||"").toUpperCase()==="VERDADERO",
-        ci:(r.CI||"").toUpperCase()==="VERDADERO",
-        foja:r.Foja && r.Foja!==""
-      };
+      map[r.Orden]={...r, detalles:[]};
     }
 
     map[r.Orden].detalles.push(r);
@@ -60,7 +42,6 @@ function procesar(data){
 
 // FILTROS
 function cargarFiltros(){
-
   fill("filtroInstitucion","Institucion");
   fill("filtroPrioridad","Prioridad");
   fill("filtroCiudad","Ciudad");
@@ -69,7 +50,7 @@ function cargarFiltros(){
   setYN("filtroFoja");
   setYN("filtroCI");
 
-  document.getElementById("filtroFecha").innerHTML = `
+  document.getElementById("filtroFecha").innerHTML=`
     <option value="">Todas</option>
     <option value="REALIZADA">Realizada</option>
     <option value="HOY">Hoy</option>
@@ -93,68 +74,38 @@ function setYN(id){
 }
 
 function aplicarFiltros(){
-
-  const f=id=>document.getElementById(id).value;
-  const hoy=new Date().toISOString().split("T")[0];
-
-  filtradas=ordenes.filter(o=>{
-
-    if(f("filtroInstitucion") && o.Institucion!==f("filtroInstitucion")) return false;
-    if(f("filtroPrioridad") && o.Prioridad!==f("filtroPrioridad")) return false;
-    if(f("filtroCiudad") && o.Ciudad!==f("filtroCiudad")) return false;
-
-    if(f("filtroDevolucion")==="SI" && !o.dev) return false;
-    if(f("filtroDevolucion")==="NO" && o.dev) return false;
-
-    if(f("filtroFoja")==="SI" && !o.foja) return false;
-    if(f("filtroFoja")==="NO" && o.foja) return false;
-
-    if(f("filtroCI")==="SI" && !o.ci) return false;
-    if(f("filtroCI")==="NO" && o.ci) return false;
-
-    if(o.FechaCX){
-      const fecha=o.FechaCX.split(" ")[0];
-
-      if(f("filtroFecha")==="HOY" && fecha!==hoy) return false;
-      if(f("filtroFecha")==="REALIZADA" && fecha>hoy) return false;
-      if(f("filtroFecha")==="PENDIENTE" && fecha<=hoy) return false;
-    }
-
-    return true;
-  });
-
+  filtradas = ordenes;
   renderLista();
 }
 
 // LISTA
 function renderLista(){
 
-  const cont=document.getElementById("ordenesList");
+  const cont = document.getElementById("ordenesList");
   cont.innerHTML="";
 
   filtradas.forEach(o=>{
 
-    const div=document.createElement("div");
-    div.className="card";
+    const fila = document.createElement("div");
+    fila.className = "fila";
 
-    div.innerHTML=`
+    fila.innerHTML = `
       ${(o.Favotito||"").toUpperCase()==="VERDADERO" ? "⭐" : ""}
-      <b>${o.Orden}</b> | 
-      ${o.Apellido} ${o.Nombre} | 
-      ${o.Dni} | 
-      ${o.ObraSocial} | 
-      ${o.Institucion} | 
-      ${o.Prioridad} | 
-      ${o.FechaCX || ""}
+      <span>${o.Orden}</span>
+      <span>${o.Apellido} ${o.Nombre}</span>
+      <span>${o.Dni}</span>
+      <span>${o.ObraSocial}</span>
+      <span>${o.Institucion}</span>
+      <span>${o.Prioridad}</span>
     `;
 
-    div.onclick=()=>{
-      document.querySelectorAll(".card").forEach(c=>c.classList.remove("active"));
-      div.classList.add("active");
+    fila.onclick = ()=>{
+      document.querySelectorAll(".fila").forEach(f=>f.classList.remove("active"));
+      fila.classList.add("active");
       mostrar(o);
     };
 
-    cont.appendChild(div);
+    cont.appendChild(fila);
   });
 }
 
@@ -162,23 +113,20 @@ function renderLista(){
 function mostrar(o){
 
   document.getElementById("cabecera").innerHTML=`
-    <div class="campo"><b>${o.Apellido} ${o.Nombre}</b></div>
-    <div class="campo">DNI: ${o.Dni}</div>
+    <div class="campo">${o.Apellido} ${o.Nombre}</div>
+    <div class="campo">${o.Dni}</div>
     <div class="campo">${o.ObraSocial}</div>
+    <div class="campo">${o.Institucion}</div>
 
-    <div class="campo">Institución: ${o.Institucion}</div>
-    <div class="campo">Ciudad: ${o.Ciudad}</div>
-    <div class="campo">Prioridad: ${o.Prioridad}</div>
-
+    <div class="campo">${o.Ciudad}</div>
+    <div class="campo">${o.Prioridad}</div>
     <div class="campo">Foja: ${o.Foja}</div>
     <div class="campo">CI: ${o.CI}</div>
-    <div class="campo">Devolución: ${o.Devolucion}</div>
 
-    <div class="campo">Expediente: ${o.Expediente}</div>
-    <div class="campo">Fecha CX: ${o.FechaCX}</div>
-    <div class="campo">Médico: ${o.Medico}</div>
-
-    <div class="campo">Solicitante: ${o.MedicoSolicitante}</div>
+    <div class="campo">Dev: ${o.Devolucion}</div>
+    <div class="campo">${o.Expediente}</div>
+    <div class="campo">${o.FechaCX}</div>
+    <div class="campo">${o.Medico}</div>
   `;
 
   const body=document.getElementById("detalleBody");
