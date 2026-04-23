@@ -1,11 +1,10 @@
 let ordenes = [];
 let filtradas = [];
-let seleccionActual = null;
 
-// ================= FILE =================
 const dropzone = document.getElementById("dropzone");
 const input = document.getElementById("fileInput");
 
+// DRAG & DROP
 dropzone.onclick = () => input.click();
 
 dropzone.ondragover = e => {
@@ -33,7 +32,6 @@ function leerArchivo(file){
   });
 }
 
-// ================= DATA =================
 function procesar(data){
 
   const map = {};
@@ -45,9 +43,9 @@ function procesar(data){
       map[r.Orden]={
         ...r,
         detalles:[],
-        dev: (r.Devolucion || "").toUpperCase()==="VERDADERO",
-        ci: (r.CI || "").toUpperCase()==="VERDADERO",
-        foja: r.Foja && r.Foja !== ""
+        dev:(r.Devolucion||"").toUpperCase()==="VERDADERO",
+        ci:(r.CI||"").toUpperCase()==="VERDADERO",
+        foja:r.Foja && r.Foja!==""
       };
     }
 
@@ -60,7 +58,7 @@ function procesar(data){
   aplicarFiltros();
 }
 
-// ================= FILTROS =================
+// FILTROS
 function cargarFiltros(){
 
   fill("filtroInstitucion","Institucion");
@@ -71,7 +69,6 @@ function cargarFiltros(){
   setYN("filtroFoja");
   setYN("filtroCI");
 
-  // NUEVO: fecha
   document.getElementById("filtroFecha").innerHTML = `
     <option value="">Todas</option>
     <option value="REALIZADA">Realizada</option>
@@ -81,14 +78,14 @@ function cargarFiltros(){
 }
 
 function fill(id,campo){
-  const sel = document.getElementById(id);
-  const vals = [...new Set(ordenes.map(o=>o[campo]).filter(Boolean))];
-  sel.innerHTML = `<option value="">Todos</option>` +
+  const sel=document.getElementById(id);
+  const vals=[...new Set(ordenes.map(o=>o[campo]).filter(Boolean))];
+  sel.innerHTML=`<option value="">Todos</option>`+
     vals.map(v=>`<option>${v}</option>`).join("");
 }
 
 function setYN(id){
-  document.getElementById(id).innerHTML = `
+  document.getElementById(id).innerHTML=`
     <option value="">Todos</option>
     <option value="SI">Sí</option>
     <option value="NO">No</option>
@@ -97,11 +94,10 @@ function setYN(id){
 
 function aplicarFiltros(){
 
-  const f = id => document.getElementById(id).value;
+  const f=id=>document.getElementById(id).value;
+  const hoy=new Date().toISOString().split("T")[0];
 
-  const hoy = new Date().toISOString().split("T")[0];
-
-  filtradas = ordenes.filter(o=>{
+  filtradas=ordenes.filter(o=>{
 
     if(f("filtroInstitucion") && o.Institucion!==f("filtroInstitucion")) return false;
     if(f("filtroPrioridad") && o.Prioridad!==f("filtroPrioridad")) return false;
@@ -116,13 +112,12 @@ function aplicarFiltros(){
     if(f("filtroCI")==="SI" && !o.ci) return false;
     if(f("filtroCI")==="NO" && o.ci) return false;
 
-    // FECHA CX
     if(o.FechaCX){
-      const fecha = o.FechaCX.split(" ")[0];
+      const fecha=o.FechaCX.split(" ")[0];
 
-      if(f("filtroFecha")==="HOY" && fecha !== hoy) return false;
-      if(f("filtroFecha")==="REALIZADA" && fecha > hoy) return false;
-      if(f("filtroFecha")==="PENDIENTE" && fecha <= hoy) return false;
+      if(f("filtroFecha")==="HOY" && fecha!==hoy) return false;
+      if(f("filtroFecha")==="REALIZADA" && fecha>hoy) return false;
+      if(f("filtroFecha")==="PENDIENTE" && fecha<=hoy) return false;
     }
 
     return true;
@@ -131,31 +126,31 @@ function aplicarFiltros(){
   renderLista();
 }
 
-// ================= LISTA =================
+// LISTA
 function renderLista(){
 
-  const cont = document.getElementById("ordenesList");
+  const cont=document.getElementById("ordenesList");
   cont.innerHTML="";
 
   filtradas.forEach(o=>{
 
-    const div = document.createElement("div");
+    const div=document.createElement("div");
     div.className="card";
 
-    div.innerHTML = `
-      ${(o.Favotito || "").toUpperCase() === "VERDADERO" ? "⭐" : ""}
-      <b>${o.Orden}</b><br>
-      ${o.Apellido} ${o.Nombre}<br>
-      DNI: ${o.Dni}<br>
-      ${o.ObraSocial}<br>
-      ${o.Institucion}<br>
-      <small>${o.FechaCX || ""}</small>
+    div.innerHTML=`
+      ${(o.Favotito||"").toUpperCase()==="VERDADERO" ? "⭐" : ""}
+      <b>${o.Orden}</b> | 
+      ${o.Apellido} ${o.Nombre} | 
+      ${o.Dni} | 
+      ${o.ObraSocial} | 
+      ${o.Institucion} | 
+      ${o.Prioridad} | 
+      ${o.FechaCX || ""}
     `;
 
-    div.onclick = ()=>{
+    div.onclick=()=>{
       document.querySelectorAll(".card").forEach(c=>c.classList.remove("active"));
       div.classList.add("active");
-      seleccionActual = o;
       mostrar(o);
     };
 
@@ -163,11 +158,10 @@ function renderLista(){
   });
 }
 
-// ================= DETALLE =================
+// DETALLE
 function mostrar(o){
 
-  // CABECERA COMPLETA
-  document.getElementById("cabecera").innerHTML = `
+  document.getElementById("cabecera").innerHTML=`
     <div class="campo"><b>${o.Apellido} ${o.Nombre}</b></div>
     <div class="campo">DNI: ${o.Dni}</div>
     <div class="campo">${o.ObraSocial}</div>
@@ -187,12 +181,11 @@ function mostrar(o){
     <div class="campo">Solicitante: ${o.MedicoSolicitante}</div>
   `;
 
-  // LIMPIAR DETALLE
-  const body = document.getElementById("detalleBody");
-  body.innerHTML = "";
+  const body=document.getElementById("detalleBody");
+  body.innerHTML="";
 
   o.detalles.forEach(d=>{
-    const tr = document.createElement("tr");
+    const tr=document.createElement("tr");
 
     tr.innerHTML=`
       <td>${d.Producto}</td>
