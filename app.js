@@ -1,22 +1,15 @@
 let data = [];
 let ordenes = [];
 let ordenesFiltradas = [];
+let grid = null;
 
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", () => {
 
-    const input = document.getElementById("fileInput");
-
-    input.addEventListener("change", function (e) {
+    document.getElementById("fileInput").addEventListener("change", e => {
         const file = e.target.files[0];
-        if (!file) return;
-
         const reader = new FileReader();
 
-        reader.onload = function (event) {
-            const text = event.target.result;
-            procesarCSV(text);
-        };
-
+        reader.onload = ev => procesarCSV(ev.target.result);
         reader.readAsText(file);
     });
 
@@ -65,9 +58,9 @@ function cargarFiltros() {
     cargarSelect("filtroObra", "ObraSocial");
     cargarSelect("filtroCiudad", "Ciudad");
 
-    setOpcionesSiNo("filtroDevolucion");
-    setOpcionesSiNo("filtroFoja");
-    setOpcionesSiNo("filtroCI");
+    setSiNo("filtroDevolucion");
+    setSiNo("filtroFoja");
+    setSiNo("filtroCI");
 }
 
 function cargarSelect(id, campo) {
@@ -78,7 +71,7 @@ function cargarSelect(id, campo) {
         valores.map(v => `<option value="${v}">${v}</option>`).join("");
 }
 
-function setOpcionesSiNo(id) {
+function setSiNo(id) {
     document.getElementById(id).innerHTML = `
         <option value="">Todos</option>
         <option value="SI">Sí</option>
@@ -88,13 +81,13 @@ function setOpcionesSiNo(id) {
 
 function aplicarFiltros() {
 
-    const inst = document.getElementById("filtroInstitucion").value;
-    const dev = document.getElementById("filtroDevolucion").value;
-    const foja = document.getElementById("filtroFoja").value;
-    const ci = document.getElementById("filtroCI").value;
-    const prioridad = document.getElementById("filtroPrioridad").value;
-    const obra = document.getElementById("filtroObra").value;
-    const ciudad = document.getElementById("filtroCiudad").value;
+    const inst = filtroInstitucion.value;
+    const dev = filtroDevolucion.value;
+    const foja = filtroFoja.value;
+    const ci = filtroCI.value;
+    const prioridad = filtroPrioridad.value;
+    const obra = filtroObra.value;
+    const ciudad = filtroCiudad.value;
 
     ordenesFiltradas = ordenes.filter(o => {
 
@@ -115,38 +108,60 @@ function aplicarFiltros() {
         return true;
     });
 
-    renderTabla();
+    renderGrid();
 }
 
-function renderTabla() {
+function renderGrid() {
 
-    const tbody = document.querySelector("#tablaOrdenes tbody");
-    tbody.innerHTML = "";
+    if (grid) grid.destroy();
 
-    ordenesFiltradas.forEach(o => {
+    grid = new gridjs.Grid({
+        columns: [
+            "Orden",
+            "Paciente",
+            "DNI",
+            "Obra Social",
+            "Favorito",
+            {
+                name: "Prioridad",
+                formatter: (cell) => {
+                    const clase = getClasePrioridad(cell);
+                    return gridjs.html(`<span class="badge ${clase}">${cell}</span>`);
+                }
+            }
+        ],
+        data: ordenesFiltradas.map(o => [
+            o.Orden,
+            o.Apellido + " " + o.Nombre,
+            o.Dni,
+            o.ObraSocial,
+            o.Favotito,
+            o.Prioridad
+        ]),
+        search: true,
+        pagination: { limit: 10 },
+        sort: true
+    }).render(document.getElementById("tablaGrid"));
 
-        const tr = document.createElement("tr");
-
-        tr.innerHTML = `
-            <td>${o.Orden}</td>
-            <td>${o.Apellido} ${o.Nombre}</td>
-            <td>${o.Dni}</td>
-            <td>${o.ObraSocial}</td>
-            <td>${o.Favotito}</td>
-            <td>${o.Prioridad}</td>
-        `;
-
-        tr.onclick = () => mostrarDetalle(o);
-
-        tbody.appendChild(tr);
+    // CLICK EN FILA
+    document.querySelectorAll(".gridjs-tr").forEach((row, i) => {
+        row.addEventListener("click", () => {
+            mostrarDetalle(ordenesFiltradas[i]);
+        });
     });
+}
+
+function getClasePrioridad(p) {
+    if (!p) return "";
+    p = p.toLowerCase();
+    if (p.includes("alta")) return "alta";
+    if (p.includes("media")) return "media";
+    return "baja";
 }
 
 function mostrarDetalle(o) {
 
-    const cab = document.getElementById("cabecera");
-
-    cab.innerHTML = `
+    document.getElementById("cabecera").innerHTML = `
         <div class="campo"><b>Paciente:</b> ${o.Apellido} ${o.Nombre}</div>
         <div class="campo"><b>DNI:</b> ${o.Dni}</div>
         <div class="campo"><b>Obra Social:</b> ${o.ObraSocial}</div>
@@ -154,29 +169,19 @@ function mostrarDetalle(o) {
         <div class="campo"><b>Institución:</b> ${o.Institucion}</div>
         <div class="campo"><b>Ciudad:</b> ${o.Ciudad}</div>
         <div class="campo"><b>Prioridad:</b> ${o.Prioridad}</div>
-
-        <div class="campo"><b>Vendedor:</b> ${o.Vendedor}</div>
-        <div class="campo"><b>Médico:</b> ${o.Medico}</div>
-        <div class="campo"><b>CI:</b> ${o.CI}</div>
     `;
 
-    const tbody = document.querySelector("#detalle tbody");
-    tbody.innerHTML = "";
-
-    o.detalles.forEach(d => {
-
-        const tr = document.createElement("tr");
-
-        tr.innerHTML = `
-            <td>${d.Remito}</td>
-            <td>${d.FechaR}</td>
-            <td>${d.Producto}</td>
-            <td>${d.Q}</td>
-            <td>${d.Lote}</td>
-            <td>${d.Serie}</td>
-            <td>${d.Vencimiento}</td>
-        `;
-
-        tbody.appendChild(tr);
-    });
+    new gridjs.Grid({
+        columns: ["Remito","Fecha","Producto","Cant","Lote","Serie","Venc"],
+        data: o.detalles.map(d => [
+            d.Remito,
+            d.FechaR,
+            d.Producto,
+            d.Q,
+            d.Lote,
+            d.Serie,
+            d.Vencimiento
+        ]),
+        pagination: { limit: 5 }
+    }).render(document.getElementById("detalle"));
 }
