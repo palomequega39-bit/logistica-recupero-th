@@ -141,21 +141,30 @@ body {
 .cabecera {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
+  gap: 4px;
 }
 
+/* cada celda */
 .campo {
-  background: #f9fafb;
-  padding: 8px;
-  border-radius: 6px;
-  border: 1px solid #e5e7eb;
-  height: 55px;
+  background: transparent;
+  border: none;
+  padding: 2px 4px;
+  height: auto;
+
+  font-size: 12px;
+  line-height: 1.2;
 
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
+/* etiqueta */
+.campo b {
+  color: #6b7280;
+  font-weight: 500;
+  margin-right: 4px;
+}
 /* ===== TABLA DETALLE ===== */
 
 table {
