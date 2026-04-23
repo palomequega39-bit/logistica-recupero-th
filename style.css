@@ -1,129 +1,94 @@
-* { box-sizing: border-box; }
-
 body {
   margin: 0;
-  font-family: "Segoe UI", Arial;
-  background: #f4f6f9;
-  color: #333;
+  font-family: "Segoe UI";
+  background: #0f172a;
+  color: white;
 }
 
-.app {
-  display: flex;
+.layout {
+  display: grid;
+  grid-template-columns: 260px 300px 1fr;
   height: 100vh;
 }
 
 /* SIDEBAR */
 .sidebar {
-  width: 260px;
-  background: #111827;
-  color: white;
+  background: #020617;
   padding: 15px;
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
 }
 
-.logo {
-  font-size: 18px;
-  font-weight: bold;
-  margin-bottom: 10px;
-}
-
-/* DROPZONE */
 .dropzone {
-  border: 2px dashed #4b5563;
+  border: 2px dashed #334155;
   padding: 20px;
   text-align: center;
   border-radius: 10px;
+  margin-bottom: 20px;
   cursor: pointer;
   position: relative;
-  transition: 0.2s;
 }
 
 .dropzone:hover {
-  background: #1f2937;
+  background: #1e293b;
 }
 
 .dropzone input {
   position: absolute;
   inset: 0;
   opacity: 0;
-  cursor: pointer;
 }
 
-/* FILTROS */
-.filters select,
-.filters button {
-  width: 100%;
-  margin-bottom: 8px;
-  padding: 8px;
-  border-radius: 6px;
-  border: none;
+/* LISTA */
+.lista {
+  background: #111827;
+  overflow-y: auto;
+  padding: 10px;
 }
 
-.filters select {
+.card {
   background: #1f2937;
-  color: white;
-}
-
-.filters button {
-  background: #2563eb;
-  color: white;
+  padding: 10px;
+  margin-bottom: 8px;
+  border-radius: 8px;
   cursor: pointer;
 }
 
-.filters .ghost {
-  background: transparent;
-  border: 1px solid #555;
+.card:hover {
+  background: #374151;
 }
 
-/* MAIN */
-.main {
-  flex: 1;
+.card.active {
+  border: 2px solid #3b82f6;
+}
+
+/* DETALLE */
+.detalle {
+  background: #f8fafc;
+  color: black;
   padding: 20px;
   overflow-y: auto;
 }
 
-.panel {
-  background: white;
-  border-radius: 10px;
-  padding: 15px;
+.cabecera {
+  display: grid;
+  grid-template-columns: repeat(3,1fr);
+  gap: 10px;
   margin-bottom: 20px;
 }
 
-.panel-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-/* CABECERA */
-.cabecera-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-}
-
 .campo {
-  background: #f9fafb;
+  background: white;
   padding: 10px;
   border-radius: 6px;
   border: 1px solid #ddd;
 }
 
-/* BADGES */
-.badge {
-  padding: 4px 8px;
-  border-radius: 6px;
-  color: white;
-  font-size: 12px;
+/* TABLA */
+table {
+  width: 100%;
+  border-collapse: collapse;
 }
 
-.alta { background: #ef4444; }
-.media { background: #f59e0b; }
-.baja { background: #10b981; }
-
-/* selección */
-.gridjs-tr.selected {
-  background: #e0e7ff !important;
+th, td {
+  border: 1px solid #ddd;
+  padding: 8px;
 }
