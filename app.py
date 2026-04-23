@@ -3,19 +3,18 @@ import pandas as pd
 
 st.set_page_config(layout="wide")
 
-st.title("Logística Recupero TH")
+st.title("Gestión de Órdenes")
 
-archivo = st.file_uploader("Subir archivo Excel o CSV", type=["csv", "xlsx"])
+archivo = st.file_uploader("Subir archivo", type=["csv", "xlsx"])
 
 if archivo:
 
-    # Cargar archivo
+    # Carga
     if archivo.name.endswith(".csv"):
         df = pd.read_csv(archivo, sep=";", encoding="latin1")
     else:
         df = pd.read_excel(archivo)
 
-    # Limpiar nombres de columnas
     df.columns = df.columns.str.strip()
 
     # Flags
@@ -23,7 +22,7 @@ if archivo:
     df["tiene_foja"] = df["Foja"].notna()
     df["tiene_ci"] = df["CI"].astype(str).str.upper() == "VERDADERO"
 
-    # CABECERA (una fila por orden)
+    # CABECERA
     cabecera = (
         df.groupby("Orden")
         .agg({
@@ -32,17 +31,8 @@ if archivo:
             "Dni": "first",
             "ObraSocial": "first",
             "FechaCX": "first",
-            "Vendedor": "first",
-            "Medico": "first",
-            "MedicoSolicitante": "first",
-            "Foja": "first",
-            "CI": "first",
-            "Actividades": "first",
             "Institucion": "first",
             "Ciudad": "first",
-            "Expediente": "first",
-            "Favotito": "first",
-            "Devolucion": "first",
             "Prioridad": "first",
             "tiene_devolucion": "max",
             "tiene_foja": "max",
@@ -51,34 +41,84 @@ if archivo:
         .reset_index()
     )
 
-    st.subheader("Listado de Órdenes")
-    st.dataframe(cabecera, use_container_width=True)
+    # -----------------------------
+    # SIDEBAR (FILTROS)
+    # -----------------------------
+    st.sidebar.header("Filtros")
 
-    # Selección de orden
-    orden = st.selectbox("Seleccionar Orden", cabecera["Orden"])
+    instituciones = ["Todas"] + sorted(cabecera["Institucion"].dropna().unique())
+    inst_sel = st.sidebar.selectbox("Institución", instituciones)
 
+    devolucion_sel = st.sidebar.selectbox("Devolución", ["Todas", "Sí", "No"])
+
+    # Aplicar filtros
+    filtrado = cabecera.copy()
+
+    if inst_sel != "Todas":
+        filtrado = filtrado[filtrado["Institucion"] == inst_sel]
+
+    if devolucion_sel == "Sí":
+        filtrado = filtrado[filtrado["tiene_devolucion"]]
+    elif devolucion_sel == "No":
+        filtrado = filtrado[~filtrado["tiene_devolucion"]]
+
+    # -----------------------------
+    # TABLA PRINCIPAL
+    # -----------------------------
+    st.subheader("Órdenes")
+
+    tabla = st.dataframe(
+        filtrado,
+        use_container_width=True,
+        height=300  # 🔥 clave para evitar scroll gigante
+    )
+
+    # Selección simple (temporal)
+    orden = st.selectbox("Seleccionar Orden", filtrado["Orden"])
+
+    # -----------------------------
+    # DETALLE
+    # -----------------------------
     cab = cabecera[cabecera["Orden"] == orden]
     det = df[df["Orden"] == orden]
 
     st.divider()
 
-    # CABECERA
-    st.subheader("Cabecera de la Orden")
-    st.dataframe(cab, use_container_width=True)
+    col1, col2 = st.columns([2, 3])
 
-    # DETALLE
-    st.subheader("Detalle de Productos")
+    # CABECERA COMPACTA
+    with col1:
+        st.subheader("Cabecera")
 
-    columnas = [
-        "Remito",
-        "FechaR",
-        "Producto",
-        "Q",
-        "Lote",
-        "Serie",
-        "Vencimiento"
-    ]
+        st.write(f"**Paciente:** {cab['Apellido'].values[0]} {cab['Nombre'].values[0]}")
+        st.write(f"**DNI:** {cab['Dni'].values[0]}")
+        st.write(f"**Obra Social:** {cab['ObraSocial'].values[0]}")
+        st.write(f"**Institución:** {cab['Institucion'].values[0]}")
+        st.write(f"**Ciudad:** {cab['Ciudad'].values[0]}")
+        st.write(f"**Prioridad:** {cab['Prioridad'].values[0]}")
 
-    columnas_validas = [c for c in columnas if c in det.columns]
+        st.write(f"**Devolución:** {'Sí' if cab['tiene_devolucion'].values[0] else 'No'}")
+        st.write(f"**Foja:** {'Sí' if cab['tiene_foja'].values[0] else 'No'}")
+        st.write(f"**CI:** {'Sí' if cab['tiene_ci'].values[0] else 'No'}")
 
-    st.dataframe(det[columnas_validas], use_container_width=True)
+    # DETALLE PRODUCTOS
+    with col2:
+        st.subheader("Detalle")
+
+        columnas = [
+            "Remito",
+            "FechaR",
+            "Producto",
+            "Q",
+            "Lote",
+            "Serie",
+            "Vencimiento"
+        ]
+
+        columnas_validas = [c for c in columnas if c in det.columns]
+
+        st.dataframe(
+            det[columnas_validas],
+            use_container_width=True,
+            height=300  # 🔥 clave
+        )
