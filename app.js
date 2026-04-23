@@ -133,3 +133,36 @@ function mostrar(o){
     body.appendChild(tr);
   });
 }
+function sortBy(field){
+
+  sortField = field;
+  ordenAsc = !ordenAsc;
+
+  filtradas.sort((a,b)=>{
+
+    let valA, valB;
+
+    switch(field){
+
+      case "fav":
+        valA = (a.Favotito||"").toUpperCase()==="VERDADERO" ? 1 : 0;
+        valB = (b.Favotito||"").toUpperCase()==="VERDADERO" ? 1 : 0;
+        break;
+
+      case "Paciente":
+        valA = (a.Apellido + a.Nombre).toLowerCase();
+        valB = (b.Apellido + b.Nombre).toLowerCase();
+        break;
+
+      default:
+        valA = (a[field]||"").toString().toLowerCase();
+        valB = (b[field]||"").toString().toLowerCase();
+    }
+
+    if(valA < valB) return ordenAsc ? -1 : 1;
+    if(valA > valB) return ordenAsc ? 1 : -1;
+    return 0;
+  });
+
+  renderLista();
+}
