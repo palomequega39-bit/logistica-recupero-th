@@ -45,48 +45,58 @@
       <label>Fecha CX</label>
       <select id="filtroFecha"></select>
 
-      <button onclick="aplicarFiltros()">Aplicar filtros</button>
+      <button id="btnFiltrar">Aplicar filtros</button>
 
     </div>
 
   </aside>
 
-  <!-- LISTA -->
-  <section class="lista">
-    <div class="header">Órdenes</div>
+  <!-- CONTENIDO -->
+  <main class="contenido">
 
-    <div class="tabla-header">
-      <span>★</span>
-      <span>Orden</span>
-      <span>Paciente</span>
-      <span>DNI</span>
-      <span>Obra</span>
-      <span>Inst.</span>
-      <span>Prio</span>
-    </div>
+    <!-- LISTA -->
+    <section class="panel">
+      <div class="titulo">Órdenes</div>
 
-    <div id="ordenesList"></div>
-  </section>
+      <div class="tabla-header">
+        <span>★</span>
+        <span>Orden</span>
+        <span>Paciente</span>
+        <span>DNI</span>
+        <span>Obra</span>
+        <span>Inst.</span>
+        <span>Prio</span>
+      </div>
 
-  <!-- DETALLE -->
-  <section class="detalle">
+      <div id="ordenesList"></div>
+    </section>
 
-    <div id="cabecera" class="cabecera"></div>
+    <!-- CABECERA -->
+    <section class="panel">
+      <div class="titulo">Cabecera</div>
+      <div id="cabecera" class="cabecera"></div>
+    </section>
 
-    <table>
-      <thead>
-        <tr>
-          <th>Producto</th>
-          <th>Cant</th>
-          <th>Lote</th>
-          <th>Serie</th>
-          <th>Venc</th>
-        </tr>
-      </thead>
-      <tbody id="detalleBody"></tbody>
-    </table>
+    <!-- DETALLE -->
+    <section class="panel">
+      <div class="titulo">Productos</div>
 
-  </section>
+      <table>
+        <thead>
+          <tr>
+            <th>Producto</th>
+            <th>Cant</th>
+            <th>Lote</th>
+            <th>Serie</th>
+            <th>Venc</th>
+          </tr>
+        </thead>
+        <tbody id="detalleBody"></tbody>
+      </table>
+
+    </section>
+
+  </main>
 
 </div>
 
