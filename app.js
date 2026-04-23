@@ -99,17 +99,22 @@ function renderLista(){
 // DETALLE
 function mostrar(o){
 
-  document.getElementById("cabecera").innerHTML=`
-    <div class="campo">${o.Apellido} ${o.Nombre}</div>
-    <div class="campo">${o.Dni}</div>
-    <div class="campo">${o.ObraSocial}</div>
-    <div class="campo">${o.Institucion}</div>
+ document.getElementById("cabecera").innerHTML = `
+  <div class="campo"><b>Paciente:</b> ${o.Apellido} ${o.Nombre}</div>
+  <div class="campo"><b>DNI:</b> ${o.Dni}</div>
+  <div class="campo"><b>Obra:</b> ${o.ObraSocial}</div>
+  <div class="campo"><b>Institución:</b> ${o.Institucion}</div>
 
-    <div class="campo">${o.Ciudad}</div>
-    <div class="campo">${o.Prioridad}</div>
-    <div class="campo">${o.Foja}</div>
-    <div class="campo">${o.CI}</div>
-  `;
+  <div class="campo"><b>Ciudad:</b> ${o.Ciudad}</div>
+  <div class="campo"><b>Prioridad:</b> ${o.Prioridad}</div>
+  <div class="campo"><b>Foja:</b> ${o.Foja}</div>
+  <div class="campo"><b>CI:</b> ${o.CI}</div>
+
+  <div class="campo"><b>Devolución:</b> ${o.Devolucion}</div>
+  <div class="campo"><b>Expediente:</b> ${o.Expediente}</div>
+  <div class="campo"><b>Fecha CX:</b> ${o.FechaCX}</div>
+  <div class="campo"><b>Médico:</b> ${o.Medico}</div>
+`;
 
   const body=document.getElementById("detalleBody");
   body.innerHTML="";
