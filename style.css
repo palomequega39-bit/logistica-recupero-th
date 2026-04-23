@@ -1,35 +1,111 @@
+* { box-sizing: border-box; }
+
 body {
-  font-family: Arial;
   margin: 0;
-  background: #f5f6fa;
+  font-family: "Segoe UI", Arial;
+  background: #f4f6f9;
+  color: #333;
 }
 
-.container {
+.app {
   display: flex;
+  height: 100vh;
 }
 
+/* SIDEBAR */
 .sidebar {
   width: 260px;
-  background: white;
+  background: #111827;
+  color: white;
   padding: 15px;
-  border-right: 1px solid #ddd;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
 }
 
+.logo {
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+/* DROPZONE */
+.dropzone {
+  border: 2px dashed #4b5563;
+  padding: 20px;
+  text-align: center;
+  border-radius: 10px;
+  cursor: pointer;
+  position: relative;
+  transition: 0.2s;
+}
+
+.dropzone:hover {
+  background: #1f2937;
+}
+
+.dropzone input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+/* FILTROS */
+.filters select,
+.filters button {
+  width: 100%;
+  margin-bottom: 8px;
+  padding: 8px;
+  border-radius: 6px;
+  border: none;
+}
+
+.filters select {
+  background: #1f2937;
+  color: white;
+}
+
+.filters button {
+  background: #2563eb;
+  color: white;
+  cursor: pointer;
+}
+
+.filters .ghost {
+  background: transparent;
+  border: 1px solid #555;
+}
+
+/* MAIN */
 .main {
   flex: 1;
   padding: 20px;
+  overflow-y: auto;
 }
 
-/* CABECERA */
-#cabecera {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
+.panel {
+  background: white;
+  border-radius: 10px;
+  padding: 15px;
   margin-bottom: 20px;
 }
 
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* CABECERA */
+.cabecera-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
 .campo {
-  background: white;
+  background: #f9fafb;
   padding: 10px;
   border-radius: 6px;
   border: 1px solid #ddd;
@@ -43,7 +119,11 @@ body {
   font-size: 12px;
 }
 
-.alta { background: #e74c3c; }
-.media { background: #f39c12; }
-.baja { background: #2ecc71; }
+.alta { background: #ef4444; }
+.media { background: #f59e0b; }
+.baja { background: #10b981; }
 
+/* selección */
+.gridjs-tr.selected {
+  background: #e0e7ff !important;
+}
