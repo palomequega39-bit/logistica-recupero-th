@@ -1,8 +1,8 @@
 body {
   margin: 0;
   font-family: "Segoe UI";
-  background: #0f172a;
-  color: white;
+  background: #f5f6fa; /* fondo claro */
+  color: #1f2937;
 }
 
 .layout {
@@ -14,6 +14,7 @@ body {
 /* SIDEBAR */
 .sidebar {
   background: #020617;
+  color: white;
   padding: 15px;
 }
 
@@ -28,14 +29,15 @@ body {
 
 /* PANEL */
 .panel {
-  background: #111827;
+  background: white;
   border-radius: 8px;
   padding: 10px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
 }
 
 /* TITULO */
 .titulo {
-  font-weight: bold;
+  font-weight: 600;
   margin-bottom: 8px;
 }
 
@@ -56,10 +58,14 @@ body {
   opacity: 0;
 }
 
+.dropzone:hover {
+  background: #1e293b;
+}
+
 /* FILTROS */
 .filters label {
   font-size: 12px;
-  color: #94a3b8;
+  color: #9ca3af;
   display: block;
   margin-top: 10px;
 }
@@ -83,66 +89,96 @@ body {
   color: white;
 }
 
-/* LISTA */
-.tabla-header,
+/* ===== LISTA ÓRDENES ===== */
+
+/* header */
+.tabla-header {
+  display: grid;
+  grid-template-columns: 30px 80px 150px 90px 120px 100px 60px;
+  font-size: 12px;
+  color: #6b7280;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 6px;
+}
+
+/* contenedor con scroll */
+#ordenesList {
+  max-height: 420px; /* ~15 filas */
+  overflow-y: auto;
+}
+
+/* filas */
 .fila {
   display: grid;
   grid-template-columns: 30px 80px 150px 90px 120px 100px 60px;
-  padding: 6px;
-  font-size: 13px;
-}
-
-.tabla-header {
-  color: #9ca3af;
-  border-bottom: 1px solid #374151;
-}
-
-.fila {
-  border-top: 1px solid #1f2937;
+  padding: 4px 6px;
+  font-size: 12px;
+  border-bottom: 1px solid #f1f1f1;
   cursor: pointer;
+
+  /* CLAVE: una sola línea */
+  white-space: nowrap;
+  overflow: hidden;
 }
 
+.fila span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* hover */
 .fila:hover {
-  background: #1f2937;
+  background: #eef2ff;
 }
 
+/* seleccion */
 .fila.active {
-  background: #1e40af;
+  background: #dbeafe;
 }
 
-/* CABECERA */
+/* ===== CABECERA ===== */
+
 .cabecera {
   display: grid;
-  grid-template-columns: repeat(4,1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 8px;
 }
 
 .campo {
-  background: white;
-  color: black;
+  background: #f9fafb;
   padding: 8px;
   border-radius: 6px;
-  height: 60px;
-  overflow: hidden;
-}
+  border: 1px solid #e5e7eb;
+  height: 55px;
 
-/* TABLA */
-table {
-  width: 100%;
-  border-collapse: collapse;
-  table-layout: fixed;
-  background: white;
-  color: black;
-}
-
-th, td {
-  border: 1px solid #ddd;
-  padding: 6px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
+/* ===== TABLA DETALLE ===== */
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+th, td {
+  border: 1px solid #e5e7eb;
+  padding: 6px;
+  font-size: 12px;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+th {
+  background: #f3f4f6;
+}
+
+/* anchos */
 th:nth-child(1), td:nth-child(1) { width: 40%; }
 th:nth-child(2), td:nth-child(2) { width: 10%; }
 th:nth-child(3), td:nth-child(3) { width: 15%; }
