@@ -1,7 +1,7 @@
 body {
   margin: 0;
   font-family: "Segoe UI";
-  background: #f5f6fa; /* fondo claro */
+  background: #f5f6fa;
   color: #1f2937;
 }
 
@@ -89,33 +89,33 @@ body {
   color: white;
 }
 
-/* ===== LISTA ÓRDENES ===== */
+/* ===== LISTA ===== */
 
-/* header */
-.tabla-header {
+.tabla-header,
+.fila {
   display: grid;
-  grid-template-columns: 40px 100px 200px 110px 160px 110px 90px;
+  grid-template-columns: 50px 120px 260px 120px 180px 160px 100px;
+  gap: 6px;
+  align-items: center;
+}
+
+.tabla-header {
   font-size: 12px;
   color: #6b7280;
   border-bottom: 1px solid #e5e7eb;
   padding: 6px;
 }
 
-/* contenedor con scroll */
 #ordenesList {
-  max-height: 260px; /* ~15 filas */
+  max-height: 300px;
   overflow-y: auto;
 }
 
-/* filas */
 .fila {
-  display: grid;
-  padding: 4px 6px;
+  padding: 6px;
   font-size: 12px;
   border-bottom: 1px solid #f1f1f1;
   cursor: pointer;
-
-  /* CLAVE: una sola línea */
   white-space: nowrap;
   overflow: hidden;
 }
@@ -125,14 +125,22 @@ body {
   text-overflow: ellipsis;
 }
 
-/* hover */
 .fila:hover {
   background: #eef2ff;
 }
 
-/* seleccion */
 .fila.active {
   background: #dbeafe;
+}
+
+/* FAVORITO */
+.fila.favorito {
+  background: #fef9c3;
+  border-left: 4px solid #facc15;
+}
+
+.fila.favorito:hover {
+  background: #fef08a;
 }
 
 /* ===== CABECERA ===== */
@@ -140,69 +148,22 @@ body {
 .cabecera {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 4px;
+  gap: 6px;
 }
 
-/* cada celda */
 .campo {
-  background: transparent;
-  border: none;
-  padding: 2px 4px;
-  height: auto;
-
   font-size: 12px;
-  line-height: 1.2;
-
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* etiqueta */
 .campo b {
   color: #6b7280;
-  font-weight: 500;
   margin-right: 4px;
 }
-/* ===== TABLA DETALLE ===== */
 
-table {
-  width: 100%;
-  border-collapse: collapse;
-  table-layout: fixed;
-}
-
-th, td {
-  border: 1px solid #e5e7eb;
-  padding: 6px;
-  font-size: 12px;
-
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-th {
-  background: #f3f4f6;
-}
-
-/* anchos */
-th:nth-child(1), td:nth-child(1) { width: 8%; }   /* Remito */
-th:nth-child(2), td:nth-child(2) { width: 10%; }  /* Fecha */
-th:nth-child(3), td:nth-child(3) { width: 40%; }  /* Producto (MÁS ANCHA) */
-th:nth-child(4), td:nth-child(4) { width: 7%; }   /* Cant */
-th:nth-child(5), td:nth-child(5) { width: 12%; }  /* Lote */
-th:nth-child(6), td:nth-child(6) { width: 11%; }  /* Serie */
-th:nth-child(7), td:nth-child(7) { width: 12%; }  /* Venc */
-
-.tabla-header span {
-  cursor: pointer;
-  user-select: none;
-}
-
-.tabla-header span:hover {
-  color: #60a5fa;
-}
+/* TAG SI / NO */
 .tag {
   padding: 2px 6px;
   border-radius: 6px;
@@ -218,4 +179,42 @@ th:nth-child(7), td:nth-child(7) { width: 12%; }  /* Venc */
 .tag.no {
   background: #fee2e2;
   color: #991b1b;
+}
+
+/* ===== TABLA DETALLE ===== */
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+th, td {
+  border: 1px solid #e5e7eb;
+  padding: 6px;
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+th {
+  background: #f3f4f6;
+}
+
+th:nth-child(1), td:nth-child(1) { width: 8%; }
+th:nth-child(2), td:nth-child(2) { width: 10%; }
+th:nth-child(3), td:nth-child(3) { width: 40%; }
+th:nth-child(4), td:nth-child(4) { width: 7%; }
+th:nth-child(5), td:nth-child(5) { width: 12%; }
+th:nth-child(6), td:nth-child(6) { width: 11%; }
+th:nth-child(7), td:nth-child(7) { width: 12%; }
+
+.tabla-header span {
+  cursor: pointer;
+  user-select: none;
+}
+
+.tabla-header span:hover {
+  color: #60a5fa;
 }
