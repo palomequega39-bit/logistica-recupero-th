@@ -9,7 +9,9 @@ archivo = st.file_uploader("Subir archivo", type=["csv", "xlsx"])
 
 if archivo:
 
-    # Carga
+    # -------------------------
+    # CARGA
+    # -------------------------
     if archivo.name.endswith(".csv"):
         df = pd.read_csv(archivo, sep=";", encoding="latin1")
     else:
@@ -17,12 +19,16 @@ if archivo:
 
     df.columns = df.columns.str.strip()
 
-    # Flags
+    # -------------------------
+    # FLAGS
+    # -------------------------
     df["tiene_devolucion"] = df["Devolucion"].astype(str).str.upper() == "VERDADERO"
     df["tiene_foja"] = df["Foja"].notna()
     df["tiene_ci"] = df["CI"].astype(str).str.upper() == "VERDADERO"
 
+    # -------------------------
     # CABECERA
+    # -------------------------
     cabecera = (
         df.groupby("Orden")
         .agg({
@@ -31,8 +37,17 @@ if archivo:
             "Dni": "first",
             "ObraSocial": "first",
             "FechaCX": "first",
+            "Vendedor": "first",
+            "Medico": "first",
+            "MedicoSolicitante": "first",
+            "Foja": "first",
+            "CI": "first",
+            "Actividades": "first",
             "Institucion": "first",
             "Ciudad": "first",
+            "Expediente": "first",
+            "Favotito": "first",
+            "Devolucion": "first",
             "Prioridad": "first",
             "tiene_devolucion": "max",
             "tiene_foja": "max",
@@ -41,84 +56,133 @@ if archivo:
         .reset_index()
     )
 
-    # -----------------------------
-    # SIDEBAR (FILTROS)
-    # -----------------------------
+    cabecera["Paciente"] = cabecera["Apellido"] + " " + cabecera["Nombre"]
+
+    # -------------------------
+    # SIDEBAR FILTROS
+    # -------------------------
     st.sidebar.header("Filtros")
 
-    instituciones = ["Todas"] + sorted(cabecera["Institucion"].dropna().unique())
-    inst_sel = st.sidebar.selectbox("Institución", instituciones)
-
-    devolucion_sel = st.sidebar.selectbox("Devolución", ["Todas", "Sí", "No"])
-
-    # Aplicar filtros
-    filtrado = cabecera.copy()
-
-    if inst_sel != "Todas":
-        filtrado = filtrado[filtrado["Institucion"] == inst_sel]
-
-    if devolucion_sel == "Sí":
-        filtrado = filtrado[filtrado["tiene_devolucion"]]
-    elif devolucion_sel == "No":
-        filtrado = filtrado[~filtrado["tiene_devolucion"]]
-
-    # -----------------------------
-    # TABLA PRINCIPAL
-    # -----------------------------
-    st.subheader("Órdenes")
-
-    tabla = st.dataframe(
-        filtrado,
-        use_container_width=True,
-        height=300  # 🔥 clave para evitar scroll gigante
+    inst = st.sidebar.selectbox(
+        "Institución",
+        ["Todas"] + sorted(cabecera["Institucion"].dropna().unique())
     )
 
-    # Selección simple (temporal)
+    devol = st.sidebar.selectbox("Devolución Pendiente", ["Todas", "Sí", "No"])
+    foja = st.sidebar.selectbox("Foja", ["Todas", "Sí", "No"])
+    ci = st.sidebar.selectbox("Certificado (CI)", ["Todas", "Sí", "No"])
+
+    prioridad = st.sidebar.selectbox(
+        "Prioridad",
+        ["Todas"] + sorted(cabecera["Prioridad"].dropna().unique())
+    )
+
+    obra = st.sidebar.selectbox(
+        "Obra Social",
+        ["Todas"] + sorted(cabecera["ObraSocial"].dropna().unique())
+    )
+
+    ciudad = st.sidebar.selectbox(
+        "Ciudad",
+        ["Todas"] + sorted(cabecera["Ciudad"].dropna().unique())
+    )
+
+    # -------------------------
+    # FILTRADO
+    # -------------------------
+    filtrado = cabecera.copy()
+
+    if inst != "Todas":
+        filtrado = filtrado[filtrado["Institucion"] == inst]
+
+    if devol == "Sí":
+        filtrado = filtrado[filtrado["tiene_devolucion"]]
+    elif devol == "No":
+        filtrado = filtrado[~filtrado["tiene_devolucion"]]
+
+    if foja == "Sí":
+        filtrado = filtrado[filtrado["tiene_foja"]]
+    elif foja == "No":
+        filtrado = filtrado[~filtrado["tiene_foja"]]
+
+    if ci == "Sí":
+        filtrado = filtrado[filtrado["tiene_ci"]]
+    elif ci == "No":
+        filtrado = filtrado[~filtrado["tiene_ci"]]
+
+    if prioridad != "Todas":
+        filtrado = filtrado[filtrado["Prioridad"] == prioridad]
+
+    if obra != "Todas":
+        filtrado = filtrado[filtrado["ObraSocial"] == obra]
+
+    if ciudad != "Todas":
+        filtrado = filtrado[filtrado["Ciudad"] == ciudad]
+
+    # -------------------------
+    # LISTA DE ÓRDENES (SOLO CAMPOS CLAVE)
+    # -------------------------
+    st.subheader("Órdenes")
+
+    tabla = filtrado[[
+        "Orden",
+        "Paciente",
+        "Dni",
+        "ObraSocial",
+        "Favotito",
+        "Prioridad"
+    ]]
+
+    st.dataframe(tabla, use_container_width=True, height=300)
+
+    # Selección
     orden = st.selectbox("Seleccionar Orden", filtrado["Orden"])
 
-    # -----------------------------
-    # DETALLE
-    # -----------------------------
     cab = cabecera[cabecera["Orden"] == orden]
     det = df[df["Orden"] == orden]
 
     st.divider()
 
-    col1, col2 = st.columns([2, 3])
+    # -------------------------
+    # CABECERA COMPLETA (ARRIBA)
+    # -------------------------
+    st.subheader("Cabecera de la Orden")
 
-    # CABECERA COMPACTA
-    with col1:
-        st.subheader("Cabecera")
+    st.write(f"**Orden:** {orden}")
+    st.write(f"**Paciente:** {cab['Paciente'].values[0]}")
+    st.write(f"**DNI:** {cab['Dni'].values[0]}")
+    st.write(f"**Obra Social:** {cab['ObraSocial'].values[0]}")
+    st.write(f"**Fecha CX:** {cab['FechaCX'].values[0]}")
+    st.write(f"**Institución:** {cab['Institucion'].values[0]}")
+    st.write(f"**Ciudad:** {cab['Ciudad'].values[0]}")
+    st.write(f"**Vendedor:** {cab['Vendedor'].values[0]}")
+    st.write(f"**Médico:** {cab['Medico'].values[0]}")
+    st.write(f"**Médico Solicitante:** {cab['MedicoSolicitante'].values[0]}")
+    st.write(f"**Expediente:** {cab['Expediente'].values[0]}")
+    st.write(f"**Actividades:** {cab['Actividades'].values[0]}")
 
-        st.write(f"**Paciente:** {cab['Apellido'].values[0]} {cab['Nombre'].values[0]}")
-        st.write(f"**DNI:** {cab['Dni'].values[0]}")
-        st.write(f"**Obra Social:** {cab['ObraSocial'].values[0]}")
-        st.write(f"**Institución:** {cab['Institucion'].values[0]}")
-        st.write(f"**Ciudad:** {cab['Ciudad'].values[0]}")
-        st.write(f"**Prioridad:** {cab['Prioridad'].values[0]}")
+    st.write(f"**Prioridad:** {cab['Prioridad'].values[0]}")
+    st.write(f"**Favorito:** {cab['Favotito'].values[0]}")
 
-        st.write(f"**Devolución:** {'Sí' if cab['tiene_devolucion'].values[0] else 'No'}")
-        st.write(f"**Foja:** {'Sí' if cab['tiene_foja'].values[0] else 'No'}")
-        st.write(f"**CI:** {'Sí' if cab['tiene_ci'].values[0] else 'No'}")
+    st.write(f"**Devolución:** {'Sí' if cab['tiene_devolucion'].values[0] else 'No'}")
+    st.write(f"**Foja:** {'Sí' if cab['tiene_foja'].values[0] else 'No'}")
+    st.write(f"**CI:** {'Sí' if cab['tiene_ci'].values[0] else 'No'}")
 
-    # DETALLE PRODUCTOS
-    with col2:
-        st.subheader("Detalle")
+    # -------------------------
+    # DETALLE (ABAJO)
+    # -------------------------
+    st.subheader("Detalle de Productos")
 
-        columnas = [
-            "Remito",
-            "FechaR",
-            "Producto",
-            "Q",
-            "Lote",
-            "Serie",
-            "Vencimiento"
-        ]
+    columnas = [
+        "Remito",
+        "FechaR",
+        "Producto",
+        "Q",
+        "Lote",
+        "Serie",
+        "Vencimiento"
+    ]
 
-        columnas_validas = [c for c in columnas if c in det.columns]
+    columnas_validas = [c for c in columnas if c in det.columns]
 
-        st.dataframe(
-            det[columnas_validas],
-            use_container_width=True,
-            height=300  # 🔥 clave
-        )
+    st.dataframe(det[columnas_validas], use_container_width=True, height=300)
