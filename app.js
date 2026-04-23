@@ -116,3 +116,4 @@ function getClase(p) {
     if (p.includes("media")) return "media";
     return "baja";
 }
+
