@@ -95,11 +95,6 @@ function renderLista(){
 
       switch(sortField){
 
-        case "fav":
-          valA = (a.Favorito||"").toUpperCase()==="VERDADERO" ? 1 : 0;
-          valB = (b.Favorito||"").toUpperCase()==="VERDADERO" ? 1 : 0;
-          break;
-
         case "Paciente":
           valA = (a.Apellido + a.Nombre).toLowerCase();
           valB = (b.Apellido + b.Nombre).toLowerCase();
@@ -126,7 +121,6 @@ function renderLista(){
     }
 
     fila.innerHTML=`
-      ${(o.Favorito||"").toUpperCase()==="VERDADERO" ? "⭐" : ""}
       <span>${o.Orden}</span>
       <span>${o.Apellido} ${o.Nombre}</span>
       <span>${o.Dni}</span>
