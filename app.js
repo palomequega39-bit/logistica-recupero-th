@@ -143,7 +143,7 @@ function renderLista(){
     div.className="card";
 
     div.innerHTML = `
-      ⭐ ${o.Favotito || ""}
+      ${(o.Favotito || "").toUpperCase() === "VERDADERO" ? "⭐" : ""}
       <b>${o.Orden}</b><br>
       ${o.Apellido} ${o.Nombre}<br>
       DNI: ${o.Dni}<br>
