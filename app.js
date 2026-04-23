@@ -1,8 +1,8 @@
 let ordenes = [];
 let filtradas = [];
+
 let sortField = null;
 let ordenAsc = true;
-
 
 // botón filtro
 document.getElementById("btnFiltrar").onclick = aplicarFiltros;
@@ -68,9 +68,26 @@ function aplicarFiltros(){
   renderLista();
 }
 
+// ===== HELPER SI / NO =====
+function boolTag(val){
+  const v = (val || "").toUpperCase();
+
+  if(v === "VERDADERO"){
+    return `<span class="tag si">SI</span>`;
+  }
+  if(v === "FALSO"){
+    return `<span class="tag no">NO</span>`;
+  }
+  return "";
+}
+
 // LISTA
 function renderLista(){
 
+  const cont=document.getElementById("ordenesList");
+  cont.innerHTML="";
+
+  // ORDEN
   if(sortField){
     filtradas.sort((a,b)=>{
 
@@ -79,8 +96,8 @@ function renderLista(){
       switch(sortField){
 
         case "fav":
-          valA = (a.Favotito||"").toUpperCase()==="VERDADERO" ? 1 : 0;
-          valB = (b.Favotito||"").toUpperCase()==="VERDADERO" ? 1 : 0;
+          valA = (a.Favorito||"").toUpperCase()==="VERDADERO" ? 1 : 0;
+          valB = (b.Favorito||"").toUpperCase()==="VERDADERO" ? 1 : 0;
           break;
 
         case "Paciente":
@@ -99,6 +116,46 @@ function renderLista(){
     });
   }
 
+  filtradas.forEach(o=>{
+
+    const fila=document.createElement("div");
+    fila.className="fila";
+
+    if((o.Favorito || "").toUpperCase() === "VERDADERO"){
+      fila.classList.add("favorito");
+    }
+
+    fila.innerHTML=`
+      ${(o.Favorito||"").toUpperCase()==="VERDADERO" ? "⭐" : ""}
+      <span>${o.Orden}</span>
+      <span>${o.Apellido} ${o.Nombre}</span>
+      <span>${o.Dni}</span>
+      <span>${o.ObraSocial}</span>
+      <span>${o.Institucion}</span>
+      <span>${o.Prioridad}</span>
+    `;
+
+    fila.onclick=()=>{
+      document.querySelectorAll(".fila").forEach(f=>f.classList.remove("active"));
+      fila.classList.add("active");
+      mostrar(o);
+    };
+
+    cont.appendChild(fila);
+  });
+}
+
+// SORT
+function sortBy(field){
+  if(sortField === field){
+    ordenAsc = !ordenAsc;
+  } else {
+    sortField = field;
+    ordenAsc = true;
+  }
+  renderLista();
+}
+
 // DETALLE
 function mostrar(o){
 
@@ -113,7 +170,7 @@ function mostrar(o){
   <div class="campo"><b>Foja:</b> ${boolTag(o.Foja)}</div>
   <div class="campo"><b>CI:</b> ${boolTag(o.CI)}</div>
 
-   <div class="campo"><b>Devolución:</b> ${boolTag(o.Devolucion)}</div>
+  <div class="campo"><b>Devolución:</b> ${boolTag(o.Devolucion)}</div>
   <div class="campo"><b>Expediente:</b> ${o.Expediente}</div>
   <div class="campo"><b>Fecha CX:</b> ${o.FechaCX}</div>
   <div class="campo"><b>Médico:</b> ${o.Medico}</div>
@@ -135,24 +192,4 @@ function mostrar(o){
     `;
     body.appendChild(tr);
   });
-}
-function sortBy(field){
-  if(sortField === field){
-    ordenAsc = !ordenAsc;
-  } else {
-    sortField = field;
-    ordenAsc = true;
-  }
-  renderLista();
-}
-function boolTag(val){
-  const v = (val || "").toUpperCase();
-
-  if(v === "VERDADERO"){
-    return `<span class="tag si">SI</span>`;
-  }
-  if(v === "FALSO"){
-    return `<span class="tag no">NO</span>`;
-  }
-  return "";
 }
