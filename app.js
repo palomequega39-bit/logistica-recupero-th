@@ -117,11 +117,13 @@ function mostrar(o){
   o.detalles.forEach(d=>{
     const tr=document.createElement("tr");
     tr.innerHTML=`
-      <td>${d.Producto}</td>
-      <td>${d.Q}</td>
-      <td>${d.Lote}</td>
-      <td>${d.Serie}</td>
-      <td>${d.Vencimiento}</td>
+      <td>${d.Remito || ""}</td>
+      <td>${d.FechaR || ""}</td>
+      <td>${d.Producto || ""}</td>
+      <td>${d.Q || ""}</td>
+      <td>${d.Lote || ""}</td>
+      <td>${d.Serie || ""}</td>
+      <td>${d.Vencimiento || ""}</td>
     `;
     body.appendChild(tr);
   });
