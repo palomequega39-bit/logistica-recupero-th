@@ -94,7 +94,7 @@ body {
 .tabla-header,
 .fila {
   display: grid;
-  grid-template-columns: 50px 120px 260px 120px 180px 160px 100px;
+  grid-template-columns: 50px 260px 80px 120px 260px 160px;
   gap: 6px;
   align-items: center;
 }
