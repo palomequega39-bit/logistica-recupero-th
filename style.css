@@ -7,7 +7,7 @@ body {
 
 .layout {
   display: grid;
-  grid-template-columns: 260px 300px 1fr;
+  grid-template-columns: 260px 350px 1fr;
   height: 100vh;
 }
 
@@ -17,6 +17,7 @@ body {
   padding: 15px;
 }
 
+/* DROPZONE */
 .dropzone {
   border: 2px dashed #334155;
   padding: 20px;
@@ -37,6 +38,34 @@ body {
   opacity: 0;
 }
 
+/* FILTROS */
+.filters label {
+  font-size: 12px;
+  color: #9ca3af;
+  margin-top: 10px;
+  display: block;
+}
+
+.filters select {
+  width: 100%;
+  background: #1f2937;
+  color: white;
+  border: none;
+  padding: 6px;
+  border-radius: 5px;
+  margin-bottom: 5px;
+}
+
+.filters button {
+  width: 100%;
+  margin-top: 10px;
+  padding: 8px;
+  background: #2563eb;
+  border: none;
+  border-radius: 6px;
+  color: white;
+}
+
 /* LISTA */
 .lista {
   background: #111827;
@@ -46,10 +75,11 @@ body {
 
 .card {
   background: #1f2937;
-  padding: 10px;
-  margin-bottom: 8px;
-  border-radius: 8px;
+  padding: 8px;
+  margin-bottom: 6px;
+  border-radius: 6px;
   cursor: pointer;
+  font-size: 13px;
 }
 
 .card:hover {
@@ -68,10 +98,12 @@ body {
   overflow-y: auto;
 }
 
+/* CABECERA */
 .cabecera {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 8px;
+  margin-bottom: 20px;
 }
 
 .campo {
@@ -82,13 +114,6 @@ body {
 
   background: white;
   padding: 8px;
-  border-radius: 6px;
-  border: 1px solid #ddd;
-}
-
-.campo {
-  background: white;
-  padding: 10px;
   border-radius: 6px;
   border: 1px solid #ddd;
 }
@@ -108,8 +133,8 @@ th, td {
   white-space: nowrap;
 }
 
-/* ancho específico */
-th:nth-child(1), td:nth-child(1) { width: 40%; } /* Producto */
+/* COLUMNAS */
+th:nth-child(1), td:nth-child(1) { width: 40%; }
 th:nth-child(2), td:nth-child(2) { width: 10%; }
 th:nth-child(3), td:nth-child(3) { width: 15%; }
 th:nth-child(4), td:nth-child(4) { width: 15%; }
