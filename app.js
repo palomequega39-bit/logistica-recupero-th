@@ -1,16 +1,30 @@
 let data = [];
 let ordenes = [];
 
-document.getElementById("fileInput").addEventListener("change", function(e) {
-    const file = e.target.files[0];
+document.addEventListener("DOMContentLoaded", function () {
 
-    const reader = new FileReader();
-    reader.onload = function(event) {
-        const text = event.target.result;
-        procesarCSV(text);
-    };
+    const input = document.getElementById("fileInput");
 
-    reader.readAsText(file);
+    if (!input) {
+        console.error("No existe fileInput en el HTML");
+        return;
+    }
+
+    input.addEventListener("change", function (e) {
+        const file = e.target.files[0];
+
+        if (!file) return;
+
+        const reader = new FileReader();
+
+        reader.onload = function (event) {
+            const text = event.target.result;
+            procesarCSV(text);
+        };
+
+        reader.readAsText(file);
+    });
+
 });
 
 function procesarCSV(text) {
@@ -18,6 +32,7 @@ function procesarCSV(text) {
     const filas = text.split("\n").map(f => f.split(";"));
 
     const headers = filas[0];
+
     data = filas.slice(1).map(f => {
         let obj = {};
         headers.forEach((h, i) => obj[h.trim()] = f[i]);
@@ -48,6 +63,12 @@ function construirOrdenes() {
 function renderTabla(lista) {
 
     const tabla = document.getElementById("tablaOrdenes");
+
+    if (!tabla) {
+        console.error("No existe tablaOrdenes en HTML");
+        return;
+    }
+
     tabla.innerHTML = "";
 
     lista.forEach(o => {
@@ -71,6 +92,12 @@ function renderTabla(lista) {
 function mostrarDetalle(o) {
 
     const cab = document.getElementById("cabecera");
+    const det = document.getElementById("detalle");
+
+    if (!cab || !det) {
+        console.error("Faltan elementos cabecera o detalle");
+        return;
+    }
 
     cab.innerHTML = `
         <div class="campo"><b>Paciente:</b> ${o.Apellido} ${o.Nombre}</div>
@@ -86,7 +113,6 @@ function mostrarDetalle(o) {
         <div class="campo"><b>CI:</b> ${o.CI}</div>
     `;
 
-    const det = document.getElementById("detalle");
     det.innerHTML = "";
 
     o.detalles.forEach(d => {
