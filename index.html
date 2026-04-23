@@ -8,13 +8,15 @@
   <link href="https://unpkg.com/gridjs/dist/theme/mermaid.min.css" rel="stylesheet" />
   <script src="https://unpkg.com/gridjs/dist/gridjs.umd.js"></script>
 
+  <!-- PapaParse -->
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <div class="container">
 
-  <!-- SIDEBAR -->
   <div class="sidebar">
     <h3>Filtros</h3>
 
@@ -29,9 +31,7 @@
     <button onclick="aplicarFiltros()">Filtrar</button>
   </div>
 
-  <!-- MAIN -->
   <div class="main">
-
     <h2>Órdenes</h2>
     <div id="tablaGrid"></div>
 
@@ -40,12 +40,13 @@
 
     <h2>Detalle</h2>
     <div id="detalle"></div>
-
   </div>
 
 </div>
 
-<input type="file" id="fileInput" />
+<div style="padding:10px;">
+  <input type="file" id="fileInput">
+</div>
 
 <script src="app.js" defer></script>
 
