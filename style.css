@@ -70,9 +70,20 @@ body {
 
 .cabecera {
   display: grid;
-  grid-template-columns: repeat(3,1fr);
-  gap: 10px;
-  margin-bottom: 20px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.campo {
+  height: 60px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  background: white;
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid #ddd;
 }
 
 .campo {
