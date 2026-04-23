@@ -18,7 +18,7 @@ if archivo:
 
     df["tiene_devolucion"] = df["Devolucion"].astype(str).str.upper() == "VERDADERO"
     df["tiene_foja"] = df["Foja"].notna()
-    df["tiene_ci"] = df["Ci"].astype(str).str.upper() == "VERDADERO"
+    df["tiene_ci"] = df["CI"].astype(str).str.upper() == "VERDADERO"
 
     cabecera = (
         df.groupby("Orden")
