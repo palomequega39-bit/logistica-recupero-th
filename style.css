@@ -103,7 +103,7 @@ body {
 
 /* contenedor con scroll */
 #ordenesList {
-  max-height: 420px; /* ~15 filas */
+  max-height: 260px; /* ~15 filas */
   overflow-y: auto;
 }
 
