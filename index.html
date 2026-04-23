@@ -5,8 +5,8 @@
 <title>Logística Recupero</title>
 
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-
 <link rel="stylesheet" href="style.css">
+
 </head>
 <body>
 
@@ -18,8 +18,7 @@
     <h2>Recupero</h2>
 
     <div id="dropzone" class="dropzone">
-      <p>Arrastrá tu CSV</p>
-      <span>o hacer click</span>
+      <p>Arrastrar CSV</p>
       <input type="file" id="fileInput">
     </div>
 
@@ -46,7 +45,7 @@
       <label>Fecha CX</label>
       <select id="filtroFecha"></select>
 
-      <button onclick="aplicarFiltros()">Filtrar</button>
+      <button onclick="aplicarFiltros()">Aplicar filtros</button>
 
     </div>
 
@@ -54,7 +53,18 @@
 
   <!-- LISTA -->
   <section class="lista">
-    <h3>Órdenes</h3>
+    <div class="header">Órdenes</div>
+
+    <div class="tabla-header">
+      <span>★</span>
+      <span>Orden</span>
+      <span>Paciente</span>
+      <span>DNI</span>
+      <span>Obra</span>
+      <span>Inst.</span>
+      <span>Prio</span>
+    </div>
+
     <div id="ordenesList"></div>
   </section>
 
