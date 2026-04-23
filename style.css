@@ -18,19 +18,18 @@ body {
   padding: 20px;
 }
 
-/* TABLA */
 table {
   width: 100%;
   border-collapse: collapse;
   margin-bottom: 20px;
 }
 
-td, th {
+th, td {
   border: 1px solid #ddd;
   padding: 8px;
 }
 
-/* CABECERA COMPACTA */
+/* Cabecera compacta en 3 columnas */
 #cabecera {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
