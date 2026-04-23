@@ -1,18 +1,13 @@
 let data = [];
 let ordenes = [];
+let ordenesFiltradas = [];
 
 document.addEventListener("DOMContentLoaded", function () {
 
     const input = document.getElementById("fileInput");
 
-    if (!input) {
-        console.error("No existe fileInput en el HTML");
-        return;
-    }
-
     input.addEventListener("change", function (e) {
         const file = e.target.files[0];
-
         if (!file) return;
 
         const reader = new FileReader();
@@ -30,7 +25,6 @@ document.addEventListener("DOMContentLoaded", function () {
 function procesarCSV(text) {
 
     const filas = text.split("\n").map(f => f.split(";"));
-
     const headers = filas[0];
 
     data = filas.slice(1).map(f => {
@@ -40,7 +34,8 @@ function procesarCSV(text) {
     });
 
     construirOrdenes();
-    renderTabla(ordenes);
+    cargarFiltros();
+    aplicarFiltros();
 }
 
 function construirOrdenes() {
@@ -51,7 +46,10 @@ function construirOrdenes() {
         if (!map[row.Orden]) {
             map[row.Orden] = {
                 ...row,
-                detalles: []
+                detalles: [],
+                tiene_devolucion: (row.Devolucion || "").toUpperCase() === "VERDADERO",
+                tiene_foja: row.Foja && row.Foja !== "",
+                tiene_ci: (row.CI || "").toUpperCase() === "VERDADERO"
             };
         }
         map[row.Orden].detalles.push(row);
@@ -60,18 +58,73 @@ function construirOrdenes() {
     ordenes = Object.values(map);
 }
 
-function renderTabla(lista) {
+function cargarFiltros() {
 
-    const tabla = document.getElementById("tablaOrdenes");
+    cargarSelect("filtroInstitucion", "Institucion");
+    cargarSelect("filtroPrioridad", "Prioridad");
+    cargarSelect("filtroObra", "ObraSocial");
+    cargarSelect("filtroCiudad", "Ciudad");
 
-    if (!tabla) {
-        console.error("No existe tablaOrdenes en HTML");
-        return;
-    }
+    setOpcionesSiNo("filtroDevolucion");
+    setOpcionesSiNo("filtroFoja");
+    setOpcionesSiNo("filtroCI");
+}
 
-    tabla.innerHTML = "";
+function cargarSelect(id, campo) {
+    const select = document.getElementById(id);
+    const valores = [...new Set(ordenes.map(o => o[campo]).filter(Boolean))];
 
-    lista.forEach(o => {
+    select.innerHTML = `<option value="">Todos</option>` +
+        valores.map(v => `<option value="${v}">${v}</option>`).join("");
+}
+
+function setOpcionesSiNo(id) {
+    document.getElementById(id).innerHTML = `
+        <option value="">Todos</option>
+        <option value="SI">Sí</option>
+        <option value="NO">No</option>
+    `;
+}
+
+function aplicarFiltros() {
+
+    const inst = document.getElementById("filtroInstitucion").value;
+    const dev = document.getElementById("filtroDevolucion").value;
+    const foja = document.getElementById("filtroFoja").value;
+    const ci = document.getElementById("filtroCI").value;
+    const prioridad = document.getElementById("filtroPrioridad").value;
+    const obra = document.getElementById("filtroObra").value;
+    const ciudad = document.getElementById("filtroCiudad").value;
+
+    ordenesFiltradas = ordenes.filter(o => {
+
+        if (inst && o.Institucion !== inst) return false;
+        if (prioridad && o.Prioridad !== prioridad) return false;
+        if (obra && o.ObraSocial !== obra) return false;
+        if (ciudad && o.Ciudad !== ciudad) return false;
+
+        if (dev === "SI" && !o.tiene_devolucion) return false;
+        if (dev === "NO" && o.tiene_devolucion) return false;
+
+        if (foja === "SI" && !o.tiene_foja) return false;
+        if (foja === "NO" && o.tiene_foja) return false;
+
+        if (ci === "SI" && !o.tiene_ci) return false;
+        if (ci === "NO" && o.tiene_ci) return false;
+
+        return true;
+    });
+
+    renderTabla();
+}
+
+function renderTabla() {
+
+    const tbody = document.querySelector("#tablaOrdenes tbody");
+    tbody.innerHTML = "";
+
+    ordenesFiltradas.forEach(o => {
+
         const tr = document.createElement("tr");
 
         tr.innerHTML = `
@@ -85,19 +138,13 @@ function renderTabla(lista) {
 
         tr.onclick = () => mostrarDetalle(o);
 
-        tabla.appendChild(tr);
+        tbody.appendChild(tr);
     });
 }
 
 function mostrarDetalle(o) {
 
     const cab = document.getElementById("cabecera");
-    const det = document.getElementById("detalle");
-
-    if (!cab || !det) {
-        console.error("Faltan elementos cabecera o detalle");
-        return;
-    }
 
     cab.innerHTML = `
         <div class="campo"><b>Paciente:</b> ${o.Apellido} ${o.Nombre}</div>
@@ -113,9 +160,11 @@ function mostrarDetalle(o) {
         <div class="campo"><b>CI:</b> ${o.CI}</div>
     `;
 
-    det.innerHTML = "";
+    const tbody = document.querySelector("#detalle tbody");
+    tbody.innerHTML = "";
 
     o.detalles.forEach(d => {
+
         const tr = document.createElement("tr");
 
         tr.innerHTML = `
@@ -128,6 +177,6 @@ function mostrarDetalle(o) {
             <td>${d.Vencimiento}</td>
         `;
 
-        det.appendChild(tr);
+        tbody.appendChild(tr);
     });
 }
