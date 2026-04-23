@@ -1,40 +1,35 @@
 let ordenes = [];
 let filtradas = [];
 
-// FILE
-document.getElementById("dropzone").onclick = () => {
-  document.getElementById("fileInput").click();
-};
+// botón filtro
+document.getElementById("btnFiltrar").onclick = aplicarFiltros;
 
-document.getElementById("fileInput").onchange = e => {
-  leerArchivo(e.target.files[0]);
-};
-
-function leerArchivo(file){
-  Papa.parse(file,{
+// archivo
+document.getElementById("fileInput").onchange = e=>{
+  Papa.parse(e.target.files[0],{
     header:true,
     delimiter:";",
     skipEmptyLines:true,
-    complete: res => procesar(res.data)
+    complete: res=>procesar(res.data)
   });
-}
+};
 
 // DATA
 function procesar(data){
 
-  const map = {};
+  const map={};
 
   data.forEach(r=>{
     if(!r.Orden) return;
 
     if(!map[r.Orden]){
-      map[r.Orden]={...r, detalles:[]};
+      map[r.Orden]={...r,detalles:[]};
     }
 
     map[r.Orden].detalles.push(r);
   });
 
-  ordenes = Object.values(map);
+  ordenes=Object.values(map);
 
   cargarFiltros();
   aplicarFiltros();
@@ -45,17 +40,6 @@ function cargarFiltros(){
   fill("filtroInstitucion","Institucion");
   fill("filtroPrioridad","Prioridad");
   fill("filtroCiudad","Ciudad");
-
-  setYN("filtroDevolucion");
-  setYN("filtroFoja");
-  setYN("filtroCI");
-
-  document.getElementById("filtroFecha").innerHTML=`
-    <option value="">Todas</option>
-    <option value="REALIZADA">Realizada</option>
-    <option value="HOY">Hoy</option>
-    <option value="PENDIENTE">No realizada</option>
-  `;
 }
 
 function fill(id,campo){
@@ -65,31 +49,34 @@ function fill(id,campo){
     vals.map(v=>`<option>${v}</option>`).join("");
 }
 
-function setYN(id){
-  document.getElementById(id).innerHTML=`
-    <option value="">Todos</option>
-    <option value="SI">Sí</option>
-    <option value="NO">No</option>
-  `;
-}
-
 function aplicarFiltros(){
-  filtradas = ordenes;
+
+  const f=id=>document.getElementById(id).value;
+
+  filtradas=ordenes.filter(o=>{
+
+    if(f("filtroInstitucion") && o.Institucion!==f("filtroInstitucion")) return false;
+    if(f("filtroPrioridad") && o.Prioridad!==f("filtroPrioridad")) return false;
+    if(f("filtroCiudad") && o.Ciudad!==f("filtroCiudad")) return false;
+
+    return true;
+  });
+
   renderLista();
 }
 
 // LISTA
 function renderLista(){
 
-  const cont = document.getElementById("ordenesList");
+  const cont=document.getElementById("ordenesList");
   cont.innerHTML="";
 
   filtradas.forEach(o=>{
 
-    const fila = document.createElement("div");
-    fila.className = "fila";
+    const fila=document.createElement("div");
+    fila.className="fila";
 
-    fila.innerHTML = `
+    fila.innerHTML=`
       ${(o.Favotito||"").toUpperCase()==="VERDADERO" ? "⭐" : ""}
       <span>${o.Orden}</span>
       <span>${o.Apellido} ${o.Nombre}</span>
@@ -99,7 +86,7 @@ function renderLista(){
       <span>${o.Prioridad}</span>
     `;
 
-    fila.onclick = ()=>{
+    fila.onclick=()=>{
       document.querySelectorAll(".fila").forEach(f=>f.classList.remove("active"));
       fila.classList.add("active");
       mostrar(o);
@@ -120,13 +107,8 @@ function mostrar(o){
 
     <div class="campo">${o.Ciudad}</div>
     <div class="campo">${o.Prioridad}</div>
-    <div class="campo">Foja: ${o.Foja}</div>
-    <div class="campo">CI: ${o.CI}</div>
-
-    <div class="campo">Dev: ${o.Devolucion}</div>
-    <div class="campo">${o.Expediente}</div>
-    <div class="campo">${o.FechaCX}</div>
-    <div class="campo">${o.Medico}</div>
+    <div class="campo">${o.Foja}</div>
+    <div class="campo">${o.CI}</div>
   `;
 
   const body=document.getElementById("detalleBody");
@@ -134,7 +116,6 @@ function mostrar(o){
 
   o.detalles.forEach(d=>{
     const tr=document.createElement("tr");
-
     tr.innerHTML=`
       <td>${d.Producto}</td>
       <td>${d.Q}</td>
@@ -142,7 +123,6 @@ function mostrar(o){
       <td>${d.Serie}</td>
       <td>${d.Vencimiento}</td>
     `;
-
     body.appendChild(tr);
   });
 }
