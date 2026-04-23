@@ -195,3 +195,12 @@ th:nth-child(4), td:nth-child(4) { width: 7%; }   /* Cant */
 th:nth-child(5), td:nth-child(5) { width: 12%; }  /* Lote */
 th:nth-child(6), td:nth-child(6) { width: 11%; }  /* Serie */
 th:nth-child(7), td:nth-child(7) { width: 12%; }  /* Venc */
+
+.tabla-header span {
+  cursor: pointer;
+  user-select: none;
+}
+
+.tabla-header span:hover {
+  color: #60a5fa;
+}
