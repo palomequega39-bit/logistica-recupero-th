@@ -1,5 +1,8 @@
 let ordenes = [];
 let filtradas = [];
+let sortField = null;
+let ordenAsc = true;
+
 
 // botón filtro
 document.getElementById("btnFiltrar").onclick = aplicarFiltros;
@@ -68,33 +71,33 @@ function aplicarFiltros(){
 // LISTA
 function renderLista(){
 
-  const cont=document.getElementById("ordenesList");
-  cont.innerHTML="";
+  if(sortField){
+    filtradas.sort((a,b)=>{
 
-  filtradas.forEach(o=>{
+      let valA, valB;
 
-    const fila=document.createElement("div");
-    fila.className="fila";
+      switch(sortField){
 
-    fila.innerHTML=`
-      ${(o.Favotito||"").toUpperCase()==="VERDADERO" ? "⭐" : ""}
-      <span>${o.Orden}</span>
-      <span>${o.Apellido} ${o.Nombre}</span>
-      <span>${o.Dni}</span>
-      <span>${o.ObraSocial}</span>
-      <span>${o.Institucion}</span>
-      <span>${o.Prioridad}</span>
-    `;
+        case "fav":
+          valA = (a.Favotito||"").toUpperCase()==="VERDADERO" ? 1 : 0;
+          valB = (b.Favotito||"").toUpperCase()==="VERDADERO" ? 1 : 0;
+          break;
 
-    fila.onclick=()=>{
-      document.querySelectorAll(".fila").forEach(f=>f.classList.remove("active"));
-      fila.classList.add("active");
-      mostrar(o);
-    };
+        case "Paciente":
+          valA = (a.Apellido + a.Nombre).toLowerCase();
+          valB = (b.Apellido + b.Nombre).toLowerCase();
+          break;
 
-    cont.appendChild(fila);
-  });
-}
+        default:
+          valA = (a[sortField]||"").toString().toLowerCase();
+          valB = (b[sortField]||"").toString().toLowerCase();
+      }
+
+      if(valA < valB) return ordenAsc ? -1 : 1;
+      if(valA > valB) return ordenAsc ? 1 : -1;
+      return 0;
+    });
+  }
 
 // DETALLE
 function mostrar(o){
@@ -134,35 +137,11 @@ function mostrar(o){
   });
 }
 function sortBy(field){
-
-  sortField = field;
-  ordenAsc = !ordenAsc;
-
-  filtradas.sort((a,b)=>{
-
-    let valA, valB;
-
-    switch(field){
-
-      case "fav":
-        valA = (a.Favotito||"").toUpperCase()==="VERDADERO" ? 1 : 0;
-        valB = (b.Favotito||"").toUpperCase()==="VERDADERO" ? 1 : 0;
-        break;
-
-      case "Paciente":
-        valA = (a.Apellido + a.Nombre).toLowerCase();
-        valB = (b.Apellido + b.Nombre).toLowerCase();
-        break;
-
-      default:
-        valA = (a[field]||"").toString().toLowerCase();
-        valB = (b[field]||"").toString().toLowerCase();
-    }
-
-    if(valA < valB) return ordenAsc ? -1 : 1;
-    if(valA > valB) return ordenAsc ? 1 : -1;
-    return 0;
-  });
-
+  if(sortField === field){
+    ordenAsc = !ordenAsc;
+  } else {
+    sortField = field;
+    ordenAsc = true;
+  }
   renderLista();
 }
