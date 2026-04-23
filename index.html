@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Gestión de Órdenes</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <h3>Filtros</h3>
+
+    <select id="filtroInstitucion"></select>
+    <select id="filtroDevolucion"></select>
+    <select id="filtroFoja"></select>
+    <select id="filtroCI"></select>
+    <select id="filtroPrioridad"></select>
+    <select id="filtroObra"></select>
+    <select id="filtroCiudad"></select>
+
+    <button onclick="aplicarFiltros()">Filtrar</button>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <h2>Órdenes</h2>
+    <table id="tablaOrdenes"></table>
+
+    <h2>Cabecera</h2>
+    <div id="cabecera"></div>
+
+    <h2>Detalle</h2>
+    <table id="detalle"></table>
+
+  </div>
+
+</div>
+
+<input type="file" id="fileInput" />
+
+<script src="app.js"></script>
+
+</body>
+</html>
