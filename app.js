@@ -110,10 +110,10 @@ function mostrar(o){
 
   <div class="campo"><b>Ciudad:</b> ${o.Ciudad}</div>
   <div class="campo"><b>Prioridad:</b> ${o.Prioridad}</div>
-  <div class="campo"><b>Foja:</b> ${o.Foja}</div>
-  <div class="campo"><b>CI:</b> ${o.CI}</div>
+  <div class="campo"><b>Foja:</b> ${boolTag(o.Foja)}</div>
+  <div class="campo"><b>CI:</b> ${boolTag(o.CI)}</div>
 
-  <div class="campo"><b>Devolución:</b> ${o.Devolucion}</div>
+   <div class="campo"><b>Devolución:</b> ${boolTag(o.Devolucion)}</div>
   <div class="campo"><b>Expediente:</b> ${o.Expediente}</div>
   <div class="campo"><b>Fecha CX:</b> ${o.FechaCX}</div>
   <div class="campo"><b>Médico:</b> ${o.Medico}</div>
@@ -144,4 +144,15 @@ function sortBy(field){
     ordenAsc = true;
   }
   renderLista();
+}
+function boolTag(val){
+  const v = (val || "").toUpperCase();
+
+  if(v === "VERDADERO"){
+    return `<span class="tag si">SI</span>`;
+  }
+  if(v === "FALSO"){
+    return `<span class="tag no">NO</span>`;
+  }
+  return "";
 }
