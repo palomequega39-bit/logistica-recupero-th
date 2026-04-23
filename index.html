@@ -1,55 +1,75 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>Gestión de Órdenes</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Logística Recupero</title>
 
   <!-- Grid.js -->
-  <link href="https://unpkg.com/gridjs/dist/theme/mermaid.min.css" rel="stylesheet" />
+  <link href="https://unpkg.com/gridjs/dist/theme/mermaid.min.css" rel="stylesheet"/>
   <script src="https://unpkg.com/gridjs/dist/gridjs.umd.js"></script>
 
   <!-- PapaParse -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
 
-<div class="container">
+<div class="app">
 
-  <div class="sidebar">
-    <h3>Filtros</h3>
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="logo">Recupero TH</div>
 
-    <select id="filtroInstitucion"></select>
-    <select id="filtroDevolucion"></select>
-    <select id="filtroFoja"></select>
-    <select id="filtroCI"></select>
-    <select id="filtroPrioridad"></select>
-    <select id="filtroObra"></select>
-    <select id="filtroCiudad"></select>
+    <div class="dropzone" id="dropzone">
+      <p>Arrastrá CSV acá</p>
+      <span>o hacé click</span>
+      <input type="file" id="fileInput" accept=".csv"/>
+    </div>
 
-    <button onclick="aplicarFiltros()">Filtrar</button>
-  </div>
+    <div class="filters">
+      <h4>Filtros</h4>
 
-  <div class="main">
-    <h2>Órdenes</h2>
-    <div id="tablaGrid"></div>
+      <select id="filtroInstitucion"></select>
+      <select id="filtroPrioridad"></select>
+      <select id="filtroObra"></select>
+      <select id="filtroCiudad"></select>
 
-    <h2>Cabecera</h2>
-    <div id="cabecera"></div>
+      <select id="filtroDevolucion"></select>
+      <select id="filtroFoja"></select>
+      <select id="filtroCI"></select>
 
-    <h2>Detalle</h2>
-    <div id="detalle"></div>
-  </div>
+      <button id="btnFiltrar">Aplicar</button>
+      <button id="btnReset" class="ghost">Reset</button>
+    </div>
+  </aside>
 
-</div>
+  <!-- MAIN -->
+  <main class="main">
 
-<div style="padding:10px;">
-  <input type="file" id="fileInput">
+    <section class="panel">
+      <div class="panel-header">
+        <h2>Órdenes</h2>
+        <div id="counter"></div>
+      </div>
+      <div id="tablaGrid"></div>
+    </section>
+
+    <section class="panel">
+      <h2>Cabecera</h2>
+      <div id="cabecera" class="cabecera-grid"></div>
+    </section>
+
+    <section class="panel">
+      <h2>Detalle</h2>
+      <div id="detalle"></div>
+    </section>
+
+  </main>
+
 </div>
 
 <script src="app.js" defer></script>
-
 </body>
 </html>
-
