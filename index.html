@@ -28,21 +28,47 @@
   <div class="main">
 
     <h2>Órdenes</h2>
-    <table id="tablaOrdenes"></table>
+    <table id="tablaOrdenes">
+      <thead>
+        <tr>
+          <th>Orden</th>
+          <th>Paciente</th>
+          <th>DNI</th>
+          <th>Obra Social</th>
+          <th>Favorito</th>
+          <th>Prioridad</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
 
     <h2>Cabecera</h2>
     <div id="cabecera"></div>
 
-    <h2>Detalle</h2>
-    <table id="detalle"></table>
+    <h2>Detalle de Productos</h2>
+    <table id="detalle">
+      <thead>
+        <tr>
+          <th>Remito</th>
+          <th>Fecha</th>
+          <th>Producto</th>
+          <th>Cantidad</th>
+          <th>Lote</th>
+          <th>Serie</th>
+          <th>Vencimiento</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
 
   </div>
 
 </div>
 
+<p style="padding:10px;">Subí un archivo CSV para comenzar</p>
 <input type="file" id="fileInput" />
 
-<script src="app.js"></script>
+<script src="app.js" defer></script>
 
 </body>
 </html>
