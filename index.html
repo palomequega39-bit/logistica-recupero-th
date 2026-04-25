@@ -5,29 +5,37 @@
 <title>Logística Recupero</title>
 
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-
-<!-- ✅ VERSIONADO -->
-<link rel="stylesheet" href="style.css?v=2.0.6">
+<link rel="stylesheet" href="style.css?v=2.0.7">
 
 </head>
 <body>
 
 <div class="layout">
 
-  <!-- SIDEBAR -->
   <aside class="sidebar">
 
     <h2>Recupero</h2>
 
+    <!-- DROPZONE NUEVO -->
     <div id="dropzone" class="dropzone">
-      <p>Arrastrar CSV</p>
-      <input type="file" id="fileInput">
+
+      <div class="dz-content">
+        <div class="icon">⬆</div>
+        <div class="dz-title">Arrastrar CSV</div>
+        <div class="dz-sub">o hacer click para seleccionar</div>
+      </div>
+
+      <div id="fileStatus" class="file-status hidden">
+        <span id="fileName"></span>
+        <span class="check">✔</span>
+      </div>
+
+      <input type="file" id="fileInput" accept=".csv">
     </div>
 
     <div class="filters">
-
       <label>Institución</label>
-      <input id="filtroInstitucion" class="inputFiltro" placeholder="Seleccionar institución...">
+      <input id="filtroInstitucion" class="inputFiltro">
       <div id="listaInstituciones" class="dropdown"></div>
 
       <label>Prioridad</label>
@@ -49,15 +57,12 @@
       <select id="filtroFecha"></select>
 
       <button id="btnFiltrar">Aplicar filtros</button>
-
     </div>
 
   </aside>
 
-  <!-- CONTENIDO -->
   <main class="contenido">
 
-    <!-- LISTA -->
     <section class="panel">
       <div class="titulo">Órdenes</div>
 
@@ -74,16 +79,13 @@
       <div id="ordenesList"></div>
     </section>
 
-    <!-- BUSCADOR -->
-    <input id="buscadorGlobal" class="buscador" placeholder="Buscar N° Orden, Apellido, Nombre, Dni, Obra Social Institucion...">
+    <input id="buscadorGlobal" class="buscador">
 
-    <!-- CABECERA -->
     <section class="panel">
       <div class="titulo">Cabecera</div>
       <div id="cabecera" class="cabecera"></div>
     </section>
 
-    <!-- DETALLE -->
     <section class="panel">
       <div class="titulo">Productos</div>
 
@@ -101,16 +103,12 @@
         </thead>
         <tbody id="detalleBody"></tbody>
       </table>
-
     </section>
 
   </main>
 
 </div>
 
-<!-- ✅ VERSIONADO -->
-<script src="app.js?v=1.0.1"></script>
-
+<script src="app.js?v=3.0.0"></script>
 </body>
 </html>
-
