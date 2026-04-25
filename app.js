@@ -21,12 +21,21 @@ document.getElementById("buscadorGlobal")
 
 /* DATA */
 function procesar(data){
-  const map={};
+  const map = {};
 
   data.forEach(r=>{
+
+    // 🔴 NORMALIZAR HEADERS (CLAVE DEL PROBLEMA)
+    const limpio = {};
+    Object.keys(r).forEach(k=>{
+      const key = k.replace(/\uFEFF/g, "").trim(); // elimina BOM + espacios
+      limpio[key] = r[k];
+    });
+
+    r = limpio;
+
     if(!r.Orden) return;
 
-    // Normalización alineada con CSV real
     r.Paciente = (r.Apellido || "") + " " + (r.Nombre || "");
     r.Institucion = r.Institucion || "";
     r.Ciudad = r.Ciudad || "";
@@ -36,13 +45,15 @@ function procesar(data){
     r.CI = r.CI || "";
 
     if(!map[r.Orden]){
-      map[r.Orden]={...r,detalles:[]};
+      map[r.Orden] = {...r, detalles:[]};
     }
 
     map[r.Orden].detalles.push(r);
   });
 
-  ordenes=Object.values(map);
+  ordenes = Object.values(map);
+
+  console.log("Órdenes cargadas:", ordenes.length); // ← clave para validar
 
   cargarFiltros();
   aplicarFiltros();
