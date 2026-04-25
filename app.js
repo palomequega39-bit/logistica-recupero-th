@@ -1,115 +1,274 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<title>Logística Recupero</title>
+let ordenes = [];
+let filtradas = [];
+let indiceSeleccionado = -1;
+let sortField = null;
+let ordenAsc = true;
 
-<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+/* INIT */
+document.getElementById("btnFiltrar").onclick = aplicarFiltros;
 
-<!-- ✅ VERSIONADO -->
-<link rel="stylesheet" href="style.css?v=1.0.9">
+document.getElementById("fileInput").addEventListener("change", e=>{
+  Papa.parse(e.target.files[0],{
+    header:true,
+    delimiter:";",
+    skipEmptyLines:true,
+    complete: res=>procesar(res.data)
+  });
+});
 
-</head>
-<body>
+document.getElementById("buscadorGlobal")
+  .addEventListener("input", aplicarFiltros);
 
-<div class="layout">
+/* DATA */
+function procesar(data){
+  const map={};
 
-  <!-- SIDEBAR -->
-  <aside class="sidebar">
+  data.forEach(r=>{
+    if(!r.Orden) return;
 
-    <h2>Recupero</h2>
+    if(!map[r.Orden]){
+      map[r.Orden]={...r,detalles:[]};
+    }
 
-    <div id="dropzone" class="dropzone">
-      <p>Arrastrar CSV</p>
-      <input type="file" id="fileInput">
-    </div>
+    map[r.Orden].detalles.push(r);
+  });
 
-    <div class="filters">
+  ordenes=Object.values(map);
 
-      <label>Institución</label>
-      <input id="filtroInstitucion" class="inputFiltro" placeholder="Seleccionar institución...">
-      <div id="listaInstituciones" class="dropdown"></div>
+  cargarFiltros();
+  aplicarFiltros();
+}
 
-      <label>Prioridad</label>
-      <select id="filtroPrioridad"></select>
+/* FILTROS */
+function cargarFiltros(){
+  fill("filtroPrioridad","Actividades");
+  fill("filtroCiudad","Vendedor");
 
-      <label>Ciudad</label>
-      <select id="filtroCiudad"></select>
+  fillBool("filtroDevolucion");
+  fillBool("filtroFoja");
+  fillBool("filtroCI");
 
-      <label>Devolución</label>
-      <select id="filtroDevolucion"></select>
+  fillFecha();
+  cargarInstituciones();
+}
 
-      <label>Foja</label>
-      <select id="filtroFoja"></select>
+function fill(id,campo){
+  const sel=document.getElementById(id);
+  const vals=[...new Set(ordenes.map(o=>o[campo]).filter(Boolean))];
 
-      <label>CI</label>
-      <select id="filtroCI"></select>
+  sel.innerHTML=`<option value="">Todos</option>`+
+    vals.map(v=>`<option>${v}</option>`).join("");
+}
 
-      <label>Fecha CX</label>
-      <select id="filtroFecha"></select>
+function fillBool(id){
+  document.getElementById(id).innerHTML=`
+    <option value="">Todos</option>
+    <option value="VERDADERO">SI</option>
+    <option value="FALSO">NO</option>
+  `;
+}
 
-      <button id="btnFiltrar">Aplicar filtros</button>
+function fillFecha(){
+  document.getElementById("filtroFecha").innerHTML=`
+    <option value="">Todas</option>
+    <option value="realizadas">Realizadas</option>
+    <option value="hoy">Hoy</option>
+    <option value="pendientes">Sin realizar</option>
+  `;
+}
 
-    </div>
+/* FILTRAR */
+function aplicarFiltros(){
 
-  </aside>
+  const f=id=>document.getElementById(id).value;
+  const texto=document.getElementById("buscadorGlobal").value.toLowerCase();
 
-  <!-- CONTENIDO -->
-  <main class="contenido">
+  const hoy=new Date();
+  hoy.setHours(0,0,0,0);
 
-    <!-- LISTA -->
-    <section class="panel">
-      <div class="titulo">Órdenes</div>
+  filtradas=ordenes.filter(o=>{
 
-      <div class="tabla-header">
-        <span onclick="sortBy('Orden')">Orden</span>
-        <span onclick="sortBy('Paciente')">Paciente</span>
-        <span onclick="sortBy('Dni')">DNI</span>
-        <span onclick="sortBy('ObraSocial')">Obra</span>
-        <span onclick="sortBy('Institucion')">Inst.</span>
-        <span onclick="sortBy('Prioridad')">Prio</span>
-      </div>
+    if(f("filtroInstitucion") && o.Ins!==f("filtroInstitucion")) return false;
+    if(f("filtroPrioridad") && o.Actividades!==f("filtroPrioridad")) return false;
+    if(f("filtroCiudad") && o.Vendedor!==f("filtroCiudad")) return false;
 
-      <div id="ordenesList"></div>
-    </section>
+    if(f("filtroDevolucion") && o.Devolucion!==f("filtroDevolucion")) return false;
+    if(f("filtroFoja") && o.Foja!==f("filtroFoja")) return false;
+    if(f("filtroCI") && o.CI!==f("filtroCI")) return false;
 
-    <!-- BUSCADOR -->
-    <input id="buscadorGlobal" class="buscador" placeholder="Buscar N° Orden, Apellido, Nombre, Dni, Obra Social Institucion...">
+    if(f("filtroFecha")){
+      const fecha=new Date(o.FechaCX||"1900-01-01");
+      fecha.setHours(0,0,0,0);
 
-    <!-- CABECERA -->
-    <section class="panel">
-      <div class="titulo">Cabecera</div>
-      <div id="cabecera" class="cabecera"></div>
-    </section>
+      if(f("filtroFecha")==="realizadas" && fecha>=hoy) return false;
+      if(f("filtroFecha")==="hoy" && fecha.getTime()!==hoy.getTime()) return false;
+      if(f("filtroFecha")==="pendientes" && fecha<hoy) return false;
+    }
 
-    <!-- DETALLE -->
-    <section class="panel">
-      <div class="titulo">Productos</div>
+    if(texto){
+      const combinado=`
+        ${o.Orden}
+        ${o.Apellido}
+        ${o.Nombre}
+        ${o.Dni}
+        ${o.ObraSocial}
+        ${o.Ins}
+      `.toLowerCase();
 
-      <table>
-        <thead>
-          <tr>
-            <th>Remito</th>
-            <th>Fecha R</th>
-            <th>Producto</th>
-            <th>Cant</th>
-            <th>Lote</th>
-            <th>Serie</th>
-            <th>Venc</th>
-          </tr>
-        </thead>
-        <tbody id="detalleBody"></tbody>
-      </table>
+      if(!combinado.includes(texto)) return false;
+    }
 
-    </section>
+    return true;
+  });
 
-  </main>
+  indiceSeleccionado=-1;
+  renderLista();
+}
 
-</div>
+/* LISTA */
+function renderLista(){
 
-<!-- ✅ VERSIONADO -->
-<script src="app.js?v=1.0.1"></script>
+  const cont=document.getElementById("ordenesList");
+  cont.innerHTML="";
 
-</body>
-</html>
+  if(sortField){
+    filtradas.sort((a,b)=>{
 
+      if(sortField==="FechaCX"){
+        return ordenAsc
+          ? new Date(a.FechaCX)-new Date(b.FechaCX)
+          : new Date(b.FechaCX)-new Date(a.FechaCX);
+      }
+
+      let valA=(a[sortField]||"").toString().toLowerCase();
+      let valB=(b[sortField]||"").toString().toLowerCase();
+
+      return ordenAsc
+        ? valA.localeCompare(valB)
+        : valB.localeCompare(valA);
+    });
+  }
+
+  filtradas.forEach((o,i)=>{
+
+    const fila=document.createElement("div");
+    fila.className="fila";
+
+    fila.innerHTML=`
+      <span>${o.Orden}</span>
+      <span>${o.Apellido} ${o.Nombre}</span>
+      <span>${o.Dni}</span>
+      <span>${o.ObraSocial}</span>
+      <span>${o.FechaCX||""}</span>
+      <span>${o.Ins}</span>
+      <span>${o.Actividades}</span>
+    `;
+
+    fila.onclick=()=>{
+      indiceSeleccionado=i;
+      actualizarSeleccion();
+    };
+
+    cont.appendChild(fila);
+  });
+}
+
+/* SELECCION */
+document.addEventListener("keydown",e=>{
+  if(e.key==="ArrowDown") indiceSeleccionado++;
+  if(e.key==="ArrowUp") indiceSeleccionado--;
+  actualizarSeleccion();
+});
+
+function actualizarSeleccion(){
+
+  const filas=document.querySelectorAll(".fila");
+  filas.forEach(f=>f.classList.remove("active"));
+
+  const fila=filas[indiceSeleccionado];
+  if(!fila) return;
+
+  fila.classList.add("active");
+
+  mostrar(filtradas[indiceSeleccionado]);
+
+  fila.scrollIntoView({block:"nearest"});
+}
+
+/* DETALLE */
+function mostrar(o){
+
+  document.getElementById("cabecera").innerHTML=`
+    <div class="campo"><b>Paciente:</b> ${o.Apellido} ${o.Nombre}</div>
+    <div class="campo"><b>DNI:</b> ${o.Dni}</div>
+    <div class="campo"><b>Obra:</b> ${o.ObraSocial}</div>
+    <div class="campo"><b>Institución:</b> ${o.Ins}</div>
+
+    <div class="campo"><b>Fecha CX:</b> ${o.FechaCX}</div>
+    <div class="campo"><b>Médico:</b> ${o.Medico}</div>
+    <div class="campo"><b>Solicitante:</b> ${o.MedicoSolicitante}</div>
+    <div class="campo"><b>Vendedor:</b> ${o.Vendedor}</div>
+
+    <div class="campo"><b>Foja:</b> ${boolTag(o.Foja)}</div>
+    <div class="campo"><b>CI:</b> ${boolTag(o.CI)}</div>
+    <div class="campo"><b>Devolución:</b> ${boolTag(o.Devolucion,"dev")}</div>
+  `;
+
+  const body=document.getElementById("detalleBody");
+  body.innerHTML="";
+
+  o.detalles.forEach(d=>{
+    body.innerHTML+=`
+      <tr>
+        <td>${d.Remito||""}</td>
+        <td>${d.FechaR||""}</td>
+        <td>${d.Producto||""}</td>
+        <td>${d.Q||""}</td>
+        <td>${d.Lote||""}</td>
+        <td>${d.Serie||""}</td>
+        <td>${d.Vencimiento||""}</td>
+      </tr>
+    `;
+  });
+}
+
+/* TAGS */
+function boolTag(val,tipo="normal"){
+  const v=(val||"").toUpperCase();
+
+  if(v==="VERDADERO"){
+    if(tipo==="dev") return `<span class="tag dev">SI</span>`;
+    return `<span class="tag si">SI</span>`;
+  }
+
+  if(v==="FALSO") return `<span class="tag no">NO</span>`;
+
+  return "";
+}
+
+/* INSTITUCIONES */
+function cargarInstituciones(){
+
+  const input=document.getElementById("filtroInstitucion");
+  const lista=document.getElementById("listaInstituciones");
+
+  const valores=[...new Set(ordenes.map(o=>o.Ins).filter(Boolean))];
+
+  input.oninput=()=>{
+    const texto=input.value.toLowerCase();
+
+    lista.innerHTML=valores
+      .filter(v=>v.toLowerCase().includes(texto))
+      .slice(0,50)
+      .map(v=>`<div class="item-inst">${v}</div>`)
+      .join("");
+  };
+
+  lista.onclick=e=>{
+    if(e.target.classList.contains("item-inst")){
+      input.value=e.target.textContent;
+      lista.innerHTML="";
+      aplicarFiltros();
+    }
+  };
+}
