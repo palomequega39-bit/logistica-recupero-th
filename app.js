@@ -91,6 +91,7 @@ function procesar(data){
     r.Devolucion = r.Devolucion || "";
     r.Foja = r.Foja || "";
     r.CI = r.CI || "";
+    r.Favorito = (r.Favorito || "").toUpperCase();
 
     if(!map[r.Orden]){
       map[r.Orden] = {...r, detalles:[]};
@@ -230,23 +231,31 @@ function renderLista(){
       if(valA > valB) return ordenAsc ? 1 : -1;
       return 0;
     });
+
+     
   }
 
-  filtradas.forEach((o,i)=>{
+  filtradas.forEach((o, i) => {
+        const fila = document.createElement("div");
+        
+        // Verificamos si es favorito
+        const esFav = o.Favorito === "VERDADERO" || o.Favorito === "SI";
+        
+        // Añadimos la clase 'favorito' si corresponde
+        fila.className = `fila ${esFav ? 'favorito' : ''}`;
 
-    const fila=document.createElement("div");
-    fila.className="fila";
+        // Añadimos la estrella antes del número de orden si es favorito
+        const estrellaHtml = esFav ? `<span class="estrella">★</span>` : "";
 
-    fila.innerHTML=`
-      <span>${o.Orden}</span>
-      <span>${o.Apellido} ${o.Nombre}</span>
-      <span>${o.Dni}</span>
-      <span>${o.ObraSocial}</span>
-      <span>${o.FechaCX||""}</span>
-      <span title="${o.Institucion}">${o.Institucion}</span>
-      <span>${o.Prioridad}</span>
-     
-    `;
+        fila.innerHTML = `
+            <span>${estrellaHtml}${o.Orden}</span>
+            <span title="${o.Apellido} ${o.Nombre}">${o.Apellido} ${o.Nombre}</span>
+            <span>${o.Dni}</span>
+            <span>${o.ObraSocial}</span>
+            <span>${o.FechaCX || ""}</span>
+            <span title="${o.Institucion}">${o.Institucion}</span>
+            <span>${o.Prioridad}</span>
+        `;
 
     fila.onclick=()=>{
       indiceSeleccionado=i;
@@ -288,10 +297,10 @@ function actualizarSeleccion(){
 
 function mostrar(o){
 
-  const cab = document.getElementById("cabecera");
-
+   const cab = document.getElementById("cabecera");
+   const estrellaTitulo = (o.Favorito === "VERDADERO" || o.Favorito === "SI") ? " ★" : "";
   cab.innerHTML = `
-    <div class="campo"><b>Paciente:</b> ${o.Apellido} ${o.Nombre}</div>
+    <div class="campo"><b>Paciente:</b> ${o.Apellido} ${o.Nombre}${estrellaTitulo}</div>
     <div class="campo"><b>DNI:</b> ${o.Dni}</div>
     <div class="campo"><b>Obra:</b> ${o.ObraSocial}</div>
     <div class="campo"><b>Institución:</b> ${o.Institucion}</div>
