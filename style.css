@@ -240,6 +240,7 @@ th:nth-child(7), td:nth-child(7) { width: 12%; }
   max-height: 150px;
   overflow-y: auto;
   background: white;
+  color: #111827; /* 🔥 texto oscuro */
   border: 1px solid #ddd;
   border-radius: 5px;
   position: relative;
@@ -250,6 +251,7 @@ th:nth-child(7), td:nth-child(7) { width: 12%; }
   padding: 6px;
   cursor: pointer;
   font-size: 12px;
+  color: #111827; /* 🔥 texto visible */
 }
 
 .dropdown div:hover {
