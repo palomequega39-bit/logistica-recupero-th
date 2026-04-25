@@ -1,236 +1,116 @@
-let ordenes = [];
-let filtradas = [];
-let indiceSeleccionado = -1;
-let sortField = null;
-let ordenAsc = true;
+app.js
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Logística Recupero</title>
 
-/* INIT */
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
-document.getElementById("fileInput").addEventListener("change", e=>{
-  Papa.parse(e.target.files[0],{
-    header:true,
-    delimiter:";",
-    skipEmptyLines:true,
-    complete: res=>procesar(res.data)
-  });
-});
+<!-- ✅ VERSIONADO -->
+<link rel="stylesheet" href="style.css?v=1.0.9">
 
-document.getElementById("btnFiltrar").onclick = aplicarFiltros;
-document.getElementById("buscadorGlobal").addEventListener("input", aplicarFiltros);
+</head>
+<body>
 
-/* DATA */
+<div class="layout">
 
-function procesar(data){
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
 
-  const map={};
+    <h2>Recupero</h2>
 
-  data.forEach(r=>{
-    if(!r.Orden) return;
+    <div id="dropzone" class="dropzone">
+      <p>Arrastrar CSV</p>
+      <input type="file" id="fileInput">
+    </div>
 
-    // derivar devolución desde Actividades
-    r.Devolucion = (r.Actividades || "").toUpperCase().includes("DEV")
-      ? "VERDADERO" : "FALSO";
+    <div class="filters">
 
-    // clasificar fecha CX
-    r.EstadoFecha = clasificarFecha(r.FechaCX);
+      <label>Institución</label>
+      <input id="filtroInstitucion" class="inputFiltro" placeholder="Seleccionar institución...">
+      <div id="listaInstituciones" class="dropdown"></div>
 
-    if(!map[r.Orden]){
-      map[r.Orden]={...r,detalles:[]};
-    }
+      <label>Prioridad</label>
+      <select id="filtroPrioridad"></select>
 
-    map[r.Orden].detalles.push(r);
-  });
+      <label>Ciudad</label>
+      <select id="filtroCiudad"></select>
 
-  ordenes=Object.values(map);
+      <label>Devolución</label>
+      <select id="filtroDevolucion"></select>
 
-  cargarFiltros();
-  aplicarFiltros();
-}
+      <label>Foja</label>
+      <select id="filtroFoja"></select>
 
-/* FILTROS */
+      <label>CI</label>
+      <select id="filtroCI"></select>
 
-function cargarFiltros(){
+      <label>Fecha CX</label>
+      <select id="filtroFecha"></select>
 
-  fillSelect("filtroFoja", ["VERDADERO","FALSO"]);
-  fillSelect("filtroCI", ["VERDADERO","FALSO"]);
-  fillSelect("filtroDevolucion", ["VERDADERO","FALSO"]);
-  fillSelect("filtroFecha", ["Realizadas","Hoy","Sin realizarse"]);
+      <button id="btnFiltrar">Aplicar filtros</button>
 
-  cargarInstituciones();
-}
+    </div>
 
-function fillSelect(id, valores){
-  const sel=document.getElementById(id);
-  sel.innerHTML = `<option value="">Todos</option>` +
-    valores.map(v=>`<option>${v}</option>`).join("");
-}
+  </aside>
 
-function aplicarFiltros(){
+  <!-- CONTENIDO -->
+  <main class="contenido">
 
-  const f=id=>document.getElementById(id).value;
-  const texto=document.getElementById("buscadorGlobal").value.toLowerCase();
+    <!-- LISTA -->
+    <section class="panel">
+      <div class="titulo">Órdenes</div>
 
-  filtradas = ordenes.filter(o=>{
+      <div class="tabla-header">
+        <span onclick="sortBy('Orden')">Orden</span>
+        <span onclick="sortBy('Paciente')">Paciente</span>
+        <span onclick="sortBy('Dni')">DNI</span>
+        <span onclick="sortBy('ObraSocial')">Obra</span>
+        <span onclick="sortBy('Institucion')">Inst.</span>
+        <span onclick="sortBy('Prioridad')">Prio</span>
+      </div>
 
-    if(f("filtroInstitucion") && o.Ins!==f("filtroInstitucion")) return false;
-    if(f("filtroFoja") && o.Foja!==f("filtroFoja")) return false;
-    if(f("filtroCI") && o.CI!==f("filtroCI")) return false;
-    if(f("filtroDevolucion") && o.Devolucion!==f("filtroDevolucion")) return false;
-    if(f("filtroFecha") && o.EstadoFecha!==f("filtroFecha")) return false;
+      <div id="ordenesList"></div>
+    </section>
 
-    if(texto){
-      const c = `${o.Orden} ${o.Apellido} ${o.Nombre} ${o.Dni} ${o.ObraSocial} ${o.Ins}`.toLowerCase();
-      if(!c.includes(texto)) return false;
-    }
+    <!-- BUSCADOR -->
+    <input id="buscadorGlobal" class="buscador" placeholder="Buscar N° Orden, Apellido, Nombre, Dni, Obra Social Institucion...">
 
-    return true;
-  });
+    <!-- CABECERA -->
+    <section class="panel">
+      <div class="titulo">Cabecera</div>
+      <div id="cabecera" class="cabecera"></div>
+    </section>
 
-  indiceSeleccionado=-1;
-  renderLista();
-}
+    <!-- DETALLE -->
+    <section class="panel">
+      <div class="titulo">Productos</div>
 
-/* LISTA */
+      <table>
+        <thead>
+          <tr>
+            <th>Remito</th>
+            <th>Fecha R</th>
+            <th>Producto</th>
+            <th>Cant</th>
+            <th>Lote</th>
+            <th>Serie</th>
+            <th>Venc</th>
+          </tr>
+        </thead>
+        <tbody id="detalleBody"></tbody>
+      </table>
 
-function renderLista(){
+    </section>
 
-  const cont=document.getElementById("ordenesList");
-  cont.innerHTML="";
+  </main>
 
-  filtradas.forEach((o,i)=>{
+</div>
 
-    const fila=document.createElement("div");
-    fila.className="fila";
+<!-- ✅ VERSIONADO -->
+<script src="app.js?v=1.0.1"></script>
 
-    fila.innerHTML=`
-      <span>${o.Orden}</span>
-      <span>${o.Apellido} ${o.Nombre}</span>
-      <span>${o.Dni}</span>
-      <span>${o.ObraSocial}</span>
-      <span>${o.FechaCX}</span>
-      <span>${o.Ins}</span>
-    `;
+</body>
+</html>
 
-    fila.onclick=()=>{
-      indiceSeleccionado=i;
-      actualizarSeleccion();
-    };
-
-    cont.appendChild(fila);
-  });
-}
-
-/* SELECCION */
-
-document.addEventListener("keydown", e=>{
-
-  if(filtradas.length===0) return;
-
-  if(e.key==="ArrowDown"){
-    if(indiceSeleccionado < filtradas.length-1) indiceSeleccionado++;
-    actualizarSeleccion();
-  }
-
-  if(e.key==="ArrowUp"){
-    if(indiceSeleccionado > 0) indiceSeleccionado--;
-    actualizarSeleccion();
-  }
-});
-
-function actualizarSeleccion(){
-
-  const filas=document.querySelectorAll(".fila");
-  filas.forEach(f=>f.classList.remove("active"));
-
-  const fila=filas[indiceSeleccionado];
-  if(!fila) return;
-
-  fila.classList.add("active");
-
-  mostrar(filtradas[indiceSeleccionado]);
-
-  fila.scrollIntoView({block:"nearest"});
-}
-
-/* DETALLE */
-
-function mostrar(o){
-
-  document.getElementById("cabecera").innerHTML=`
-    <div class="campo"><b>Paciente:</b> ${o.Apellido} ${o.Nombre}</div>
-    <div class="campo"><b>DNI:</b> ${o.Dni}</div>
-    <div class="campo"><b>Obra:</b> ${o.ObraSocial}</div>
-    <div class="campo"><b>Institución:</b> ${o.Ins}</div>
-
-    <div class="campo"><b>Foja:</b> ${tag(o.Foja,"verde")}</div>
-    <div class="campo"><b>CI:</b> ${tag(o.CI,"verde")}</div>
-    <div class="campo"><b>Devolución:</b> ${tag(o.Devolucion,"naranja")}</div>
-    <div class="campo"><b>Fecha CX:</b> ${o.FechaCX}</div>
-  `;
-
-  const body=document.getElementById("detalleBody");
-  body.innerHTML="";
-
-  o.detalles.forEach(d=>{
-    body.innerHTML+=`
-      <tr>
-        <td>${d.Remito}</td>
-        <td>${d.FechaR}</td>
-        <td>${d.Producto}</td>
-        <td>${d.Q}</td>
-        <td>${d.Lote}</td>
-        <td>${d.Serie}</td>
-        <td>${d.Vencimiento}</td>
-      </tr>
-    `;
-  });
-}
-
-/* UTILS */
-
-function tag(val,tipo){
-  if(val==="VERDADERO"){
-    if(tipo==="naranja") return `<span class="tag dev">SI</span>`;
-    return `<span class="tag si">SI</span>`;
-  }
-  if(val==="FALSO") return `<span class="tag no">NO</span>`;
-  return "";
-}
-
-function clasificarFecha(f){
-  if(!f) return "Sin realizarse";
-
-  const hoy=new Date();
-  const fecha=new Date(f);
-
-  if(fecha.toDateString()===hoy.toDateString()) return "Hoy";
-  if(fecha < hoy) return "Realizadas";
-  return "Sin realizarse";
-}
-
-/* INSTITUCIONES */
-
-function cargarInstituciones(){
-
-  const input=document.getElementById("filtroInstitucion");
-  const lista=document.getElementById("listaInstituciones");
-
-  const valores=[...new Set(ordenes.map(o=>o.Ins).filter(Boolean))];
-
-  input.oninput=()=>{
-    const t=input.value.toLowerCase();
-
-    lista.innerHTML=valores
-      .filter(v=>v.toLowerCase().includes(t))
-      .map(v=>`<div class="item-inst">${v}</div>`)
-      .join("");
-  };
-
-  lista.onclick=e=>{
-    if(e.target.classList.contains("item-inst")){
-      input.value=e.target.textContent;
-      lista.innerHTML="";
-      aplicarFiltros();
-    }
-  };
-}
