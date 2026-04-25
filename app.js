@@ -4,10 +4,10 @@ let indiceSeleccionado = -1;
 let sortField = null;
 let ordenAsc = true;
 
-// botón filtro
+/* ================= INIT ================= */
+
 document.getElementById("btnFiltrar").onclick = aplicarFiltros;
 
-// archivo
 document.getElementById("fileInput").onchange = e=>{
   Papa.parse(e.target.files[0],{
     header:true,
@@ -17,7 +17,11 @@ document.getElementById("fileInput").onchange = e=>{
   });
 };
 
-// DATA
+document.getElementById("buscadorGlobal")
+  .addEventListener("input", aplicarFiltros);
+
+/* ================= DATA ================= */
+
 function procesar(data){
 
   const map={};
@@ -38,11 +42,10 @@ function procesar(data){
   aplicarFiltros();
 }
 
-// FILTROS
+/* ================= FILTROS ================= */
+
 function cargarFiltros(){
-
   cargarInstituciones();
-
   fill("filtroPrioridad","Prioridad");
   fill("filtroCiudad","Ciudad");
 }
@@ -50,6 +53,7 @@ function cargarFiltros(){
 function fill(id,campo){
   const sel=document.getElementById(id);
   const vals=[...new Set(ordenes.map(o=>o[campo]).filter(Boolean))];
+
   sel.innerHTML=`<option value="">Todos</option>`+
     vals.map(v=>`<option>${v}</option>`).join("");
 }
@@ -61,12 +65,10 @@ function aplicarFiltros(){
 
   filtradas = ordenes.filter(o=>{
 
-    // filtros existentes
     if(f("filtroInstitucion") && o.Institucion!==f("filtroInstitucion")) return false;
     if(f("filtroPrioridad") && o.Prioridad!==f("filtroPrioridad")) return false;
     if(f("filtroCiudad") && o.Ciudad!==f("filtroCiudad")) return false;
 
-    // 🔍 búsqueda global
     if(texto){
       const combinado = `
         ${o.Orden}
@@ -83,44 +85,28 @@ function aplicarFiltros(){
     return true;
   });
 
+  indiceSeleccionado = -1;
   renderLista();
 }
 
-// ===== HELPER SI / NO =====
-function boolTag(val){
-  const v = (val || "").toUpperCase();
+/* ================= LISTA ================= */
 
-  if(v === "VERDADERO"){
-    return `<span class="tag si">SI</span>`;
-  }
-  if(v === "FALSO"){
-    return `<span class="tag no">NO</span>`;
-  }
-  return "";
-}
-
-// LISTA
 function renderLista(){
 
   const cont=document.getElementById("ordenesList");
   cont.innerHTML="";
 
-  // ORDEN
   if(sortField){
     filtradas.sort((a,b)=>{
 
       let valA, valB;
 
-      switch(sortField){
-
-        case "Paciente":
-          valA = (a.Apellido + a.Nombre).toLowerCase();
-          valB = (b.Apellido + b.Nombre).toLowerCase();
-          break;
-
-        default:
-          valA = (a[sortField]||"").toString().toLowerCase();
-          valB = (b[sortField]||"").toString().toLowerCase();
+      if(sortField === "Paciente"){
+        valA = (a.Apellido + a.Nombre).toLowerCase();
+        valB = (b.Apellido + b.Nombre).toLowerCase();
+      } else {
+        valA = (a[sortField]||"").toString().toLowerCase();
+        valB = (b[sortField]||"").toString().toLowerCase();
       }
 
       if(valA < valB) return ordenAsc ? -1 : 1;
@@ -129,7 +115,7 @@ function renderLista(){
     });
   }
 
-  filtradas.forEach(o=>{
+  filtradas.forEach((o,index)=>{
 
     const fila=document.createElement("div");
     fila.className="fila";
@@ -148,31 +134,65 @@ function renderLista(){
     `;
 
     fila.onclick = ()=>{
-
-  indiceSeleccionado = filtradas.indexOf(o);
-
-  document.querySelectorAll(".fila").forEach(f=>f.classList.remove("active"));
-  fila.classList.add("active");
-
-  mostrar(o);
-};
+      indiceSeleccionado = index;
+      actualizarSeleccion();
+    };
 
     cont.appendChild(fila);
   });
 }
 
-// SORT
-function sortBy(field){
-  if(sortField === field){
-    ordenAsc = !ordenAsc;
-  } else {
-    sortField = field;
-    ordenAsc = true;
+/* ================= SELECCIÓN ================= */
+
+document.addEventListener("keydown", function(e){
+
+  if(filtradas.length === 0) return;
+
+  if(e.key === "ArrowDown"){
+    if(indiceSeleccionado < filtradas.length - 1){
+      indiceSeleccionado++;
+    }
+    actualizarSeleccion();
   }
-  renderLista();
+
+  if(e.key === "ArrowUp"){
+    if(indiceSeleccionado > 0){
+      indiceSeleccionado--;
+    }
+    actualizarSeleccion();
+  }
+});
+
+function actualizarSeleccion(){
+
+  const filas = document.querySelectorAll(".fila");
+  filas.forEach(f => f.classList.remove("active"));
+
+  const fila = filas[indiceSeleccionado];
+  if(!fila) return;
+
+  fila.classList.add("active");
+
+  const orden = filtradas[indiceSeleccionado];
+  mostrar(orden);
+
+  const contenedor = document.getElementById("ordenesList");
+
+  const filaTop = fila.offsetTop;
+  const filaBottom = filaTop + fila.offsetHeight;
+
+  const viewTop = contenedor.scrollTop;
+  const viewBottom = viewTop + contenedor.clientHeight;
+
+  if (filaTop < viewTop) {
+    contenedor.scrollTop = filaTop;
+  } else if (filaBottom > viewBottom) {
+    contenedor.scrollTop = filaBottom - contenedor.clientHeight;
+  }
 }
 
-// DETALLE
+/* ================= DETALLE ================= */
+
 function mostrar(o){
 
  document.getElementById("cabecera").innerHTML = `
@@ -210,7 +230,17 @@ function mostrar(o){
   });
 }
 
-document.getElementById("buscadorGlobal").addEventListener("input", aplicarFiltros);
+/* ================= UTILS ================= */
+
+function boolTag(val){
+  const v = (val || "").toUpperCase();
+  if(v === "VERDADERO") return `<span class="tag si">SI</span>`;
+  if(v === "FALSO") return `<span class="tag no">NO</span>`;
+  return "";
+}
+
+/* ================= INSTITUCIONES ================= */
+
 function cargarInstituciones(){
 
   const input = document.getElementById("filtroInstitucion");
@@ -218,7 +248,6 @@ function cargarInstituciones(){
 
   const valores = [...new Set(ordenes.map(o=>o.Institucion).filter(Boolean))];
 
-  // INPUT
   input.addEventListener("input", ()=>{
 
     const texto = input.value.toLowerCase();
@@ -231,95 +260,21 @@ function cargarInstituciones(){
 
   });
 
-  // CLICK EN ITEM
-  lista.addEventListener("click", function(e){
-
+  lista.addEventListener("click", e=>{
     if(e.target.classList.contains("item-inst")){
       input.value = e.target.textContent;
       lista.innerHTML = "";
       aplicarFiltros();
     }
-
   });
 
-  // BLUR (cerrar)
   input.addEventListener("blur", ()=>{
-    setTimeout(()=> lista.innerHTML = "", 150);
+    setTimeout(()=> lista.innerHTML="",150);
   });
 
-}
-  function seleccionarInstitucion(valor){
-    document.getElementById("filtroInstitucion").value = valor;
-    document.getElementById("listaInstituciones").innerHTML = "";
-    aplicarFiltros();
-  }
-  
-  document.addEventListener("keydown", function(e){
-  
-    if(filtradas.length === 0) return;
-  
-    if(e.key === "ArrowDown"){
-  
-      if(indiceSeleccionado < filtradas.length - 1){
-        indiceSeleccionado++;
-      }
-  
-      actualizarSeleccion();
+  document.addEventListener("click", e=>{
+    if(!input.contains(e.target) && !lista.contains(e.target)){
+      lista.innerHTML="";
     }
-  
-    if(e.key === "ArrowUp"){
-  
-      if(indiceSeleccionado > 0){
-        indiceSeleccionado--;
-      }
-  
-      actualizarSeleccion();
-    }
-  
   });
-    
-function actualizarSeleccion(){
-
-  const filas = document.querySelectorAll(".fila");
-
-  filas.forEach(f => f.classList.remove("active"));
-
-  const fila = filas[indiceSeleccionado];
-
-  if(!fila) return;
-
-  fila.classList.add("active");
-
-  const orden = filtradas[indiceSeleccionado];
-
-  mostrar(orden);
-
-  // 🔥 auto scroll para mantener visible
- const contenedor = document.getElementById("ordenesList");
-
-const filaTop = fila.offsetTop;
-const filaBottom = filaTop + fila.offsetHeight;
-
-const viewTop = contenedor.scrollTop;
-const viewBottom = viewTop + contenedor.clientHeight;
-
-// si la fila queda arriba del visible
-if (filaTop < viewTop) {
-  contenedor.scrollTop = filaTop;
 }
-
-// si la fila queda abajo del visible
-else if (filaBottom > viewBottom) {
-  contenedor.scrollTop = filaBottom - contenedor.clientHeight;
-}
-
-    document.addEventListener("click", function(e){
-
-  const input = document.getElementById("filtroInstitucion");
-  const lista = document.getElementById("listaInstituciones");
-
-  if (!input.contains(e.target) && !lista.contains(e.target)) {
-    lista.innerHTML = "";
-  }
-
-});
