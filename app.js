@@ -1,4 +1,3 @@
-app.js
 <!DOCTYPE html>
 <html lang="es">
 <head>
