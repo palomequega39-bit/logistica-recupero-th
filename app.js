@@ -218,6 +218,7 @@ function cargarInstituciones(){
 
   const valores = [...new Set(ordenes.map(o=>o.Institucion).filter(Boolean))];
 
+  // INPUT
   input.addEventListener("input", ()=>{
 
     const texto = input.value.toLowerCase();
@@ -225,14 +226,28 @@ function cargarInstituciones(){
     lista.innerHTML = valores
       .filter(v=>v.toLowerCase().includes(texto))
       .slice(0,50)
-      .map(v=>`<div onclick="seleccionarInstitucion('${v}')">${v}</div>`)
+      .map(v=>`<div class="item-inst">${v}</div>`)
       .join("");
-    
-  input.addEventListener("blur", () => {
-    setTimeout(() => {
-      lista.innerHTML = "";
-    }, 150);
+
   });
+
+  // CLICK EN ITEM
+  lista.addEventListener("click", function(e){
+
+    if(e.target.classList.contains("item-inst")){
+      input.value = e.target.textContent;
+      lista.innerHTML = "";
+      aplicarFiltros();
+    }
+
+  });
+
+  // BLUR (cerrar)
+  input.addEventListener("blur", ()=>{
+    setTimeout(()=> lista.innerHTML = "", 150);
+  });
+
+}
   function seleccionarInstitucion(valor){
     document.getElementById("filtroInstitucion").value = valor;
     document.getElementById("listaInstituciones").innerHTML = "";
