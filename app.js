@@ -26,6 +26,15 @@ function procesar(data){
   data.forEach(r=>{
     if(!r.Orden) return;
 
+    // Normalización alineada con CSV real
+    r.Paciente = (r.Apellido || "") + " " + (r.Nombre || "");
+    r.Institucion = r.Institucion || "";
+    r.Ciudad = r.Ciudad || "";
+    r.Prioridad = r.Prioridad || "";
+    r.Devolucion = r.Devolucion || "";
+    r.Foja = r.Foja || "";
+    r.CI = r.CI || "";
+
     if(!map[r.Orden]){
       map[r.Orden]={...r,detalles:[]};
     }
@@ -42,7 +51,7 @@ function procesar(data){
 /* FILTROS */
 function cargarFiltros(){
   fill("filtroPrioridad","Actividades");
-  fill("filtroCiudad","Vendedor");
+  fill("filtroCiudad","Ciudad");
 
   fillBool("filtroDevolucion");
   fillBool("filtroFoja");
@@ -88,9 +97,9 @@ function aplicarFiltros(){
 
   filtradas=ordenes.filter(o=>{
 
-    if(f("filtroInstitucion") && o.Ins!==f("filtroInstitucion")) return false;
-    if(f("filtroPrioridad") && o.Actividades!==f("filtroPrioridad")) return false;
-    if(f("filtroCiudad") && o.Vendedor!==f("filtroCiudad")) return false;
+    if(f("filtroInstitucion") && o.Institucion!==f("filtroInstitucion")) return false;
+    if(f("filtroCiudad") && o.Ciudad!==f("filtroCiudad")) return false;
+    if(f("filtroPrioridad") && o.Prioridad!==f("filtroPrioridad")) return false;
 
     if(f("filtroDevolucion") && o.Devolucion!==f("filtroDevolucion")) return false;
     if(f("filtroFoja") && o.Foja!==f("filtroFoja")) return false;
@@ -112,7 +121,7 @@ function aplicarFiltros(){
         ${o.Nombre}
         ${o.Dni}
         ${o.ObraSocial}
-        ${o.Ins}
+        ${o.Institucion}
       `.toLowerCase();
 
       if(!combinado.includes(texto)) return false;
@@ -162,9 +171,7 @@ function renderLista(){
         if(valA > valB) return ordenAsc ? 1 : -1;
         return 0;
 
-      return ordenAsc
-        ? valA.localeCompare(valB)
-        : valB.localeCompare(valA);
+  
     });
   }
 
@@ -179,8 +186,8 @@ function renderLista(){
       <span>${o.Dni}</span>
       <span>${o.ObraSocial}</span>
       <span>${o.FechaCX||""}</span>
-      <span>${o.Ins}</span>
-      <span>${o.Actividades}</span>
+      <span>${o.Institucion}</span>
+      <span>${o.Prioridad}</span>
     `;
 
     fila.onclick=()=>{
@@ -221,8 +228,7 @@ function mostrar(o){
     <div class="campo"><b>Paciente:</b> ${o.Apellido} ${o.Nombre}</div>
     <div class="campo"><b>DNI:</b> ${o.Dni}</div>
     <div class="campo"><b>Obra:</b> ${o.ObraSocial}</div>
-    <div class="campo"><b>Institución:</b> ${o.Ins}</div>
-
+    <div class="campo"><b>Institución:</b> ${o.Institucion}</div>
     <div class="campo"><b>Fecha CX:</b> ${o.FechaCX}</div>
     <div class="campo"><b>Médico:</b> ${o.Medico}</div>
     <div class="campo"><b>Solicitante:</b> ${o.MedicoSolicitante}</div>
@@ -231,6 +237,13 @@ function mostrar(o){
     <div class="campo"><b>Foja:</b> ${boolTag(o.Foja)}</div>
     <div class="campo"><b>CI:</b> ${boolTag(o.CI)}</div>
     <div class="campo"><b>Devolución:</b> ${boolTag(o.Devolucion,"dev")}</div>
+    
+    document.getElementById("cabecera").innerHTML += `
+  <div class="campo" style="grid-column: span 4;">
+    <b>Actividades:</b> ${o.Actividades || ""}
+  </div>
+`;
+
   `;
 
   const body=document.getElementById("detalleBody");
