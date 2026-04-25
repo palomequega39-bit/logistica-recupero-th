@@ -61,8 +61,8 @@ function procesar(data){
 /* ================= FILTROS ================= */
 
 function cargarFiltros(){
-  fill("filtroPrioridad","Prioridad");
-  fill("filtroCiudad","Ciudad");
+  fill("filtroPrioridad","Actividades"); // usamos Actividades como prioridad
+  fill("filtroCiudad","Vendedor");       // ejemplo: podés cambiar si querés
   cargarInstituciones();
 }
 
@@ -84,9 +84,9 @@ function aplicarFiltros(){
 
   filtradas = ordenes.filter(o=>{
 
-    if(f("filtroInstitucion") && o.Institucion!==f("filtroInstitucion")) return false;
-    if(f("filtroPrioridad") && o.Prioridad!==f("filtroPrioridad")) return false;
-    if(f("filtroCiudad") && o.Ciudad!==f("filtroCiudad")) return false;
+    if(f("filtroInstitucion") && o.Ins !== f("filtroInstitucion")) return false;
+    if(f("filtroPrioridad") && o.Actividades !== f("filtroPrioridad")) return false;
+    if(f("filtroCiudad") && o.Vendedor !== f("filtroCiudad")) return false;
 
     if(texto){
       const combinado = `
@@ -95,7 +95,7 @@ function aplicarFiltros(){
         ${o.Nombre}
         ${o.Dni}
         ${o.ObraSocial}
-        ${o.Institucion}
+        ${o.Ins}
       `.toLowerCase();
 
       if(!combinado.includes(texto)) return false;
@@ -124,8 +124,8 @@ function renderLista(){
         valA = (a.Apellido + a.Nombre).toLowerCase();
         valB = (b.Apellido + b.Nombre).toLowerCase();
       } else {
-        valA = (a[sortField]||"").toLowerCase();
-        valB = (b[sortField]||"").toLowerCase();
+        valA = (a[sortField]||"").toString().toLowerCase();
+        valB = (b[sortField]||"").toString().toLowerCase();
       }
 
       return ordenAsc
@@ -139,17 +139,13 @@ function renderLista(){
     const fila = document.createElement("div");
     fila.className = "fila";
 
-    if((o.Favorito||"").toUpperCase()==="VERDADERO"){
-      fila.classList.add("favorito");
-    }
-
     fila.innerHTML = `
       <span>${o.Orden}</span>
       <span>${o.Apellido} ${o.Nombre}</span>
       <span>${o.Dni}</span>
       <span>${o.ObraSocial}</span>
-      <span>${o.Institucion}</span>
-      <span>${o.Prioridad}</span>
+      <span>${o.Ins}</span>
+      <span>${o.Actividades}</span>
     `;
 
     fila.onclick = ()=>{
@@ -201,17 +197,15 @@ function mostrar(o){
     <div class="campo"><b>Paciente:</b> ${o.Apellido} ${o.Nombre}</div>
     <div class="campo"><b>DNI:</b> ${o.Dni}</div>
     <div class="campo"><b>Obra:</b> ${o.ObraSocial}</div>
-    <div class="campo"><b>Institución:</b> ${o.Institucion}</div>
+    <div class="campo"><b>Institución:</b> ${o.Ins}</div>
 
-    <div class="campo"><b>Ciudad:</b> ${o.Ciudad}</div>
-    <div class="campo"><b>Prioridad:</b> ${o.Prioridad}</div>
-    <div class="campo"><b>Foja:</b> ${boolTag(o.Foja)}</div>
-    <div class="campo"><b>CI:</b> ${boolTag(o.CI)}</div>
-
-    <div class="campo"><b>Devolución:</b> ${boolTag(o.Devolucion)}</div>
-    <div class="campo"><b>Expediente:</b> ${o.Expediente}</div>
     <div class="campo"><b>Fecha CX:</b> ${o.FechaCX}</div>
     <div class="campo"><b>Médico:</b> ${o.Medico}</div>
+    <div class="campo"><b>Médico Sol:</b> ${o.MedicoSolicitante}</div>
+    <div class="campo"><b>Vendedor:</b> ${o.Vendedor}</div>
+
+    <div class="campo"><b>Foja:</b> ${boolTag(o.Foja)}</div>
+    <div class="campo"><b>CI:</b> ${boolTag(o.CI)}</div>
   `;
 
   const body = document.getElementById("detalleBody");
@@ -249,7 +243,7 @@ function cargarInstituciones(){
   const lista = document.getElementById("listaInstituciones");
 
   const valores = [...new Set(
-    ordenes.map(o=>o.Institucion).filter(Boolean)
+    ordenes.map(o=>o.Ins).filter(Boolean)
   )];
 
   input.oninput = ()=>{
