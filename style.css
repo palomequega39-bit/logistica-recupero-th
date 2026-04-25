@@ -257,3 +257,13 @@ th:nth-child(7), td:nth-child(7) { width: 12%; }
 .dropdown div:hover {
   background: #e5e7eb;
 }
+
+.dropdown .item-inst {
+  padding: 6px;
+  font-size: 12px;
+  color: #111827 !important;
+}
+
+.dropdown .item-inst:hover {
+  background: #e5e7eb;
+}
