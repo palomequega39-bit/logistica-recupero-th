@@ -243,8 +243,9 @@ function renderLista(){
       <span>${o.Dni}</span>
       <span>${o.ObraSocial}</span>
       <span>${o.FechaCX||""}</span>
-      <span>${o.Institucion}</span>
+      <span title="${o.Institucion}">${o.Institucion}</span>
       <span>${o.Prioridad}</span>
+     
     `;
 
     fila.onclick=()=>{
