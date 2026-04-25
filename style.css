@@ -284,3 +284,19 @@ th:nth-child(3) { width: 40%; }
   opacity: 0;
   cursor: pointer;
 }
+/* Estilo para la fila favorita */
+.fila.favorito {
+    background-color: #fefce8; /* Un amarillo/dorado muy suave */
+    border-left: 4px solid #eab308; /* Una barra lateral dorada para resaltar */
+}
+
+.fila.favorito:hover {
+    background-color: #fef9c3; /* Un poco más oscuro al pasar el mouse */
+}
+
+/* Estilo para la estrella */
+.estrella {
+    color: #eab308;
+    font-size: 14px;
+    margin-right: 4px;
+}
