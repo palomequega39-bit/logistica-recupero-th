@@ -125,6 +125,31 @@ body {
 .fila:hover {
   background: #eef2ff;
 }
+/* --- Estilos para la fila favorita (Colócalo después de .fila:hover) --- */
+
+.fila.favorito {
+    background-color: #fff9c4 !important; /* Dorado suave con !important para asegurar */
+    border-left: 5px solid #fbc02d;    /* Una barra lateral dorada más marcada */
+}
+
+/* Para que cuando pases el mouse sobre una favorita se note un cambio pero siga siendo dorada */
+.fila.favorito:hover {
+    background-color: #fff176 !important;
+}
+
+/* Si la fila es favorita Y está seleccionada, podemos mezclar los estilos o priorizar uno */
+.fila.favorito.active {
+    background-color: #dbeafe !important; /* Azul de selección */
+    border-left: 5px solid #2563eb;       /* Cambia la barra a azul */
+}
+
+.estrella {
+    color: #f59e0b;
+    font-weight: bold;
+    margin-right: 5px;
+    display: inline-block;
+}
+
 
 .fila.active {
   background: #dbeafe;
@@ -283,20 +308,3 @@ th:nth-child(3) { width: 40%; }
   inset: 0;
   opacity: 0;
   cursor: pointer;
-}
-/* Estilo para la fila favorita */
-.fila.favorito {
-    background-color: #fefce8; /* Un amarillo/dorado muy suave */
-    border-left: 4px solid #eab308; /* Una barra lateral dorada para resaltar */
-}
-
-.fila.favorito:hover {
-    background-color: #fef9c3; /* Un poco más oscuro al pasar el mouse */
-}
-
-/* Estilo para la estrella */
-.estrella {
-    color: #eab308;
-    font-size: 14px;
-    margin-right: 4px;
-}
