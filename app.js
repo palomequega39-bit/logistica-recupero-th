@@ -1,6 +1,6 @@
 let ordenes = [];
 let filtradas = [];
-
+let indiceSeleccionado = -1;
 let sortField = null;
 let ordenAsc = true;
 
@@ -147,11 +147,15 @@ function renderLista(){
       <span>${o.Prioridad}</span>
     `;
 
-    fila.onclick=()=>{
-      document.querySelectorAll(".fila").forEach(f=>f.classList.remove("active"));
-      fila.classList.add("active");
-      mostrar(o);
-    };
+    fila.onclick = ()=>{
+
+  indiceSeleccionado = filtradas.indexOf(o);
+
+  document.querySelectorAll(".fila").forEach(f=>f.classList.remove("active"));
+  fila.classList.add("active");
+
+  mostrar(o);
+};
 
     cont.appendChild(fila);
   });
@@ -229,4 +233,50 @@ function seleccionarInstitucion(valor){
   document.getElementById("filtroInstitucion").value = valor;
   document.getElementById("listaInstituciones").innerHTML = "";
   aplicarFiltros();
+}
+
+document.addEventListener("keydown", function(e){
+
+  if(filtradas.length === 0) return;
+
+  if(e.key === "ArrowDown"){
+
+    if(indiceSeleccionado < filtradas.length - 1){
+      indiceSeleccionado++;
+    }
+
+    actualizarSeleccion();
+  }
+
+  if(e.key === "ArrowUp"){
+
+    if(indiceSeleccionado > 0){
+      indiceSeleccionado--;
+    }
+
+    actualizarSeleccion();
+  }
+
+});
+function actualizarSeleccion(){
+
+  const filas = document.querySelectorAll(".fila");
+
+  filas.forEach(f => f.classList.remove("active"));
+
+  const fila = filas[indiceSeleccionado];
+
+  if(!fila) return;
+
+  fila.classList.add("active");
+
+  const orden = filtradas[indiceSeleccionado];
+
+  mostrar(orden);
+
+  // 🔥 auto scroll para mantener visible
+  fila.scrollIntoView({
+    behavior: "smooth",
+    block: "nearest"
+  });
 }
