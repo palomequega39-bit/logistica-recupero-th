@@ -1,19 +1,26 @@
+
 let ordenes = [];
 let filtradas = [];
 let indiceSeleccionado = -1;
 let sortField = null;
 let ordenAsc = true;
 
+console.log("APP INICIADA");
 /* ================= INIT ================= */
 
 document.getElementById("btnFiltrar").onclick = aplicarFiltros;
 
 document.getElementById("fileInput").onchange = e=>{
+  console.log("Archivo cargado");
+  
   Papa.parse(e.target.files[0],{
     header:true,
     delimiter:";",
     skipEmptyLines:true,
-    complete: res=>procesar(res.data)
+    complete: res=>{
+      console.log("DATA:", res.data);
+      procesar(res.data);
+    }
   });
 };
 
