@@ -401,3 +401,20 @@ function sortBy(field){
 
   renderLista();
 }
+
+/* =========================
+   UI HELPERS (NUEVO)
+========================= */
+
+function configurarPlaceholders() {
+    const buscadorGlobal = document.getElementById("buscadorGlobal");
+    
+    // Estos son los campos que definiste en tu función aplicarFiltros()
+    const camposPermitidos = ["Orden", "Apellido", "Nombre", "DNI", "Obra Social", "Institución"];
+    
+    // Unimos los campos con una coma y los ponemos en el placeholder
+    buscadorGlobal.placeholder = "Buscar por: " + camposPermitidos.join(", ") + "...";
+}
+
+// Llamamos a la función al cargar el script
+configurarPlaceholders();
