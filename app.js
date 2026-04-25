@@ -40,7 +40,9 @@ function procesar(data){
 
 // FILTROS
 function cargarFiltros(){
-  fill("filtroInstitucion","Institucion");
+
+  cargarInstituciones();
+
   fill("filtroPrioridad","Prioridad");
   fill("filtroCiudad","Ciudad");
 }
@@ -205,3 +207,26 @@ function mostrar(o){
 }
 
 document.getElementById("buscadorGlobal").addEventListener("input", aplicarFiltros);
+function cargarInstituciones(){
+
+  const input = document.getElementById("filtroInstitucion");
+  const lista = document.getElementById("listaInstituciones");
+
+  const valores = [...new Set(ordenes.map(o=>o.Institucion).filter(Boolean))];
+
+  input.addEventListener("input", ()=>{
+
+    const texto = input.value.toLowerCase();
+
+    lista.innerHTML = valores
+      .filter(v=>v.toLowerCase().includes(texto))
+      .slice(0,50)
+      .map(v=>`<div onclick="seleccionarInstitucion('${v}')">${v}</div>`)
+      .join("");
+  });
+}
+function seleccionarInstitucion(valor){
+  document.getElementById("filtroInstitucion").value = valor;
+  document.getElementById("listaInstituciones").innerHTML = "";
+  aplicarFiltros();
+}
