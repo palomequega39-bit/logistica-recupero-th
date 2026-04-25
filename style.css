@@ -110,7 +110,16 @@ body {
   font-size: 12px;
   border-bottom: 1px solid #eee;
   cursor: pointer;
-  white-space: nowrap;
+  /* IMPORTANTE: Esto evita que la fila crezca a lo ancho */
+  overflow: hidden; 
+}
+
+/* AGREGA ESTA REGLA NUEVA: */
+.fila span {
+  white-space: nowrap;       /* Evita que el texto salte a una segunda línea */
+  overflow: hidden;          /* Esconde lo que sobra */
+  text-overflow: ellipsis;   /* Agrega los tres puntos (...) al final */
+  padding-right: 5px;        /* Deja un pequeño aire entre columnas */
 }
 
 .fila:hover {
