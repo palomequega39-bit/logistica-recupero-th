@@ -21,14 +21,15 @@ document.getElementById("buscadorGlobal")
 
 /* DATA */
 function procesar(data){
+
   const map = {};
 
   data.forEach(r=>{
 
-    // 🔴 NORMALIZAR HEADERS (CLAVE DEL PROBLEMA)
+    // 🔴 NORMALIZAR HEADERS (BOM + espacios)
     const limpio = {};
     Object.keys(r).forEach(k=>{
-      const key = k.replace(/\uFEFF/g, "").trim(); // elimina BOM + espacios
+      const key = k.replace(/\uFEFF/g, "").trim();
       limpio[key] = r[k];
     });
 
@@ -53,7 +54,7 @@ function procesar(data){
 
   ordenes = Object.values(map);
 
-  console.log("Órdenes cargadas:", ordenes.length); // ← clave para validar
+  console.log("Órdenes cargadas:", ordenes.length);
 
   cargarFiltros();
   aplicarFiltros();
@@ -154,35 +155,24 @@ function renderLista(){
   if(sortField){
     filtradas.sort((a,b)=>{
 
-      if(sortField==="FechaCX"){
-        return ordenAsc
-          ? new Date(a.FechaCX)-new Date(b.FechaCX)
-          : new Date(b.FechaCX)-new Date(a.FechaCX);
-      }
-
       let valA, valB;
 
-        // Campo virtual Paciente
-        if(sortField === "Paciente"){
-          valA = (a.Apellido + " " + a.Nombre).toLowerCase();
-          valB = (b.Apellido + " " + b.Nombre).toLowerCase();
-        }
-        // Fecha
-        else if(sortField === "FechaCX"){
-          valA = new Date(a.FechaCX || "1900-01-01");
-          valB = new Date(b.FechaCX || "1900-01-01");
-        }
-        // Normal
-        else{
-          valA = (a[sortField] || "").toString().toLowerCase();
-          valB = (b[sortField] || "").toString().toLowerCase();
-        }
-        
-        if(valA < valB) return ordenAsc ? -1 : 1;
-        if(valA > valB) return ordenAsc ? 1 : -1;
-        return 0;
+      if(sortField === "Paciente"){
+        valA = (a.Apellido + " " + a.Nombre).toLowerCase();
+        valB = (b.Apellido + " " + b.Nombre).toLowerCase();
+      }
+      else if(sortField === "FechaCX"){
+        valA = new Date(a.FechaCX || "1900-01-01");
+        valB = new Date(b.FechaCX || "1900-01-01");
+      }
+      else{
+        valA = (a[sortField] || "").toString().toLowerCase();
+        valB = (b[sortField] || "").toString().toLowerCase();
+      }
 
-  
+      if(valA < valB) return ordenAsc ? -1 : 1;
+      if(valA > valB) return ordenAsc ? 1 : -1;
+      return 0;
     });
   }
 
@@ -252,7 +242,6 @@ function mostrar(o){
     <div class="campo"><b>Devolución:</b> ${boolTag(o.Devolucion,"dev")}</div>
   `;
 
-  // ✔ Actividades separado
   cab.innerHTML += `
     <div class="campo" style="grid-column: span 4;">
       <b>Actividades:</b> ${o.Actividades || ""}
