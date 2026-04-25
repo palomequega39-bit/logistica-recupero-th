@@ -239,7 +239,7 @@ function renderLista(){
         const fila = document.createElement("div");
         
         // Verificamos si es favorito
-        const esFav = o.Favorito === "VERDADERO" || o.Favorito === "SI";
+        const esFav = o.Favorito === "Favorito" || o.Favorito === "SI";
         
         // Añadimos la clase 'favorito' si corresponde
         fila.className = `fila ${esFav ? 'favorito' : ''}`;
@@ -298,7 +298,7 @@ function actualizarSeleccion(){
 function mostrar(o){
 
    const cab = document.getElementById("cabecera");
-   const estrellaTitulo = (o.Favorito === "VERDADERO" || o.Favorito === "SI") ? " ★" : "";
+   const estrellaTitulo = (o.Favorito === "Favorito" || o.Favorito === "SI") ? " ★" : "";
   cab.innerHTML = `
     <div class="campo"><b>Paciente:</b> ${o.Apellido} ${o.Nombre}${estrellaTitulo}</div>
     <div class="campo"><b>DNI:</b> ${o.Dni}</div>
