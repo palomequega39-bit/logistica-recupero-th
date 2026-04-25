@@ -314,5 +314,16 @@ function sortBy(field){
     ordenAsc = true;
   }
 
+  document.querySelectorAll(".tabla-header span").forEach(s=>{
+    s.classList.remove("active","asc","desc");
+  });
+
+  document.querySelectorAll(".tabla-header span").forEach(h=>{
+    if(h.getAttribute("onclick").includes(field)){
+      h.classList.add("active");
+      h.classList.add(ordenAsc ? "asc" : "desc");
+    }
+  });
+
   renderLista();
 }
