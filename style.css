@@ -220,7 +220,7 @@ th:nth-child(7), td:nth-child(7) { width: 12%; }
 }
 
 .buscador {
-  width: 100%;
+  width: 50%;
   padding: 8px;
   margin-bottom: 8px;
   border-radius: 6px;
