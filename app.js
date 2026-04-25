@@ -55,12 +55,28 @@ function fill(id,campo){
 function aplicarFiltros(){
 
   const f=id=>document.getElementById(id).value;
+  const texto = document.getElementById("buscadorGlobal").value.toLowerCase();
 
-  filtradas=ordenes.filter(o=>{
+  filtradas = ordenes.filter(o=>{
 
+    // filtros existentes
     if(f("filtroInstitucion") && o.Institucion!==f("filtroInstitucion")) return false;
     if(f("filtroPrioridad") && o.Prioridad!==f("filtroPrioridad")) return false;
     if(f("filtroCiudad") && o.Ciudad!==f("filtroCiudad")) return false;
+
+    // 🔍 búsqueda global
+    if(texto){
+      const combinado = `
+        ${o.Orden}
+        ${o.Apellido}
+        ${o.Nombre}
+        ${o.Dni}
+        ${o.ObraSocial}
+        ${o.Institucion}
+      `.toLowerCase();
+
+      if(!combinado.includes(texto)) return false;
+    }
 
     return true;
   });
@@ -187,3 +203,5 @@ function mostrar(o){
     body.appendChild(tr);
   });
 }
+
+document.getElementById("buscadorGlobal").addEventListener("input", aplicarFiltros);
