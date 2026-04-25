@@ -227,3 +227,31 @@ th:nth-child(7), td:nth-child(7) { width: 12%; }
   border: 1px solid #d1d5db;
   font-size: 13px;
 }
+
+.inputFiltro {
+  width: 100%;
+  padding: 6px;
+  border-radius: 5px;
+  border: 1px solid #d1d5db;
+  font-size: 12px;
+}
+
+.dropdown {
+  max-height: 150px;
+  overflow-y: auto;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  position: relative;
+  z-index: 10;
+}
+
+.dropdown div {
+  padding: 6px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.dropdown div:hover {
+  background: #e5e7eb;
+}
