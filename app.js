@@ -4,22 +4,69 @@ let indiceSeleccionado = -1;
 let sortField = null;
 let ordenAsc = true;
 
-/* INIT */
+/* =========================
+   INIT
+========================= */
+
 document.getElementById("btnFiltrar").onclick = aplicarFiltros;
 
-document.getElementById("fileInput").addEventListener("change", e=>{
-  Papa.parse(e.target.files[0],{
+document.getElementById("buscadorGlobal")
+  .addEventListener("input", aplicarFiltros);
+
+/* =========================
+   DROPZONE (NUEVO)
+========================= */
+
+const dz = document.getElementById("dropzone");
+const fileInput = document.getElementById("fileInput");
+
+dz.addEventListener("dragover", e=>{
+  e.preventDefault();
+  dz.classList.add("hover");
+});
+
+dz.addEventListener("dragleave", ()=>{
+  dz.classList.remove("hover");
+});
+
+dz.addEventListener("drop", e=>{
+  e.preventDefault();
+  dz.classList.remove("hover");
+
+  const file = e.dataTransfer.files[0];
+  fileInput.files = e.dataTransfer.files;
+
+  handleFile(file);
+});
+
+fileInput.addEventListener("change", e=>{
+  handleFile(e.target.files[0]);
+});
+
+/* =========================
+   FILE LOAD
+========================= */
+
+function handleFile(file){
+
+  if(!file) return;
+
+  // UI
+  document.getElementById("fileName").textContent = file.name;
+  document.getElementById("fileStatus").classList.remove("hidden");
+
+  Papa.parse(file,{
     header:true,
     delimiter:";",
     skipEmptyLines:true,
     complete: res=>procesar(res.data)
   });
-});
+}
 
-document.getElementById("buscadorGlobal")
-  .addEventListener("input", aplicarFiltros);
+/* =========================
+   DATA
+========================= */
 
-/* DATA */
 function procesar(data){
 
   const map = {};
@@ -60,7 +107,10 @@ function procesar(data){
   aplicarFiltros();
 }
 
-/* FILTROS */
+/* =========================
+   FILTROS
+========================= */
+
 function cargarFiltros(){
   fill("filtroPrioridad","Prioridad");
   fill("filtroCiudad","Ciudad");
@@ -98,7 +148,10 @@ function fillFecha(){
   `;
 }
 
-/* FILTRAR */
+/* =========================
+   FILTRAR
+========================= */
+
 function aplicarFiltros(){
 
   const f=id=>document.getElementById(id).value;
@@ -146,7 +199,10 @@ function aplicarFiltros(){
   renderLista();
 }
 
-/* LISTA */
+/* =========================
+   LISTA
+========================= */
+
 function renderLista(){
 
   const cont=document.getElementById("ordenesList");
@@ -200,7 +256,10 @@ function renderLista(){
   });
 }
 
-/* SELECCION */
+/* =========================
+   SELECCION
+========================= */
+
 document.addEventListener("keydown",e=>{
   if(e.key==="ArrowDown") indiceSeleccionado++;
   if(e.key==="ArrowUp") indiceSeleccionado--;
@@ -222,7 +281,10 @@ function actualizarSeleccion(){
   fila.scrollIntoView({block:"nearest"});
 }
 
-/* DETALLE */
+/* =========================
+   DETALLE
+========================= */
+
 function mostrar(o){
 
   const cab = document.getElementById("cabecera");
@@ -266,7 +328,10 @@ function mostrar(o){
   });
 }
 
-/* TAGS */
+/* =========================
+   TAGS
+========================= */
+
 function boolTag(val,tipo="normal"){
   const v=(val||"").toUpperCase();
 
@@ -280,7 +345,10 @@ function boolTag(val,tipo="normal"){
   return "";
 }
 
-/* INSTITUCIONES */
+/* =========================
+   INSTITUCIONES
+========================= */
+
 function cargarInstituciones(){
 
   const input=document.getElementById("filtroInstitucion");
@@ -306,6 +374,10 @@ function cargarInstituciones(){
     }
   };
 }
+
+/* =========================
+   SORT
+========================= */
 
 function sortBy(field){
 
