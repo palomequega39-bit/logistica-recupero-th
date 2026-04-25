@@ -1,7 +1,8 @@
 body {
   margin: 0;
-  font-family: Arial;
-  background: #f4f4f4;
+  font-family: "Segoe UI";
+  background: #f5f6fa;
+  color: #1f2937;
 }
 
 .layout {
@@ -10,61 +11,267 @@ body {
   height: 100vh;
 }
 
+/* SIDEBAR */
 .sidebar {
-  background: #111;
+  background: #020617;
   color: white;
   padding: 15px;
 }
 
+/* CONTENIDO */
 .contenido {
-  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  padding: 15px;
   overflow-y: auto;
 }
 
+/* PANEL */
 .panel {
   background: white;
+  border-radius: 8px;
   padding: 10px;
-  margin-bottom: 10px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
 }
 
-.tabla-header,
-.fila {
-  display: grid;
-  grid-template-columns: 60px 200px 100px 150px 120px 200px 120px;
+/* TITULO */
+.titulo {
+  font-weight: 600;
+  margin-bottom: 8px;
 }
 
-.fila {
-  padding: 5px;
-  border-bottom: 1px solid #ddd;
+/* DROPZONE */
+.dropzone {
+  border: 2px dashed #334155;
+  padding: 20px;
+  text-align: center;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  position: relative;
   cursor: pointer;
 }
 
+.dropzone input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+}
+
+/* FILTROS */
+.filters label {
+  font-size: 12px;
+  color: #9ca3af;
+  margin-top: 10px;
+  display: block;
+}
+
+.filters select,
+.inputFiltro {
+  width: 100%;
+  padding: 6px;
+  border-radius: 5px;
+  border: none;
+  background: #1e293b;
+  color: white;
+}
+
+.filters button {
+  width: 100%;
+  margin-top: 12px;
+  padding: 8px;
+  background: #2563eb;
+  border: none;
+  border-radius: 6px;
+  color: white;
+}
+
+/* LISTA */
+.tabla-header,
+.fila {
+  display: grid;
+  grid-template-columns: 50px 220px 80px 120px 120px 200px 120px;
+  gap: 6px;
+  align-items: center;
+}
+
+.tabla-header {
+  font-size: 12px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+#ordenesList {
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.fila {
+  padding: 6px;
+  font-size: 12px;
+  border-bottom: 1px solid #eee;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
 .fila:hover {
-  background: #eee;
+  background: #eef2ff;
 }
 
 .fila.active {
-  background: #cfe3ff;
+  background: #dbeafe;
+}
+
+/* CABECERA */
+.cabecera {
+  display: grid;
+  grid-template-columns: repeat(4,1fr);
+  gap: 6px;
+}
+
+.campo {
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* TAGS */
+.tag {
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.tag.si { background: #dcfce7; color: #166534; }
+.tag.no { background: #fee2e2; color: #991b1b; }
+.tag.dev { background: #ffedd5; color: #c2410c; }
+
+/* TABLA */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+th, td {
+  border: 1px solid #e5e7eb;
+  padding: 6px;
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+th:nth-child(3) { width: 40%; }
+
+/* BUSCADOR */
+.buscador {
+  width: 50%;
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+/* DROPDOWN */
+.dropdown {
+  background: white;
+  color: black;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.item-inst {
+  padding: 6px;
+  cursor: pointer;
+}
+
+.item-inst:hover {
+  background: #e5e7eb;
+}
+.tabla-header span {
+  cursor: pointer;
+  font-weight: 600;
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.tabla-header span:hover {
+  background: #e5e7eb;
+}
+
+.tabla-header span.active {
+  background: #dbeafe;
+}
+
+.tabla-header span.asc::after {
+  content: " ▲";
+  font-size: 10px;
+}
+
+.tabla-header span.desc::after {
+  content: " ▼";
+  font-size: 10px;
 }
 
 .dropzone {
-  border: 2px dashed #555;
+  border: 2px dashed #334155;
+  border-radius: 12px;
   padding: 20px;
   text-align: center;
-  margin-bottom: 20px;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.dropzone:hover {
+  border-color: #2563eb;
+  background: rgba(37,99,235,0.05);
+}
+
+.dz-content {
+  pointer-events: none;
+}
+
+.icon {
+  font-size: 28px;
+  margin-bottom: 8px;
+}
+
+.dz-title {
+  font-weight: 600;
+}
+
+.dz-sub {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+/* FILE STATUS */
+.file-status {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #020617;
+  border: 1px solid #334155;
+  padding: 6px 10px;
+  border-radius: 8px;
+  margin-top: 10px;
+  font-size: 12px;
+}
+
+.file-status .check {
+  color: #22c55e;
+  font-weight: bold;
 }
 
 .hidden {
   display: none;
 }
 
-table {
-  width: 100%;
-  border-collapse: collapse;
-  background: white;
-}
-
-td, th {
-  border: 1px solid #ddd;
-  padding: 5px;
+.dropzone input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
 }
