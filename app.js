@@ -140,8 +140,27 @@ function renderLista(){
           : new Date(b.FechaCX)-new Date(a.FechaCX);
       }
 
-      let valA=(a[sortField]||"").toString().toLowerCase();
-      let valB=(b[sortField]||"").toString().toLowerCase();
+      let valA, valB;
+
+        // Campo virtual Paciente
+        if(sortField === "Paciente"){
+          valA = (a.Apellido + " " + a.Nombre).toLowerCase();
+          valB = (b.Apellido + " " + b.Nombre).toLowerCase();
+        }
+        // Fecha
+        else if(sortField === "FechaCX"){
+          valA = new Date(a.FechaCX || "1900-01-01");
+          valB = new Date(b.FechaCX || "1900-01-01");
+        }
+        // Normal
+        else{
+          valA = (a[sortField] || "").toString().toLowerCase();
+          valB = (b[sortField] || "").toString().toLowerCase();
+        }
+        
+        if(valA < valB) return ordenAsc ? -1 : 1;
+        if(valA > valB) return ordenAsc ? 1 : -1;
+        return 0;
 
       return ordenAsc
         ? valA.localeCompare(valB)
