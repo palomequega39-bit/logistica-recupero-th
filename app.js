@@ -5,7 +5,6 @@ let sortField = null;
 let ordenAsc = true;
 
 /* INIT */
-document.getElementById("btnFiltrar").onclick = aplicarFiltros;
 
 document.getElementById("fileInput").addEventListener("change", e=>{
   Papa.parse(e.target.files[0],{
@@ -16,15 +15,24 @@ document.getElementById("fileInput").addEventListener("change", e=>{
   });
 });
 
-document.getElementById("buscadorGlobal")
-  .addEventListener("input", aplicarFiltros);
+document.getElementById("btnFiltrar").onclick = aplicarFiltros;
+document.getElementById("buscadorGlobal").addEventListener("input", aplicarFiltros);
 
 /* DATA */
+
 function procesar(data){
+
   const map={};
 
   data.forEach(r=>{
     if(!r.Orden) return;
+
+    // derivar devolución desde Actividades
+    r.Devolucion = (r.Actividades || "").toUpperCase().includes("DEV")
+      ? "VERDADERO" : "FALSO";
+
+    // clasificar fecha CX
+    r.EstadoFecha = clasificarFecha(r.FechaCX);
 
     if(!map[r.Orden]){
       map[r.Orden]={...r,detalles:[]};
@@ -40,82 +48,39 @@ function procesar(data){
 }
 
 /* FILTROS */
+
 function cargarFiltros(){
-  fill("filtroPrioridad","Actividades");
-  fill("filtroCiudad","Vendedor");
 
-  fillBool("filtroDevolucion");
-  fillBool("filtroFoja");
-  fillBool("filtroCI");
+  fillSelect("filtroFoja", ["VERDADERO","FALSO"]);
+  fillSelect("filtroCI", ["VERDADERO","FALSO"]);
+  fillSelect("filtroDevolucion", ["VERDADERO","FALSO"]);
+  fillSelect("filtroFecha", ["Realizadas","Hoy","Sin realizarse"]);
 
-  fillFecha();
   cargarInstituciones();
 }
 
-function fill(id,campo){
+function fillSelect(id, valores){
   const sel=document.getElementById(id);
-  const vals=[...new Set(ordenes.map(o=>o[campo]).filter(Boolean))];
-
-  sel.innerHTML=`<option value="">Todos</option>`+
-    vals.map(v=>`<option>${v}</option>`).join("");
+  sel.innerHTML = `<option value="">Todos</option>` +
+    valores.map(v=>`<option>${v}</option>`).join("");
 }
 
-function fillBool(id){
-  document.getElementById(id).innerHTML=`
-    <option value="">Todos</option>
-    <option value="VERDADERO">SI</option>
-    <option value="FALSO">NO</option>
-  `;
-}
-
-function fillFecha(){
-  document.getElementById("filtroFecha").innerHTML=`
-    <option value="">Todas</option>
-    <option value="realizadas">Realizadas</option>
-    <option value="hoy">Hoy</option>
-    <option value="pendientes">Sin realizar</option>
-  `;
-}
-
-/* FILTRAR */
 function aplicarFiltros(){
 
   const f=id=>document.getElementById(id).value;
   const texto=document.getElementById("buscadorGlobal").value.toLowerCase();
 
-  const hoy=new Date();
-  hoy.setHours(0,0,0,0);
-
-  filtradas=ordenes.filter(o=>{
+  filtradas = ordenes.filter(o=>{
 
     if(f("filtroInstitucion") && o.Ins!==f("filtroInstitucion")) return false;
-    if(f("filtroPrioridad") && o.Actividades!==f("filtroPrioridad")) return false;
-    if(f("filtroCiudad") && o.Vendedor!==f("filtroCiudad")) return false;
-
-    if(f("filtroDevolucion") && o.Devolucion!==f("filtroDevolucion")) return false;
     if(f("filtroFoja") && o.Foja!==f("filtroFoja")) return false;
     if(f("filtroCI") && o.CI!==f("filtroCI")) return false;
-
-    if(f("filtroFecha")){
-      const fecha=new Date(o.FechaCX||"1900-01-01");
-      fecha.setHours(0,0,0,0);
-
-      if(f("filtroFecha")==="realizadas" && fecha>=hoy) return false;
-      if(f("filtroFecha")==="hoy" && fecha.getTime()!==hoy.getTime()) return false;
-      if(f("filtroFecha")==="pendientes" && fecha<hoy) return false;
-    }
+    if(f("filtroDevolucion") && o.Devolucion!==f("filtroDevolucion")) return false;
+    if(f("filtroFecha") && o.EstadoFecha!==f("filtroFecha")) return false;
 
     if(texto){
-      const combinado=`
-        ${o.Orden}
-        ${o.Apellido}
-        ${o.Nombre}
-        ${o.Dni}
-        ${o.ObraSocial}
-        ${o.Ins}
-      `.toLowerCase();
-
-      if(!combinado.includes(texto)) return false;
+      const c = `${o.Orden} ${o.Apellido} ${o.Nombre} ${o.Dni} ${o.ObraSocial} ${o.Ins}`.toLowerCase();
+      if(!c.includes(texto)) return false;
     }
 
     return true;
@@ -126,28 +91,11 @@ function aplicarFiltros(){
 }
 
 /* LISTA */
+
 function renderLista(){
 
   const cont=document.getElementById("ordenesList");
   cont.innerHTML="";
-
-  if(sortField){
-    filtradas.sort((a,b)=>{
-
-      if(sortField==="FechaCX"){
-        return ordenAsc
-          ? new Date(a.FechaCX)-new Date(b.FechaCX)
-          : new Date(b.FechaCX)-new Date(a.FechaCX);
-      }
-
-      let valA=(a[sortField]||"").toString().toLowerCase();
-      let valB=(b[sortField]||"").toString().toLowerCase();
-
-      return ordenAsc
-        ? valA.localeCompare(valB)
-        : valB.localeCompare(valA);
-    });
-  }
 
   filtradas.forEach((o,i)=>{
 
@@ -159,9 +107,8 @@ function renderLista(){
       <span>${o.Apellido} ${o.Nombre}</span>
       <span>${o.Dni}</span>
       <span>${o.ObraSocial}</span>
-      <span>${o.FechaCX||""}</span>
+      <span>${o.FechaCX}</span>
       <span>${o.Ins}</span>
-      <span>${o.Actividades}</span>
     `;
 
     fila.onclick=()=>{
@@ -174,10 +121,20 @@ function renderLista(){
 }
 
 /* SELECCION */
-document.addEventListener("keydown",e=>{
-  if(e.key==="ArrowDown") indiceSeleccionado++;
-  if(e.key==="ArrowUp") indiceSeleccionado--;
-  actualizarSeleccion();
+
+document.addEventListener("keydown", e=>{
+
+  if(filtradas.length===0) return;
+
+  if(e.key==="ArrowDown"){
+    if(indiceSeleccionado < filtradas.length-1) indiceSeleccionado++;
+    actualizarSeleccion();
+  }
+
+  if(e.key==="ArrowUp"){
+    if(indiceSeleccionado > 0) indiceSeleccionado--;
+    actualizarSeleccion();
+  }
 });
 
 function actualizarSeleccion(){
@@ -196,6 +153,7 @@ function actualizarSeleccion(){
 }
 
 /* DETALLE */
+
 function mostrar(o){
 
   document.getElementById("cabecera").innerHTML=`
@@ -204,14 +162,10 @@ function mostrar(o){
     <div class="campo"><b>Obra:</b> ${o.ObraSocial}</div>
     <div class="campo"><b>Institución:</b> ${o.Ins}</div>
 
+    <div class="campo"><b>Foja:</b> ${tag(o.Foja,"verde")}</div>
+    <div class="campo"><b>CI:</b> ${tag(o.CI,"verde")}</div>
+    <div class="campo"><b>Devolución:</b> ${tag(o.Devolucion,"naranja")}</div>
     <div class="campo"><b>Fecha CX:</b> ${o.FechaCX}</div>
-    <div class="campo"><b>Médico:</b> ${o.Medico}</div>
-    <div class="campo"><b>Solicitante:</b> ${o.MedicoSolicitante}</div>
-    <div class="campo"><b>Vendedor:</b> ${o.Vendedor}</div>
-
-    <div class="campo"><b>Foja:</b> ${boolTag(o.Foja)}</div>
-    <div class="campo"><b>CI:</b> ${boolTag(o.CI)}</div>
-    <div class="campo"><b>Devolución:</b> ${boolTag(o.Devolucion,"dev")}</div>
   `;
 
   const body=document.getElementById("detalleBody");
@@ -220,33 +174,42 @@ function mostrar(o){
   o.detalles.forEach(d=>{
     body.innerHTML+=`
       <tr>
-        <td>${d.Remito||""}</td>
-        <td>${d.FechaR||""}</td>
-        <td>${d.Producto||""}</td>
-        <td>${d.Q||""}</td>
-        <td>${d.Lote||""}</td>
-        <td>${d.Serie||""}</td>
-        <td>${d.Vencimiento||""}</td>
+        <td>${d.Remito}</td>
+        <td>${d.FechaR}</td>
+        <td>${d.Producto}</td>
+        <td>${d.Q}</td>
+        <td>${d.Lote}</td>
+        <td>${d.Serie}</td>
+        <td>${d.Vencimiento}</td>
       </tr>
     `;
   });
 }
 
-/* TAGS */
-function boolTag(val,tipo="normal"){
-  const v=(val||"").toUpperCase();
+/* UTILS */
 
-  if(v==="VERDADERO"){
-    if(tipo==="dev") return `<span class="tag dev">SI</span>`;
+function tag(val,tipo){
+  if(val==="VERDADERO"){
+    if(tipo==="naranja") return `<span class="tag dev">SI</span>`;
     return `<span class="tag si">SI</span>`;
   }
-
-  if(v==="FALSO") return `<span class="tag no">NO</span>`;
-
+  if(val==="FALSO") return `<span class="tag no">NO</span>`;
   return "";
 }
 
+function clasificarFecha(f){
+  if(!f) return "Sin realizarse";
+
+  const hoy=new Date();
+  const fecha=new Date(f);
+
+  if(fecha.toDateString()===hoy.toDateString()) return "Hoy";
+  if(fecha < hoy) return "Realizadas";
+  return "Sin realizarse";
+}
+
 /* INSTITUCIONES */
+
 function cargarInstituciones(){
 
   const input=document.getElementById("filtroInstitucion");
@@ -255,11 +218,10 @@ function cargarInstituciones(){
   const valores=[...new Set(ordenes.map(o=>o.Ins).filter(Boolean))];
 
   input.oninput=()=>{
-    const texto=input.value.toLowerCase();
+    const t=input.value.toLowerCase();
 
     lista.innerHTML=valores
-      .filter(v=>v.toLowerCase().includes(texto))
-      .slice(0,50)
+      .filter(v=>v.toLowerCase().includes(t))
       .map(v=>`<div class="item-inst">${v}</div>`)
       .join("");
   };
