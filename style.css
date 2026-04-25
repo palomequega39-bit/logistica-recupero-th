@@ -218,3 +218,12 @@ th:nth-child(7), td:nth-child(7) { width: 12%; }
 .tabla-header span:hover {
   color: #60a5fa;
 }
+
+.buscador {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 8px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  font-size: 13px;
+}
