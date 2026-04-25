@@ -50,7 +50,7 @@ function procesar(data){
 
 /* FILTROS */
 function cargarFiltros(){
-  fill("filtroPrioridad","Actividades");
+  fill("filtroPrioridad","Prioridad");
   fill("filtroCiudad","Ciudad");
 
   fillBool("filtroDevolucion");
@@ -224,7 +224,9 @@ function actualizarSeleccion(){
 /* DETALLE */
 function mostrar(o){
 
-  document.getElementById("cabecera").innerHTML=`
+  const cab = document.getElementById("cabecera");
+
+  cab.innerHTML = `
     <div class="campo"><b>Paciente:</b> ${o.Apellido} ${o.Nombre}</div>
     <div class="campo"><b>DNI:</b> ${o.Dni}</div>
     <div class="campo"><b>Obra:</b> ${o.ObraSocial}</div>
@@ -237,13 +239,13 @@ function mostrar(o){
     <div class="campo"><b>Foja:</b> ${boolTag(o.Foja)}</div>
     <div class="campo"><b>CI:</b> ${boolTag(o.CI)}</div>
     <div class="campo"><b>Devolución:</b> ${boolTag(o.Devolucion,"dev")}</div>
-    
-    document.getElementById("cabecera").innerHTML += `
-  <div class="campo" style="grid-column: span 4;">
-    <b>Actividades:</b> ${o.Actividades || ""}
-  </div>
-`;
+  `;
 
+  // ✔ Actividades separado
+  cab.innerHTML += `
+    <div class="campo" style="grid-column: span 4;">
+      <b>Actividades:</b> ${o.Actividades || ""}
+    </div>
   `;
 
   const body=document.getElementById("detalleBody");
@@ -284,7 +286,7 @@ function cargarInstituciones(){
   const input=document.getElementById("filtroInstitucion");
   const lista=document.getElementById("listaInstituciones");
 
-  const valores=[...new Set(ordenes.map(o=>o.Ins).filter(Boolean))];
+  const valores=[...new Set(ordenes.map(o=>o.Institucion).filter(Boolean))];
 
   input.oninput=()=>{
     const texto=input.value.toLowerCase();
