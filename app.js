@@ -275,8 +275,20 @@ function actualizarSeleccion(){
   mostrar(orden);
 
   // 🔥 auto scroll para mantener visible
-  fila.scrollIntoView({
-    behavior: "smooth",
-    block: "nearest"
-  });
+ const contenedor = document.getElementById("ordenesList");
+
+const filaTop = fila.offsetTop;
+const filaBottom = filaTop + fila.offsetHeight;
+
+const viewTop = contenedor.scrollTop;
+const viewBottom = viewTop + contenedor.clientHeight;
+
+// si la fila queda arriba del visible
+if (filaTop < viewTop) {
+  contenedor.scrollTop = filaTop;
+}
+
+// si la fila queda abajo del visible
+else if (filaBottom > viewBottom) {
+  contenedor.scrollTop = filaBottom - contenedor.clientHeight;
 }
