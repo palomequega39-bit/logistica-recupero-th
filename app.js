@@ -227,37 +227,42 @@ function cargarInstituciones(){
       .slice(0,50)
       .map(v=>`<div onclick="seleccionarInstitucion('${v}')">${v}</div>`)
       .join("");
+    
+  input.addEventListener("blur", () => {
+    setTimeout(() => {
+      lista.innerHTML = "";
+    }, 150);
   });
-}
-function seleccionarInstitucion(valor){
-  document.getElementById("filtroInstitucion").value = valor;
-  document.getElementById("listaInstituciones").innerHTML = "";
-  aplicarFiltros();
-}
-
-document.addEventListener("keydown", function(e){
-
-  if(filtradas.length === 0) return;
-
-  if(e.key === "ArrowDown"){
-
-    if(indiceSeleccionado < filtradas.length - 1){
-      indiceSeleccionado++;
-    }
-
-    actualizarSeleccion();
+  function seleccionarInstitucion(valor){
+    document.getElementById("filtroInstitucion").value = valor;
+    document.getElementById("listaInstituciones").innerHTML = "";
+    aplicarFiltros();
   }
-
-  if(e.key === "ArrowUp"){
-
-    if(indiceSeleccionado > 0){
-      indiceSeleccionado--;
+  
+  document.addEventListener("keydown", function(e){
+  
+    if(filtradas.length === 0) return;
+  
+    if(e.key === "ArrowDown"){
+  
+      if(indiceSeleccionado < filtradas.length - 1){
+        indiceSeleccionado++;
+      }
+  
+      actualizarSeleccion();
     }
-
-    actualizarSeleccion();
-  }
-
-});
+  
+    if(e.key === "ArrowUp"){
+  
+      if(indiceSeleccionado > 0){
+        indiceSeleccionado--;
+      }
+  
+      actualizarSeleccion();
+    }
+  
+  });
+    
 function actualizarSeleccion(){
 
   const filas = document.querySelectorAll(".fila");
@@ -292,3 +297,14 @@ if (filaTop < viewTop) {
 else if (filaBottom > viewBottom) {
   contenedor.scrollTop = filaBottom - contenedor.clientHeight;
 }
+
+    document.addEventListener("click", function(e){
+
+  const input = document.getElementById("filtroInstitucion");
+  const lista = document.getElementById("listaInstituciones");
+
+  if (!input.contains(e.target) && !lista.contains(e.target)) {
+    lista.innerHTML = "";
+  }
+
+});
