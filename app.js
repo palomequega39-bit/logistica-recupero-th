@@ -272,3 +272,15 @@ function cargarInstituciones(){
     }
   };
 }
+
+function sortBy(field){
+
+  if(sortField === field){
+    ordenAsc = !ordenAsc;
+  } else {
+    sortField = field;
+    ordenAsc = true;
+  }
+
+  renderLista();
+}
