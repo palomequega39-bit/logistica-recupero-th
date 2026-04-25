@@ -8,14 +8,11 @@
 
 <link rel="stylesheet" href="style.css?v=2.0.0">
 </head>
-
 <body>
 
 <div class="layout">
 
-  <!-- SIDEBAR -->
   <aside class="sidebar">
-
     <h2>Recupero</h2>
 
     <div class="dropzone">
@@ -26,17 +23,8 @@
     <div class="filters">
 
       <label>Institución</label>
-      <input id="filtroInstitucion" class="inputFiltro" placeholder="Buscar institución...">
+      <input id="filtroInstitucion" class="inputFiltro">
       <div id="listaInstituciones" class="dropdown"></div>
-
-      <label>Prioridad</label>
-      <select id="filtroPrioridad"></select>
-
-      <label>Ciudad</label>
-      <select id="filtroCiudad"></select>
-
-      <label>Devolución</label>
-      <select id="filtroDevolucion"></select>
 
       <label>Foja</label>
       <select id="filtroFoja"></select>
@@ -44,19 +32,19 @@
       <label>CI</label>
       <select id="filtroCI"></select>
 
+      <label>Devolución</label>
+      <select id="filtroDevolucion"></select>
+
       <label>Fecha CX</label>
       <select id="filtroFecha"></select>
 
       <button id="btnFiltrar">Aplicar filtros</button>
 
     </div>
-
   </aside>
 
-  <!-- CONTENIDO -->
   <main class="contenido">
 
-    <!-- LISTA -->
     <section class="panel">
       <div class="titulo">Órdenes</div>
 
@@ -65,25 +53,20 @@
         <span onclick="sortBy('Paciente')">Paciente</span>
         <span onclick="sortBy('Dni')">DNI</span>
         <span onclick="sortBy('ObraSocial')">Obra</span>
-        <span onclick="sortBy('FechaCX')">F. CX</span>
+        <span onclick="sortBy('FechaCX')">Fecha CX</span>
         <span onclick="sortBy('Ins')">Inst.</span>
-        <span onclick="sortBy('Actividades')">Prio</span>
       </div>
 
       <div id="ordenesList"></div>
     </section>
 
-    <!-- BUSCADOR -->
-    <input id="buscadorGlobal" class="buscador"
-      placeholder="Buscar Orden, Paciente, DNI, Obra, Institución...">
+    <input id="buscadorGlobal" class="buscador">
 
-    <!-- CABECERA -->
     <section class="panel">
       <div class="titulo">Cabecera</div>
       <div id="cabecera" class="cabecera"></div>
     </section>
 
-    <!-- DETALLE -->
     <section class="panel">
       <div class="titulo">Productos</div>
 
@@ -101,14 +84,11 @@
         </thead>
         <tbody id="detalleBody"></tbody>
       </table>
-
     </section>
 
   </main>
-
 </div>
 
 <script src="app.js?v=2.0.0"></script>
-
 </body>
 </html>
