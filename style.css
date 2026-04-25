@@ -48,8 +48,8 @@ body {
   text-align: center;
   border-radius: 10px;
   margin-bottom: 20px;
-  cursor: pointer;
   position: relative;
+  cursor: pointer;
 }
 
 .dropzone input {
@@ -58,25 +58,22 @@ body {
   opacity: 0;
 }
 
-.dropzone:hover {
-  background: #1e293b;
-}
-
 /* FILTROS */
 .filters label {
   font-size: 12px;
   color: #9ca3af;
-  display: block;
   margin-top: 10px;
+  display: block;
 }
 
-.filters select {
+.filters select,
+.inputFiltro {
   width: 100%;
-  background: #1e293b;
-  color: white;
-  border: none;
   padding: 6px;
   border-radius: 5px;
+  border: none;
+  background: #1e293b;
+  color: white;
 }
 
 .filters button {
@@ -89,40 +86,31 @@ body {
   color: white;
 }
 
-/* ===== LISTA ===== */
-
+/* LISTA */
 .tabla-header,
 .fila {
   display: grid;
-  grid-template-columns: 50px 260px 80px 120px 260px 160px;
+  grid-template-columns: 50px 220px 80px 120px 120px 200px 120px;
   gap: 6px;
   align-items: center;
 }
 
 .tabla-header {
   font-size: 12px;
-  color: #6b7280;
   border-bottom: 1px solid #e5e7eb;
-  padding: 6px;
 }
 
 #ordenesList {
-  max-height: 300px;
+  max-height: 260px;
   overflow-y: auto;
 }
 
 .fila {
   padding: 6px;
   font-size: 12px;
-  border-bottom: 1px solid #f1f1f1;
+  border-bottom: 1px solid #eee;
   cursor: pointer;
   white-space: nowrap;
-  overflow: hidden;
-}
-
-.fila span {
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .fila:hover {
@@ -133,21 +121,10 @@ body {
   background: #dbeafe;
 }
 
-/* FAVORITO */
-.fila.favorito {
-  background: #fef9c3;
-  border-left: 4px solid #facc15;
-}
-
-.fila.favorito:hover {
-  background: #fef08a;
-}
-
-/* ===== CABECERA ===== */
-
+/* CABECERA */
 .cabecera {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4,1fr);
   gap: 6px;
 }
 
@@ -158,12 +135,7 @@ body {
   text-overflow: ellipsis;
 }
 
-.campo b {
-  color: #6b7280;
-  margin-right: 4px;
-}
-
-/* TAG SI / NO */
+/* TAGS */
 .tag {
   padding: 2px 6px;
   border-radius: 6px;
@@ -171,18 +143,11 @@ body {
   font-weight: 600;
 }
 
-.tag.si {
-  background: #dcfce7;
-  color: #166534;
-}
+.tag.si { background: #dcfce7; color: #166534; }
+.tag.no { background: #fee2e2; color: #991b1b; }
+.tag.dev { background: #ffedd5; color: #c2410c; }
 
-.tag.no {
-  background: #fee2e2;
-  color: #991b1b;
-}
-
-/* ===== TABLA DETALLE ===== */
-
+/* TABLA */
 table {
   width: 100%;
   border-collapse: collapse;
@@ -198,72 +163,29 @@ th, td {
   text-overflow: ellipsis;
 }
 
-th {
-  background: #f3f4f6;
-}
+th:nth-child(3) { width: 40%; }
 
-th:nth-child(1), td:nth-child(1) { width: 8%; }
-th:nth-child(2), td:nth-child(2) { width: 10%; }
-th:nth-child(3), td:nth-child(3) { width: 40%; }
-th:nth-child(4), td:nth-child(4) { width: 7%; }
-th:nth-child(5), td:nth-child(5) { width: 12%; }
-th:nth-child(6), td:nth-child(6) { width: 11%; }
-th:nth-child(7), td:nth-child(7) { width: 12%; }
-
-.tabla-header span {
-  cursor: pointer;
-  user-select: none;
-}
-
-.tabla-header span:hover {
-  color: #60a5fa;
-}
-
+/* BUSCADOR */
 .buscador {
   width: 50%;
   padding: 8px;
-  margin-bottom: 8px;
   border-radius: 6px;
-  border: 1px solid #d1d5db;
-  font-size: 13px;
+  border: 1px solid #ccc;
 }
 
-.inputFiltro {
-  width: 100%;
-  padding: 6px;
-  border-radius: 5px;
-  border: 1px solid #d1d5db;
-  font-size: 12px;
-}
-
+/* DROPDOWN */
 .dropdown {
+  background: white;
+  color: black;
   max-height: 150px;
   overflow-y: auto;
-  background: white;
-  color: #111827; /* 🔥 texto oscuro */
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  position: relative;
-  z-index: 10;
 }
 
-.dropdown div {
+.item-inst {
   padding: 6px;
   cursor: pointer;
-  font-size: 12px;
-  color: #111827; /* 🔥 texto visible */
 }
 
-.dropdown div:hover {
-  background: #e5e7eb;
-}
-
-.dropdown .item-inst {
-  padding: 6px;
-  font-size: 12px;
-  color: #111827 !important;
-}
-
-.dropdown .item-inst:hover {
+.item-inst:hover {
   background: #e5e7eb;
 }
