@@ -14,7 +14,7 @@ document.getElementById("buscadorGlobal")
   .addEventListener("input", aplicarFiltros);
 
 /* =========================
-   DROPZONE
+   DROPZONE (NUEVO)
 ========================= */
 
 const dz = document.getElementById("dropzone");
@@ -51,6 +51,7 @@ function handleFile(file){
 
   if(!file) return;
 
+  // UI
   document.getElementById("fileName").textContent = file.name;
   document.getElementById("fileStatus").classList.remove("hidden");
 
@@ -63,138 +64,33 @@ function handleFile(file){
 }
 
 /* =========================
-   === LOGICA VBA ===
-========================= */
-
-// 1. Fill-down por orden
-function normalizarFilas(data){
-
-  let ref = {};
-
-  return data.map(r=>{
-
-    if(r.Orden){
-      ref = {...r};
-      return r;
-    }
-
-    const nueva = {...r};
-
-    Object.keys(ref).forEach(k=>{
-      if(!nueva[k]) nueva[k] = ref[k];
-    });
-
-    return nueva;
-  });
-}
-
-// 2. Obra social
-function procesarObraSocial(texto){
-
-  if(!texto) return "";
-
-  const t = texto.toUpperCase().trim();
-
-  if(t.includes("BSC") || t.includes("BOSTON SCIENTIFIC")){
-    if(t.includes("PAMI")) return "Pami - BSC";
-    if(t.includes("OSECAC")) return "Osecac - BSC";
-    return "Otra - BSC";
-  }
-
-  const partes = t.split(" ");
-
-  if(partes.length >= 2){
-    return capitalizar(partes[0]) + " " + capitalizar(partes[1]);
-  }
-
-  return capitalizar(partes[0]);
-}
-
-function capitalizar(str){
-  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
-}
-
-// 3. Completar cantidad
-function completarCantidad(rows){
-
-  return rows.map(r=>{
-    let q = Number(r.Q || 0);
-    let alt = Number(r.Prioridad || 0); // ajustar si corresponde a otra columna real
-
-    if(!q || q === 0){
-      if(alt && alt !== 0){
-        r.Q = alt;
-      }
-    }
-
-    return r;
-  });
-}
-
-// 4. Limpiar filas inválidas
-function limpiarFilas(rows){
-
-  const resultado = [];
-  let i = 0;
-
-  while(i < rows.length){
-
-    const orden = rows[i].Orden;
-    let bloque = [];
-
-    while(i < rows.length && rows[i].Orden === orden){
-      bloque.push(rows[i]);
-      i++;
-    }
-
-    const hayCantidadValida = bloque.some(r => Number(r.Q) > 0);
-
-    if(hayCantidadValida){
-      bloque = bloque.filter(r => Number(r.Q) > 0);
-    } else {
-      bloque = bloque.slice(0,1);
-    }
-
-    resultado.push(...bloque);
-  }
-
-  return resultado;
-}
-
-/* =========================
    DATA
 ========================= */
 
 function procesar(data){
 
-  // limpiar headers
-  data = data.map(r=>{
+  const map = {};
+
+  data.forEach(r=>{
+
+    // 🔴 NORMALIZAR HEADERS (BOM + espacios)
     const limpio = {};
     Object.keys(r).forEach(k=>{
       const key = k.replace(/\uFEFF/g, "").trim();
       limpio[key] = r[k];
     });
-    return limpio;
-  });
 
-  // pipeline VBA
-  data = normalizarFilas(data);
-
-  data.forEach(r=>{
-    r.ObraSocial = procesarObraSocial(r.ObraSocial);
-  });
-
-  data = completarCantidad(data);
-  data = limpiarFilas(data);
-
-  // agrupación
-  const map = {};
-
-  data.forEach(r=>{
+    r = limpio;
 
     if(!r.Orden) return;
 
     r.Paciente = (r.Apellido || "") + " " + (r.Nombre || "");
+    r.Institucion = r.Institucion || "";
+    r.Ciudad = r.Ciudad || "";
+    r.Prioridad = r.Prioridad || "";
+    r.Devolucion = r.Devolucion || "";
+    r.Foja = r.Foja || "";
+    r.CI = r.CI || "";
 
     if(!map[r.Orden]){
       map[r.Orden] = {...r, detalles:[]};
@@ -205,12 +101,14 @@ function procesar(data){
 
   ordenes = Object.values(map);
 
+  console.log("Órdenes cargadas:", ordenes.length);
+
   cargarFiltros();
   aplicarFiltros();
 }
 
 /* =========================
-   FILTROS / UI (igual)
+   FILTROS
 ========================= */
 
 function cargarFiltros(){
@@ -251,14 +149,16 @@ function fillFecha(){
 }
 
 /* =========================
-   FILTRAR / LISTA / DETALLE
-   (sin cambios relevantes)
+   FILTRAR
 ========================= */
 
 function aplicarFiltros(){
 
   const f=id=>document.getElementById(id).value;
   const texto=document.getElementById("buscadorGlobal").value.toLowerCase();
+
+  const hoy=new Date();
+  hoy.setHours(0,0,0,0);
 
   filtradas=ordenes.filter(o=>{
 
@@ -269,6 +169,15 @@ function aplicarFiltros(){
     if(f("filtroDevolucion") && o.Devolucion!==f("filtroDevolucion")) return false;
     if(f("filtroFoja") && o.Foja!==f("filtroFoja")) return false;
     if(f("filtroCI") && o.CI!==f("filtroCI")) return false;
+
+    if(f("filtroFecha")){
+      const fecha=new Date(o.FechaCX||"1900-01-01");
+      fecha.setHours(0,0,0,0);
+
+      if(f("filtroFecha")==="realizadas" && fecha>=hoy) return false;
+      if(f("filtroFecha")==="hoy" && fecha.getTime()!==hoy.getTime()) return false;
+      if(f("filtroFecha")==="pendientes" && fecha<hoy) return false;
+    }
 
     if(texto){
       const combinado=`
@@ -290,10 +199,38 @@ function aplicarFiltros(){
   renderLista();
 }
 
+/* =========================
+   LISTA
+========================= */
+
 function renderLista(){
 
   const cont=document.getElementById("ordenesList");
   cont.innerHTML="";
+
+  if(sortField){
+    filtradas.sort((a,b)=>{
+
+      let valA, valB;
+
+      if(sortField === "Paciente"){
+        valA = (a.Apellido + " " + a.Nombre).toLowerCase();
+        valB = (b.Apellido + " " + b.Nombre).toLowerCase();
+      }
+      else if(sortField === "FechaCX"){
+        valA = new Date(a.FechaCX || "1900-01-01");
+        valB = new Date(b.FechaCX || "1900-01-01");
+      }
+      else{
+        valA = (a[sortField] || "").toString().toLowerCase();
+        valB = (b[sortField] || "").toString().toLowerCase();
+      }
+
+      if(valA < valB) return ordenAsc ? -1 : 1;
+      if(valA > valB) return ordenAsc ? 1 : -1;
+      return 0;
+    });
+  }
 
   filtradas.forEach((o,i)=>{
 
@@ -319,6 +256,16 @@ function renderLista(){
   });
 }
 
+/* =========================
+   SELECCION
+========================= */
+
+document.addEventListener("keydown",e=>{
+  if(e.key==="ArrowDown") indiceSeleccionado++;
+  if(e.key==="ArrowUp") indiceSeleccionado--;
+  actualizarSeleccion();
+});
+
 function actualizarSeleccion(){
 
   const filas=document.querySelectorAll(".fila");
@@ -330,9 +277,13 @@ function actualizarSeleccion(){
   fila.classList.add("active");
 
   mostrar(filtradas[indiceSeleccionado]);
+
+  fila.scrollIntoView({block:"nearest"});
 }
 
-/* ========================= */
+/* =========================
+   DETALLE
+========================= */
 
 function mostrar(o){
 
@@ -343,6 +294,20 @@ function mostrar(o){
     <div class="campo"><b>DNI:</b> ${o.Dni}</div>
     <div class="campo"><b>Obra:</b> ${o.ObraSocial}</div>
     <div class="campo"><b>Institución:</b> ${o.Institucion}</div>
+    <div class="campo"><b>Fecha CX:</b> ${o.FechaCX}</div>
+    <div class="campo"><b>Médico:</b> ${o.Medico}</div>
+    <div class="campo"><b>Solicitante:</b> ${o.MedicoSolicitante}</div>
+    <div class="campo"><b>Vendedor:</b> ${o.Vendedor}</div>
+
+    <div class="campo"><b>Foja:</b> ${boolTag(o.Foja)}</div>
+    <div class="campo"><b>CI:</b> ${boolTag(o.CI)}</div>
+    <div class="campo"><b>Devolución:</b> ${boolTag(o.Devolucion,"dev")}</div>
+  `;
+
+  cab.innerHTML += `
+    <div class="campo" style="grid-column: span 4;">
+      <b>Actividades:</b> ${o.Actividades || ""}
+    </div>
   `;
 
   const body=document.getElementById("detalleBody");
@@ -355,7 +320,84 @@ function mostrar(o){
         <td>${d.FechaR||""}</td>
         <td>${d.Producto||""}</td>
         <td>${d.Q||""}</td>
+        <td>${d.Lote||""}</td>
+        <td>${d.Serie||""}</td>
+        <td>${d.Vencimiento||""}</td>
       </tr>
     `;
   });
+}
+
+/* =========================
+   TAGS
+========================= */
+
+function boolTag(val,tipo="normal"){
+  const v=(val||"").toUpperCase();
+
+  if(v==="VERDADERO"){
+    if(tipo==="dev") return `<span class="tag dev">SI</span>`;
+    return `<span class="tag si">SI</span>`;
+  }
+
+  if(v==="FALSO") return `<span class="tag no">NO</span>`;
+
+  return "";
+}
+
+/* =========================
+   INSTITUCIONES
+========================= */
+
+function cargarInstituciones(){
+
+  const input=document.getElementById("filtroInstitucion");
+  const lista=document.getElementById("listaInstituciones");
+
+  const valores=[...new Set(ordenes.map(o=>o.Institucion).filter(Boolean))];
+
+  input.oninput=()=>{
+    const texto=input.value.toLowerCase();
+
+    lista.innerHTML=valores
+      .filter(v=>v.toLowerCase().includes(texto))
+      .slice(0,50)
+      .map(v=>`<div class="item-inst">${v}</div>`)
+      .join("");
+  };
+
+  lista.onclick=e=>{
+    if(e.target.classList.contains("item-inst")){
+      input.value=e.target.textContent;
+      lista.innerHTML="";
+      aplicarFiltros();
+    }
+  };
+}
+
+/* =========================
+   SORT
+========================= */
+
+function sortBy(field){
+
+  if(sortField === field){
+    ordenAsc = !ordenAsc;
+  } else {
+    sortField = field;
+    ordenAsc = true;
+  }
+
+  document.querySelectorAll(".tabla-header span").forEach(s=>{
+    s.classList.remove("active","asc","desc");
+  });
+
+  document.querySelectorAll(".tabla-header span").forEach(h=>{
+    if(h.getAttribute("onclick").includes(field)){
+      h.classList.add("active");
+      h.classList.add(ordenAsc ? "asc" : "desc");
+    }
+  });
+
+  renderLista();
 }
