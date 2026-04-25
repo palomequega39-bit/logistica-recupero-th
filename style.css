@@ -189,3 +189,27 @@ th:nth-child(3) { width: 40%; }
 .item-inst:hover {
   background: #e5e7eb;
 }
+.tabla-header span {
+  cursor: pointer;
+  font-weight: 600;
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.tabla-header span:hover {
+  background: #e5e7eb;
+}
+
+.tabla-header span.active {
+  background: #dbeafe;
+}
+
+.tabla-header span.asc::after {
+  content: " ▲";
+  font-size: 10px;
+}
+
+.tabla-header span.desc::after {
+  content: " ▼";
+  font-size: 10px;
+}
