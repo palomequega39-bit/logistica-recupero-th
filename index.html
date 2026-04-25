@@ -6,16 +6,20 @@
 
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
-<link rel="stylesheet" href="style.css?v=2.0.1">
+<!-- ✅ VERSIONADO -->
+<link rel="stylesheet" href="style.css?v=1.0.9">
+
 </head>
 <body>
 
 <div class="layout">
 
+  <!-- SIDEBAR -->
   <aside class="sidebar">
+
     <h2>Recupero</h2>
 
-    <div class="dropzone">
+    <div id="dropzone" class="dropzone">
       <p>Arrastrar CSV</p>
       <input type="file" id="fileInput">
     </div>
@@ -23,8 +27,17 @@
     <div class="filters">
 
       <label>Institución</label>
-      <input id="filtroInstitucion" class="inputFiltro">
+      <input id="filtroInstitucion" class="inputFiltro" placeholder="Seleccionar institución...">
       <div id="listaInstituciones" class="dropdown"></div>
+
+      <label>Prioridad</label>
+      <select id="filtroPrioridad"></select>
+
+      <label>Ciudad</label>
+      <select id="filtroCiudad"></select>
+
+      <label>Devolución</label>
+      <select id="filtroDevolucion"></select>
 
       <label>Foja</label>
       <select id="filtroFoja"></select>
@@ -32,19 +45,19 @@
       <label>CI</label>
       <select id="filtroCI"></select>
 
-      <label>Devolución</label>
-      <select id="filtroDevolucion"></select>
-
       <label>Fecha CX</label>
       <select id="filtroFecha"></select>
 
       <button id="btnFiltrar">Aplicar filtros</button>
 
     </div>
+
   </aside>
 
+  <!-- CONTENIDO -->
   <main class="contenido">
 
+    <!-- LISTA -->
     <section class="panel">
       <div class="titulo">Órdenes</div>
 
@@ -53,20 +66,23 @@
         <span onclick="sortBy('Paciente')">Paciente</span>
         <span onclick="sortBy('Dni')">DNI</span>
         <span onclick="sortBy('ObraSocial')">Obra</span>
-        <span onclick="sortBy('FechaCX')">Fecha CX</span>
-        <span onclick="sortBy('Ins')">Inst.</span>
+        <span onclick="sortBy('Institucion')">Inst.</span>
+        <span onclick="sortBy('Prioridad')">Prio</span>
       </div>
 
       <div id="ordenesList"></div>
     </section>
 
-    <input id="buscadorGlobal" class="buscador">
+    <!-- BUSCADOR -->
+    <input id="buscadorGlobal" class="buscador" placeholder="Buscar N° Orden, Apellido, Nombre, Dni, Obra Social Institucion...">
 
+    <!-- CABECERA -->
     <section class="panel">
       <div class="titulo">Cabecera</div>
       <div id="cabecera" class="cabecera"></div>
     </section>
 
+    <!-- DETALLE -->
     <section class="panel">
       <div class="titulo">Productos</div>
 
@@ -84,11 +100,132 @@
         </thead>
         <tbody id="detalleBody"></tbody>
       </table>
+
     </section>
 
   </main>
+
 </div>
 
-<script src="app.js?v=2.0.0"></script>
+<!-- ✅ VERSIONADO -->
+<script src="app.js?v=1.0.1"></script>
+
 </body>
 </html>
+
+app.js
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Logística Recupero</title>
+
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+
+<!-- ✅ VERSIONADO -->
+<link rel="stylesheet" href="style.css?v=1.0.9">
+
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+
+    <h2>Recupero</h2>
+
+    <div id="dropzone" class="dropzone">
+      <p>Arrastrar CSV</p>
+      <input type="file" id="fileInput">
+    </div>
+
+    <div class="filters">
+
+      <label>Institución</label>
+      <input id="filtroInstitucion" class="inputFiltro" placeholder="Seleccionar institución...">
+      <div id="listaInstituciones" class="dropdown"></div>
+
+      <label>Prioridad</label>
+      <select id="filtroPrioridad"></select>
+
+      <label>Ciudad</label>
+      <select id="filtroCiudad"></select>
+
+      <label>Devolución</label>
+      <select id="filtroDevolucion"></select>
+
+      <label>Foja</label>
+      <select id="filtroFoja"></select>
+
+      <label>CI</label>
+      <select id="filtroCI"></select>
+
+      <label>Fecha CX</label>
+      <select id="filtroFecha"></select>
+
+      <button id="btnFiltrar">Aplicar filtros</button>
+
+    </div>
+
+  </aside>
+
+  <!-- CONTENIDO -->
+  <main class="contenido">
+
+    <!-- LISTA -->
+    <section class="panel">
+      <div class="titulo">Órdenes</div>
+
+      <div class="tabla-header">
+        <span onclick="sortBy('Orden')">Orden</span>
+        <span onclick="sortBy('Paciente')">Paciente</span>
+        <span onclick="sortBy('Dni')">DNI</span>
+        <span onclick="sortBy('ObraSocial')">Obra</span>
+        <span onclick="sortBy('Institucion')">Inst.</span>
+        <span onclick="sortBy('Prioridad')">Prio</span>
+      </div>
+
+      <div id="ordenesList"></div>
+    </section>
+
+    <!-- BUSCADOR -->
+    <input id="buscadorGlobal" class="buscador" placeholder="Buscar N° Orden, Apellido, Nombre, Dni, Obra Social Institucion...">
+
+    <!-- CABECERA -->
+    <section class="panel">
+      <div class="titulo">Cabecera</div>
+      <div id="cabecera" class="cabecera"></div>
+    </section>
+
+    <!-- DETALLE -->
+    <section class="panel">
+      <div class="titulo">Productos</div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Remito</th>
+            <th>Fecha R</th>
+            <th>Producto</th>
+            <th>Cant</th>
+            <th>Lote</th>
+            <th>Serie</th>
+            <th>Venc</th>
+          </tr>
+        </thead>
+        <tbody id="detalleBody"></tbody>
+      </table>
+
+    </section>
+
+  </main>
+
+</div>
+
+<!-- ✅ VERSIONADO -->
+<script src="app.js?v=1.0.1"></script>
+
+</body>
+</html>
+
