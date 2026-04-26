@@ -51,16 +51,22 @@ function handleFile(file){
 
   if(!file) return;
 
-  // UI
   document.getElementById("fileName").textContent = file.name;
   document.getElementById("fileStatus").classList.remove("hidden");
 
-  Papa.parse(file,{
-    header:true,
-    delimiter:";",
-    skipEmptyLines:true,
-    complete: res=>procesar(res.data)
-  });
+  const ext = file.name.split(".").pop().toLowerCase();
+
+  if(ext === "xlsx" || ext === "xls"){
+    leerExcel(file);
+  } else {
+    // sigue funcionando CSV normal
+    Papa.parse(file,{
+      header:true,
+      delimiter:";",
+      skipEmptyLines:true,
+      complete: res=>procesar(res.data)
+    });
+  }
 }
 
 /* =========================
