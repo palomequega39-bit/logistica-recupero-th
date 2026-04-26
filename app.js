@@ -434,3 +434,172 @@ function configurarPlaceholders() {
 
 // Llamamos a la función al cargar el script
 configurarPlaceholders();
+
+function leerExcel(file){
+
+  const reader = new FileReader();
+
+  reader.onload = function(e){
+
+    const data = new Uint8Array(e.target.result);
+    const workbook = XLSX.read(data, {type: "array"});
+
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+
+    // Convertimos a array plano
+    let json = XLSX.utils.sheet_to_json(sheet, {header:1});
+
+    // 🔥 acá entra tu magia
+    const procesado = preProcesarExcel(json);
+
+    // Convertimos a CSV
+    const csv = Papa.unparse(procesado, {
+      delimiter: ";"
+    });
+
+    // Volvemos a tu flujo actual
+    Papa.parse(csv,{
+      header:true,
+      delimiter:";",
+      skipEmptyLines:true,
+      complete: res=>procesar(res.data)
+    });
+
+  };
+
+  reader.readAsArrayBuffer(file);
+}
+
+function preProcesarExcel(rows){
+
+  if(rows.length < 2) return [];
+
+  const headers = [
+    "Orden","Remito","FechaR","Apellido","Nombre","Dni","ObraSocial",
+    "FechaCX","Producto","Q","Lote","Serie","Vendedor","Medico",
+    "MedicoSolicitante","Foja","CI","Actividades","Institucion",
+    "Ciudad","Vencimiento","Expediente","Favorito","Devolucion","Prioridad"
+  ];
+
+  rows = rows.slice(1); // sacar header original
+
+  let resultado = [];
+
+  let ref = {};
+
+  rows.forEach(r=>{
+
+    // detectar nueva orden
+    if(r[0]){
+      ref = {
+        Orden: r[0],
+        Apellido: r[3],
+        Nombre: r[4],
+        Dni: r[5],
+        ObraSocial: r[6],
+        FechaCX: r[7],
+        Vendedor: r[12],
+        Medico: r[13],
+        MedicoSolicitante: r[14],
+        Foja: r[15],
+        CI: r[16],
+        Actividades: r[17],
+        Institucion: r[18],
+        Ciudad: r[19],
+        Expediente: r[21],
+        Favorito: r[22],
+        Devolucion: r[23],
+        Prioridad: r[24]
+      };
+    }
+
+    let fila = {
+      Orden: r[0] || ref.Orden,
+      Remito: r[1],
+      FechaR: formatFecha(r[2]),
+      Apellido: r[3] || ref.Apellido,
+      Nombre: r[4] || ref.Nombre,
+      Dni: r[5] || ref.Dni,
+      ObraSocial: normalizarOS(r[6] || ref.ObraSocial),
+      FechaCX: formatFecha(r[7] || ref.FechaCX),
+      Producto: r[8],
+      Q: r[9] || r[24],
+      Lote: r[10],
+      Serie: r[11],
+      Vendedor: r[12] || ref.Vendedor,
+      Medico: r[13] || ref.Medico,
+      MedicoSolicitante: r[14] || ref.MedicoSolicitante,
+      Foja: bool(r[15] || ref.Foja),
+      CI: bool(r[16] || ref.CI),
+      Actividades: r[17] || ref.Actividades,
+      Institucion: r[18] || ref.Institucion,
+      Ciudad: r[19] || ref.Ciudad,
+      Vencimiento: formatFecha(r[20]),
+      Expediente: r[21] || ref.Expediente,
+      Favorito: bool(r[22] || ref.Favorito),
+      Devolucion: bool(r[23] || ref.Devolucion),
+      Prioridad: r[24] || ref.Prioridad
+    };
+
+    // 🔴 FILTRO DE OBRA SOCIAL
+    if(!fila.ObraSocial) return;
+
+    const os = fila.ObraSocial.toUpperCase();
+
+    const valido =
+      os.includes("APROSS") ||
+      (os.includes("PAMI") && os.includes("BSC")) ||
+      (os.includes("OSECAC") && os.includes("BSC"));
+
+    if(!valido) return;
+
+    resultado.push(fila);
+  });
+
+  return resultado;
+}
+
+function bool(v){
+  if(!v) return "FALSO";
+
+  const val = v.toString().toLowerCase();
+
+  if(val === "true" || val === "1" || val === "si") return "VERDADERO";
+  return "FALSO";
+}
+
+function formatFecha(v){
+  if(!v) return "";
+
+  if(typeof v === "number"){
+    const fecha = XLSX.SSF.parse_date_code(v);
+    return `${pad(fecha.d)}/${pad(fecha.m)}/${fecha.y}`;
+  }
+
+  const d = new Date(v);
+  if(!isNaN(d)){
+    return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()}`;
+  }
+
+  return v;
+}
+
+function pad(n){
+  return n.toString().padStart(2,"0");
+}
+
+function normalizarOS(texto){
+  if(!texto) return "";
+
+  const t = texto.toUpperCase();
+
+  if(t.includes("APROSS")) return "Apross";
+
+  if(t.includes("BSC")){
+    if(t.includes("PAMI")) return "Pami - BSC";
+    if(t.includes("OSECAC")) return "Osecac - BSC";
+  }
+
+  return texto;
+}
+
