@@ -477,23 +477,14 @@ function preProcesarExcel(rows){
 
   if(rows.length < 2) return [];
 
-  const headers = [
-    "Orden","Remito","FechaR","Apellido","Nombre","Dni","ObraSocial",
-    "FechaCX","Producto","Q","Lote","Serie","Vendedor","Medico",
-    "MedicoSolicitante","Foja","CI","Actividades","Institucion",
-    "Ciudad","Vencimiento","Expediente","Favorito","Devolucion","Prioridad", "Column1"
-  ];
-
-  rows = rows.slice(1); // sacar header original
+  rows = rows.slice(1); // quitar encabezado original
 
   let resultado = [];
-
   let ref = {};
 
   rows.forEach(r=>{
 
-    // detectar nueva orden
-    if(r[0]){
+    if(r[0]){ // nueva orden
       ref = {
         Orden: r[0],
         Apellido: r[3],
@@ -541,13 +532,12 @@ function preProcesarExcel(rows){
       Expediente: r[21] || ref.Expediente,
       Favorito: bool(r[22] || ref.Favorito),
       Devolucion: bool(r[23] || ref.Devolucion),
-      Prioridad: r[24] || ref.Prioridad
+      Prioridad: r[24] || ref.Prioridad,
+      Column1: "" // 👈 compatibilidad VBA
     };
 
-    // 🔴 FILTRO DE OBRA SOCIAL
-    if(!fila.ObraSocial) return;
-
-    const os = fila.ObraSocial.toUpperCase();
+    // 🔴 FILTRO OBRA SOCIAL (como definiste)
+    const os = (fila.ObraSocial || "").toUpperCase();
 
     const valido =
       os.includes("APROSS") ||
@@ -555,14 +545,47 @@ function preProcesarExcel(rows){
       (os.includes("OSECAC") && os.includes("BSC"));
 
     if(!valido) return;
-      fila["Column1"] = "";
-     
+
+    // 🔴 LOGICA Q (igual VBA)
+    if((!fila.Q || fila.Q == 0) && Number(r[24]) > 0){
+      fila.Q = r[24];
+    }
+
     resultado.push(fila);
   });
 
-  return resultado;
-}
+  // =========================
+  // 🔥 LIMPIEZA POR BLOQUE (CLAVE)
+  // =========================
 
+  const grupos = {};
+
+  resultado.forEach(f=>{
+    if(!grupos[f.Orden]) grupos[f.Orden] = [];
+    grupos[f.Orden].push(f);
+  });
+
+  let limpio = [];
+
+  Object.values(grupos).forEach(filas=>{
+
+    const tieneValido = filas.some(f => Number(f.Q) > 0);
+
+    if(tieneValido){
+      filas.forEach(f=>{
+        if(Number(f.Q) > 0 && f.Producto){
+          limpio.push(f);
+        }
+      });
+    } else {
+      // dejar solo la primera (cabecera tipo VBA)
+      limpio.push(filas[0]);
+    }
+
+  });
+
+  return limpio;
+}
 function bool(v){
   if(!v) return "FALSO";
 
