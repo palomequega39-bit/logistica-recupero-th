@@ -478,7 +478,7 @@ function preProcesarExcel(rows){
     "Orden","Remito","FechaR","Apellido","Nombre","Dni","ObraSocial",
     "FechaCX","Producto","Q","Lote","Serie","Vendedor","Medico",
     "MedicoSolicitante","Foja","CI","Actividades","Institucion",
-    "Ciudad","Vencimiento","Expediente","Favorito","Devolucion","Prioridad"
+    "Ciudad","Vencimiento","Expediente","Favorito","Devolucion","Prioridad", "Column1"
   ];
 
   rows = rows.slice(1); // sacar header original
@@ -552,7 +552,8 @@ function preProcesarExcel(rows){
       (os.includes("OSECAC") && os.includes("BSC"));
 
     if(!valido) return;
-
+      fila["Column1"] = "";
+     
     resultado.push(fila);
   });
 
