@@ -448,10 +448,13 @@ function leerExcel(file){
 
     // Convertimos a array plano
     let json = XLSX.utils.sheet_to_json(sheet, {header:1});
-
+   
     // 🔥 acá entra tu magia
     const procesado = preProcesarExcel(json);
-
+     
+   // 👇 EXPORTAR DEBUG
+exportarCSV(procesado);
+     
     // Convertimos a CSV
     const csv = Papa.unparse(procesado, {
       delimiter: ";"
@@ -604,3 +607,27 @@ function normalizarOS(texto){
   return texto;
 }
 
+function exportarCSV(data, nombre="debug_preprocesado.csv"){
+
+  if(!data || !data.length){
+    console.warn("No hay datos para exportar");
+    return;
+  }
+
+  const csv = Papa.unparse(data, {
+    delimiter: ";"
+  });
+
+  // UTF-8 con BOM (clave para Excel)
+  const BOM = "\uFEFF";
+  const blob = new Blob([BOM + csv], { type: "text/csv;charset=utf-8;" });
+
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = nombre;
+  a.click();
+
+  URL.revokeObjectURL(url);
+}
