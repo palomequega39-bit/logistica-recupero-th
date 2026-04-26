@@ -588,11 +588,10 @@ function preProcesarExcel(rows){
 }
 function bool(v){
   if(!v) return "FALSO";
-
   const val = v.toString().toLowerCase();
-
-  if(val === "true" || val === "1" || val === "si") return "VERDADERO";
-  return "FALSO";
+  return (val === "true" || val === "1" || val === "si")
+    ? "VERDADERO"
+    : "FALSO";
 }
 
 function formatFecha(v){
@@ -608,7 +607,7 @@ function formatFecha(v){
     return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()}`;
   }
 
-  return v;
+  return "";
 }
 
 function pad(n){
@@ -629,7 +628,6 @@ function normalizarOS(texto){
 
   return texto;
 }
-
 function exportarCSV(data, nombre="debug_preprocesado.csv"){
 
   if(!data || !data.length){
