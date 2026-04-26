@@ -523,7 +523,7 @@ function preProcesarExcel(rows){
       ObraSocial: normalizarOS(r[6] || ref.ObraSocial),
       FechaCX: formatFecha(r[7] || ref.FechaCX),
       Producto: r[8],
-      Q: r[9] || r[24],
+      Q: r[9],
       Lote: r[10],
       Serie: r[11],
       Vendedor: r[12] || ref.Vendedor,
