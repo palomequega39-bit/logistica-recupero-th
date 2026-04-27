@@ -8,7 +8,6 @@ let ordenAsc = true;
    INIT
 ========================= */
 
-document.getElementById("btnFiltrar").onclick = aplicarFiltros;
 
 document.getElementById("buscadorGlobal")
   .addEventListener("input", aplicarFiltros);
@@ -124,7 +123,6 @@ function cargarFiltros() {
     fill("filtroVendedor", "Vendedor");
     fill("filtroMedico", "Medico");
 
-    // Llenar favoritos
     document.getElementById("filtroFavorito").innerHTML = `
         <option value="">Todos</option>
         <option value="SI">Solo Favoritos</option>
@@ -137,11 +135,10 @@ function cargarFiltros() {
     fillFecha();
     cargarInstituciones();
 
-    // --- NUEVO: Hacer que cada select aplique filtros al cambiar ---
-    const selects = document.querySelectorAll('.filters select, .filters .inputFiltro');
-    selects.forEach(el => {
+    // Escuchar cambios en todos los select y inputs de la barra lateral
+    const controles = document.querySelectorAll('.filters select, .filters input');
+    controles.forEach(el => {
         el.addEventListener('change', aplicarFiltros);
-        // Para que los inputs de texto (como Institución) también reaccionen al borrar
         if(el.tagName === "INPUT") el.addEventListener('keyup', aplicarFiltros);
     });
 }
