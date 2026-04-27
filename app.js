@@ -275,7 +275,7 @@ function renderLista(){
         const estrellaHtml = esFav ? `<span class="estrella">★</span>` : "";
 
         fila.innerHTML = `
-            <span>${estrellaHtml}${o.Orden}</span>
+            <span>}${o.Orden}</span>
             <span title="${o.Apellido} ${o.Nombre}">${o.Apellido} ${o.Nombre}</span>
             <span>${o.Dni}</span>
             <span>${o.ObraSocial}</span>
@@ -338,22 +338,32 @@ function actualizarSeleccion() {
 ========================= */
 
 function mostrar(o){
+  const cab = document.getElementById("cabecera");
+  
+  // Verificamos si es favorito para crear el elemento de la estrella
+  const esFav = (o.Favorito === "FAVORITO" || o.Favorito === "SI");
+  const estrellaHtml = esFav ? `<span class="estrella" style="font-size: 1.2em; margin-left: 5px;">★</span>` : "";
 
-   const cab = document.getElementById("cabecera");
-   const estrellaTitulo = (o.Favorito === "FAVORITO" || o.Favorito === "SI") ? " ★" : "";
   cab.innerHTML = `
-    <div class="campo"><b>Paciente:</b> ${o.Apellido} ${o.Nombre}${estrellaTitulo}</div>
+    <div class="campo" style="grid-column: span 2; font-size: 14px;">
+        <b>Paciente:</b> ${o.Apellido} ${o.Nombre}${estrellaHtml}
+    </div>
     <div class="campo"><b>DNI:</b> ${o.Dni}</div>
     <div class="campo"><b>Obra:</b> ${o.ObraSocial}</div>
+    
     <div class="campo"><b>Institución:</b> ${o.Institucion}</div>
     <div class="campo"><b>Fecha CX:</b> ${o.FechaCX}</div>
     <div class="campo"><b>Médico:</b> ${o.Medico}</div>
     <div class="campo"><b>Solicitante:</b> ${o.MedicoSolicitante}</div>
+    
     <div class="campo"><b>Vendedor:</b> ${o.Vendedor}</div>
-
     <div class="campo"><b>Foja:</b> ${boolTag(o.Foja)}</div>
     <div class="campo"><b>CI:</b> ${boolTag(o.CI)}</div>
-    <div class="campo"><b>Devolución Pendiente:</b> ${boolTag(o.Devolucion,"dev")}</div>
+    <div class="campo"><b>Devolución:</b> ${boolTag(o.Devolucion,"dev")}</div>
+
+    <div class="campo" style="grid-column: span 4; margin-top: 5px; white-space: normal;">
+      <b>Actividades:</b> ${o.Actividades || ""}
+    </div>
   `;
 
   cab.innerHTML += `
@@ -404,30 +414,43 @@ function boolTag(val, tipo="normal"){
    INSTITUCIONES
 ========================= */
 
-function cargarInstituciones(){
+function cargarInstituciones() {
+    const input = document.getElementById("filtroInstitucion");
+    const lista = document.getElementById("listaInstituciones");
 
-  const input=document.getElementById("filtroInstitucion");
-  const lista=document.getElementById("listaInstituciones");
+    const valores = [...new Set(ordenes.map(o => o.Institucion).filter(Boolean))];
 
-  const valores=[...new Set(ordenes.map(o=>o.Institucion).filter(Boolean))];
+    input.oninput = () => {
+        const texto = input.value.toLowerCase();
+        const filtrados = valores.filter(v => v.toLowerCase().includes(texto));
 
-  input.oninput=()=>{
-    const texto=input.value.toLowerCase();
+        if (texto === "" || filtrados.length === 0) {
+            lista.innerHTML = "";
+            return;
+        }
 
-    lista.innerHTML=valores
-      .filter(v=>v.toLowerCase().includes(texto))
-      .slice(0,50)
-      .map(v=>`<div class="item-inst">${v}</div>`)
-      .join("");
-  };
+        lista.innerHTML = filtrados
+            .slice(0, 50)
+            .map(v => `<div class="item-inst">${v}</div>`)
+            .join("");
+    };
 
-  lista.onclick = e => {
-    if (e.target.classList.contains("item-inst")) {
-        input.value = e.target.textContent;
-        lista.innerHTML = "";
-        aplicarFiltros(); // Esto ya lo tenías, pero es vital que esté.
-    }
-};
+    // Al hacer clic en un ítem
+    lista.onclick = e => {
+        if (e.target.classList.contains("item-inst")) {
+            input.value = e.target.textContent;
+            lista.innerHTML = ""; // Oculta la lista al seleccionar
+            aplicarFiltros();
+        }
+    };
+
+    // Cerrar con la tecla Escape mientras se escribe en el input
+    input.onkeydown = e => {
+        if (e.key === "Escape") {
+            lista.innerHTML = "";
+            input.blur(); // Quita el foco del input
+        }
+    };
 }
 
 /* =========================
@@ -699,5 +722,16 @@ document.addEventListener("keydown", e => {
     }
 });
 
+/* =========================
+   CIERRE DE DROPDOWNS GLOBAL
+========================= */
+document.addEventListener("click", e => {
+    const lista = document.getElementById("listaInstituciones");
+    const input = document.getElementById("filtroInstitucion");
 
+    // Si el clic no fue dentro del input ni dentro de la lista, la vaciamos
+    if (e.target !== input && e.target !== lista) {
+        lista.innerHTML = "";
+    }
+});
 
