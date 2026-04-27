@@ -148,7 +148,7 @@ body {
 
 .fila.favorito {
     background-color: #fff9c4 !important; /* Dorado suave con !important para asegurar */
-    border-left: 5px solid #fbc02d;    /* Una barra lateral dorada más marcada */
+    box-shadow: inset 5px 0 0 0 #fbc02d;    /* Una barra lateral dorada más marcada */
 }
 
 /* Para que cuando pases el mouse sobre una favorita se note un cambio pero siga siendo dorada */
@@ -159,7 +159,7 @@ body {
 /* Si la fila es favorita Y está seleccionada, podemos mezclar los estilos o priorizar uno */
 .fila.favorito.active {
     background-color: #dbeafe !important; /* Azul de selección */
-    border-left: 5px solid #2563eb;       /* Cambia la barra a azul */
+   box-shadow: inset 5px 0 0 0 #2563eb; [cite: 157]       /* Cambia la barra a azul */
 }
 
 .estrella {
