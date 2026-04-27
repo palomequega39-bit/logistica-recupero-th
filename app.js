@@ -342,10 +342,10 @@ function mostrar(o){
   const esFav = (o.Favorito === "FAVORITO" || o.Favorito === "SI");
   const estrellaHtml = esFav ? `<span class="estrella">★</span>` : "";
    
-  // 1. Actualizamos el título del panel (Solo el número de orden)
+  // 1. Actualizamos el título del panel (N° de orden + Paciente )
   const panelTitulo = document.querySelector(".panel:nth-of-type(2) .titulo");
   if (panelTitulo) {
-    panelTitulo.textContent = `Datos de la Orden - ${o.Orden} ${estrellaHtml}`;
+    panelTitulo.textContent = `Datos de la Orden - ${o.Orden} ${estrellaHtml} - ${o.Apellido} ${o.Nombre}`;
   }
    
   const cab = document.getElementById("cabecera");
@@ -360,10 +360,6 @@ function mostrar(o){
   // Fila 5: Actividades (una sola vez)
   
   cab.innerHTML = `
-    <div class="campo" style="grid-column: span 4; font-size: 14px; border-bottom: 1px solid #f0f0f0; padding-bottom: 4px; margin-bottom: 4px;">
-        <b>Paciente:</b> ${o.Apellido} ${o.Nombre}
-    </div>
-
     <div class="campo"><b>Fecha CX:</b> ${o.FechaCX || ""}</div>
     <div class="campo"><b>DNI:</b> ${o.Dni || ""}</div>
     <div class="campo"><b>Obra:</b> ${o.ObraSocial || ""}</div>
