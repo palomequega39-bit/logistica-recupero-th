@@ -54,28 +54,19 @@ function handleFile(file){
   document.getElementById("fileName").textContent = file.name;
   document.getElementById("fileStatus").classList.remove("hidden");
 
-  const reader = new FileReader();
+  const ext = file.name.split(".").pop().toLowerCase();
 
-  reader.onload = function(e){
-
-    const data = new Uint8Array(e.target.result);
-    const workbook = XLSX.read(data, { type: "array" });
-    const sheet = workbook.Sheets[workbook.SheetNames[0]];
-    const raw = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-
-    const csvProcesado = preprocesarExacto(raw);
-
-    Papa.parse(csvProcesado,{
+  if(ext === "xlsx" || ext === "xls"){
+    leerExcel(file);
+  } else {
+    Papa.parse(file,{
       header:true,
+      delimiter:";",
       skipEmptyLines:true,
       complete: res=>procesar(res.data)
     });
-
-  };
-
-  reader.readAsArrayBuffer(file);
+  }
 }
-
 /* =========================
    DATA
 ========================= */
@@ -440,4 +431,33 @@ function preprocesarExacto(datos){
   const ws = XLSX.utils.aoa_to_sheet([headers, ...datos]);
 
   return XLSX.utils.sheet_to_csv(ws);
+}
+function leerExcel(file){
+
+  const reader = new FileReader();
+
+  reader.onload = function(e){
+
+    const data = new Uint8Array(e.target.result);
+    const workbook = XLSX.read(data, {type: "array"});
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+
+    let json = XLSX.utils.sheet_to_json(sheet, {header:1});
+
+    // 🔥 ACA enchufás tu nuevo motor
+    const csvProcesado = preprocesarExacto(json);
+
+    // DEBUG opcional
+    descargarCSV(csvProcesado, "debug_preprocesado.csv");
+
+    // 🔁 volvés a tu flujo ORIGINAL
+    Papa.parse(csvProcesado,{
+      header:true,
+      skipEmptyLines:true,
+      complete: res=>procesar(res.data)
+    });
+
+  };
+
+  reader.readAsArrayBuffer(file);
 }
