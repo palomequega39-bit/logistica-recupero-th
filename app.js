@@ -491,7 +491,7 @@ function preprocesarExacto(datos){
   let foja, certificado, actividades;
   let ciudad, expediente, favorito, devolucion, prioridad;
 
-  // === 1. RELLENO (CLAVE)
+  // === 1. RELLENO
   for (let i = 0; i < datos.length; i++) {
     let row = datos[i];
 
@@ -547,7 +547,7 @@ function preprocesarExacto(datos){
     row[20] = excelFechaAJS(row[20]);
   }
 
-  // === 3. OBRA SOCIAL (FILTRO DURO)
+  // === 3. FILTRO OBRA SOCIAL
   for (let i = 0; i < datos.length; i++) {
     let os = procesarObraSocial(datos[i][6]);
 
@@ -572,9 +572,7 @@ function preprocesarExacto(datos){
     }
   }
 
-  // ❌ IMPORTANTE: NO fallback prioridad → Q
-
-  // === 5. ELIMINACIÓN POR BLOQUES
+  // === 5. BLOQUES
   let resultado = [];
   let i = 0;
 
@@ -598,21 +596,20 @@ function preprocesarExacto(datos){
     resultado.push(...bloque);
   }
 
-  // === 6. HEADERS EXACTOS
+  // === 6. HEADERS + COLUMN1
   const nuevosHeaders = [
     "Orden","Remito","FechaR","Apellido","Nombre","Dni","ObraSocial",
     "FechaCX","Producto","Q","Lote","Serie","Vendedor","Medico",
     "MedicoSolicitante","Foja","CI","Actividades","Institucion",
     "Ciudad","Vencimiento","Expediente","Favorito","Devolucion","Prioridad","Column1"
   ];
-   const resultadoConColumna = resultado.map(row => {
-  return [...row, ""];
-});
 
-// Crear sheet
-const ws = XLSX.utils.aoa_to_sheet([nuevosHeaders, ...resultadoConColumna]);
+  const resultadoConColumna = resultado.map(row => [...row, ""]);
 
-return XLSX.utils.sheet_to_csv(ws);
+  const ws = XLSX.utils.aoa_to_sheet([nuevosHeaders, ...resultadoConColumna]);
+
+  return XLSX.utils.sheet_to_csv(ws);
+}
 
 function booleanTexto(valor){
   if (valor === true || String(valor).toLowerCase() === "true") return "VERDADERO";
@@ -645,24 +642,7 @@ function procesarObraSocial(textoOriginal){
 
   return null;
 }
-function pad(n){
-  return n.toString().padStart(2,"0");
-}
 
-function normalizarOS(texto){
-  if(!texto) return "";
-
-  const t = texto.toUpperCase();
-
-  if(t.includes("APROSS")) return "Apross";
-
-  if(t.includes("BSC")){
-    if(t.includes("PAMI")) return "Pami - BSC";
-    if(t.includes("OSECAC")) return "Osecac - BSC";
-  }
-
-  return texto;
-}
 function descargarCSV(csv, nombre){
   const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
