@@ -473,126 +473,120 @@ exportarCSV(procesado);
   reader.readAsArrayBuffer(file);
 }
 
-function preProcesarExcel(rows){
+function preProcesarExcel(rows) {
+    if (rows.length < 2) return [];
 
-  if(rows.length < 2) return [];
+    // El VBA empieza en fila 2 (índice 1 en JS si el header es index 0)
+    // Pero como sheet_to_json con {header:1} trae todo, rows[0] son los encabezados.
+    const datosCrudos = rows.slice(1); 
+    let resultadoIntermedio = [];
+    
+    // Variables para replicación (arrastre de datos)
+    let ref = {};
 
-  rows = rows.slice(1); // quitar encabezado original
-
-  let resultado = [];
-  let ref = {};
-
-  rows.forEach(r=>{
-
-    if(r[0]){ // nueva orden
-      ref = {
-        Orden: r[0],
-        Apellido: r[3],
-        Nombre: r[4],
-        Dni: r[5],
-        ObraSocial: r[6],
-        FechaCX: r[7],
-        Vendedor: r[12],
-        Medico: r[13],
-        MedicoSolicitante: r[14],
-        Foja: r[15],
-        CI: r[16],
-        Actividades: r[17],
-        Institucion: r[18],
-        Ciudad: r[19],
-        Expediente: r[21],
-        Favorito: r[22],
-        Devolucion: r[23],
-        Prioridad: r[24]
-      };
-    }
-
-    let fila = {
-      Orden: r[0] || ref.Orden,
-      Remito: r[1],
-      FechaR: formatFecha(r[2]),
-      Apellido: r[3] || ref.Apellido,
-      Nombre: r[4] || ref.Nombre,
-      Dni: r[5] || ref.Dni,
-      ObraSocial: normalizarOS(r[6] || ref.ObraSocial),
-      FechaCX: formatFecha(r[7] || ref.FechaCX),
-      Producto: r[8],
-      Q: r[9],
-      Lote: r[10],
-      Serie: r[11],
-      Vendedor: r[12] || ref.Vendedor,
-      Medico: r[13] || ref.Medico,
-      MedicoSolicitante: r[14] || ref.MedicoSolicitante,
-      Foja: bool(r[15] || ref.Foja),
-      CI: bool(r[16] || ref.CI),
-      Actividades: r[17] || ref.Actividades,
-      Institucion: r[18] || ref.Institucion,
-      Ciudad: r[19] || ref.Ciudad,
-      Vencimiento: formatFecha(r[20]),
-      Expediente: r[21] || ref.Expediente,
-      Favorito: bool(r[22] || ref.Favorito),
-      Devolucion: bool(r[23] || ref.Devolucion),
-      Prioridad: r[24] || ref.Prioridad,
-      Column1: "" // 👈 compatibilidad VBA
-    };
-
-    // 🔴 FILTRO OBRA SOCIAL (como definiste)
-    const os = (fila.ObraSocial || "").toUpperCase();
-
-    const valido =
-      os.includes("APROSS") ||
-      (os.includes("PAMI") && os.includes("BSC")) ||
-      (os.includes("OSECAC") && os.includes("BSC"));
-
-    if(!valido) return;
-
-    // 🔴 LOGICA Q (igual VBA)
-    if((!fila.Q || fila.Q == 0) && Number(r[24]) > 0){
-      fila.Q = r[24];
-    }
-
-    resultado.push(fila);
-  });
-
-  // =========================
-  // 🔥 LIMPIEZA POR BLOQUE (CLAVE)
-  // =========================
-
-  const grupos = {};
-
-  resultado.forEach(f=>{
-    if(!grupos[f.Orden]) grupos[f.Orden] = [];
-    grupos[f.Orden].push(f);
-  });
-
-  let limpio = [];
-
-  Object.values(grupos).forEach(filas=>{
-
-    const tieneValido = filas.some(f => Number(f.Q) > 0);
-
-    if(tieneValido){
-      filas.forEach(f=>{
-        if(Number(f.Q) > 0 && f.Producto){
-          limpio.push(f);
+    // --- PASO 1: RELLENAR Y NORMALIZAR (Equivalente al primer For i del VBA) ---
+    datosCrudos.forEach((r) => {
+        if (r[0] && r[0].toString().trim() !== "") {
+            // Es una fila nueva de orden, actualizamos la referencia
+            ref = {
+                Orden: r[0],
+                Apellido: r[3],
+                Nombre: r[4],
+                Dni: r[5],
+                ObraSocial: r[6],
+                FechaCX: r[7],
+                Vendedor: r[12],
+                Medico: r[13],
+                MedicoSolicitante: r[14],
+                Foja: r[15],
+                Certificado: r[16], // CI en tu app
+                Actividades: r[17],
+                Direccion: r[18],  // Institucion en tu app
+                Ciudad: r[19],
+                Expediente: r[21],
+                Favorito: r[22],
+                Devolucion: r[23],
+                Prioridad: r[24]
+            };
         }
-      });
-    } else {
-      // dejar solo la primera (cabecera tipo VBA)
-      limpio.push(filas[0]);
-    }
 
-  });
+        // Creamos el objeto fila replicando el "If datos(i, 4) = "" Then datos(i, 4) = apellido"
+        let fila = {
+            Orden: r[0] || ref.Orden,
+            Remito: r[1],
+            FechaR: formatFecha(r[2]),
+            Apellido: r[3] || ref.Apellido,
+            Nombre: r[4] || ref.Nombre,
+            Dni: r[5] || ref.Dni,
+            ObraSocial: normalizarOS_VBA(r[6] || ref.ObraSocial),
+            FechaCX: formatFecha(r[7] || ref.FechaCX),
+            Producto: r[8],
+            Q: r[9], // Columna J
+            Lote: r[10],
+            Serie: r[11],
+            Vendedor: r[12] || ref.Vendedor,
+            Medico: r[13] || ref.Medico,
+            MedicoSolicitante: r[14] || ref.MedicoSolicitante,
+            Foja: r[15] || ref.Foja,
+            CI: r[16] || ref.Certificado,
+            Actividades: r[17] || ref.Actividades,
+            Institucion: r[18] || ref.Direccion,
+            Ciudad: r[19] || ref.Ciudad,
+            Vencimiento: formatFecha(r[20]),
+            Expediente: r[21] || ref.Expediente,
+            Favorito: r[22] || ref.Favorito,
+            Devolucion: r[23] || ref.Devolucion,
+            Prioridad: r[24] || ref.Prioridad
+        };
 
-  return limpio;
+        // --- PASO 2: LÓGICA DE CANTIDAD Q (Columna J e Y) ---
+        let cantJ = fila.Q;
+        let cantY = fila.Prioridad;
+
+        if (!cantJ || cantJ == 0 || cantJ.toString().trim() === "") {
+            if (!isNaN(cantY) && Number(cantY) !== 0) {
+                fila.Q = cantY;
+            }
+        }
+
+        resultadoIntermedio.push(fila);
+    });
+
+    // --- PASO 3: ELIMINAR FILAS (Lógica de Bloques del VBA) ---
+    const grupos = {};
+    resultadoIntermedio.forEach(f => {
+        if (!grupos[f.Orden]) grupos[f.Orden] = [];
+        grupos[f.Orden].push(f);
+    });
+
+    let resultadoFinal = [];
+
+    Object.values(grupos).forEach(bloque => {
+        // ¿Tiene al menos un producto con Q > 0?
+        const tieneCantidadValida = bloque.some(f => !isNaN(f.Q) && Number(f.Q) > 0);
+
+        if (tieneCantidadValida) {
+            // Si tiene cantidad, eliminamos los que están vacíos o en 0 (como el Collection de VBA)
+            bloque.forEach(f => {
+                if (f.Q && Number(f.Q) > 0) {
+                    resultadoFinal.push(f);
+                }
+            });
+        } else {
+            // Si NINGUNO tiene cantidad, el VBA borra desde filaInicio + 1, o sea, deja solo la primera fila
+            resultadoFinal.push(bloque[0]);
+        }
+    });
+
+    return resultadoFinal;
 }
-function bool(v){
-  if(!v) return "FALSO";
 
-  const val = v.toString().toLowerCase();
 
-  if(val === "true" || val === "1" || val === "si") return "VERDADERO";
-  return "FALSO";
+function bool(v) {
+    if (!v) return "FALSO";
+    let s = v.toString().toUpperCase().trim();
+    if (s === "VERDADERO" || s === "SI" || s === "1" || s === "TRUE") return "VERDADERO";
+    return "FALSO";
 }
 
 function formatFecha(v){
@@ -615,19 +609,28 @@ function pad(n){
   return n.toString().padStart(2,"0");
 }
 
-function normalizarOS(texto){
-  if(!texto) return "";
+function normalizarOS_VBA(val) {
+    if (!val) return "";
+    let texto = val.toString().toUpperCase().trim();
 
-  const t = texto.toUpperCase();
+    // Lógica BSC
+    if (texto.includes("BSC") || texto.includes("BOSTON SCIENTIFIC")) {
+        if (texto.includes("PAMI")) return "Pami - BSC";
+        if (texto.includes("OSECAC")) return "Osecac - BSC";
+        return "Otra - BSC";
+    }
+   // Lógica Proper Case (primeras dos palabras)
+    let partes = texto.split(" ").filter(p => p.length > 0);
+    if (partes.length >= 2) {
+        return toProperCase(partes[0]) + " " + toProperCase(partes[1]);
+    } else if (partes.length === 1) {
+        return toProperCase(partes[0]);
+    }
+    return texto;
+}
 
-  if(t.includes("APROSS")) return "Apross";
-
-  if(t.includes("BSC")){
-    if(t.includes("PAMI")) return "Pami - BSC";
-    if(t.includes("OSECAC")) return "Osecac - BSC";
-  }
-
-  return texto;
+function toProperCase(txt) {
+    return txt.charAt(0).toUpperCase() + txt.slice(1).toLowerCase();
 }
 
 function exportarCSV(data, nombre="debug_preprocesado.csv"){
