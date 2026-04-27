@@ -507,6 +507,7 @@ function preProcesarExcel(rows) {
                 Favorito: r[22],
                 Devolucion: r[23],
                 Prioridad: r[24]
+                Column1: ""
             };
         }
 
