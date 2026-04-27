@@ -337,69 +337,63 @@ function actualizarSeleccion() {
    DETALLE
 ========================= */
 
-/* =========================
-   DETALLE
-========================= */
+function mostrar(o) {
+    // 1. Actualización del Título del Panel
+    const panelTitulo = document.querySelector(".panel:nth-of-type(2) .titulo");
+    if (panelTitulo) {
+        const esFav = (o.Favorito === "FAVORITO" || o.Favorito === "SI");
+        const estrellaHtml = esFav ? `<span class="estrella">★</span>` : "";
+        
+        // Estructura: H1 para la Orden + Div para el nombre (estilo slogan)
+        panelTitulo.innerHTML = `
+            <div style="display: flex; flex-direction: column; gap: 2px;">
+                <h1 style="margin: 0; font-size: 1.4rem; font-weight: bold; color: #1e293b;">
+                    Datos de la Orden - ${o.Orden} ${estrellaHtml}
+                </h1>
+                <div style="font-size: 1.1rem; font-weight: normal; color: #475569;">
+                    ${o.Apellido} ${o.Nombre}
+                </div>
+            </div>`;
+    }
 
-function mostrar(o){
-  // 1. Actualizamos el título del panel con Orden y Paciente (H1)
-  const panelTitulo = document.querySelector(".panel:nth-of-type(2) .titulo");
-  if (panelTitulo) {
-    const esFav = (o.Favorito === "FAVORITO" || o.Favorito === "SI");
-    const estrellaHtml = esFav ? `<span class="estrella">★</span>` : "";
-    
-    // Inyectamos el H1 con flexbox para alinear a los extremos
-    panelTitulo.innerHTML = `
-      <h1 style="display: flex; justify-content: space-between; width: 100%; margin: 0; font-size: 1.2rem;">
-        <span>Datos de la Orden - ${o.Orden}</span>
-        <span style="font-weight: normal;">${o.Apellido} ${o.Nombre}${estrellaHtml}</span>
-      </h1>`;
-  }
-   
-  const cab = document.getElementById("cabecera");
+    const cab = document.getElementById("cabecera");
 
-  // 2. Renderizado de campos (Nueva estructura solicitada)
-  // Línea 1: Fecha CX - DNI - Obra - Institución
-  // Línea 2: Médico - Solicitante - Vendedor
-  // Línea 3: Foja - CI - Devolución
-  // Línea 4: Actividades
-  
-  cab.innerHTML = `
-    <div class="campo"><b>Fecha CX:</b> ${o.FechaCX || ""}</div>
-    <div class="campo"><b>DNI:</b> ${o.Dni || ""}</div>
-    <div class="campo"><b>Obra:</b> ${o.ObraSocial || ""}</div>
-    <div class="campo"><b>Institución:</b> ${o.Institucion || ""}</div>
-    
-    <div class="campo"><b>Médico:</b> ${o.Medico || ""}</div>
-    <div class="campo"><b>Solicitante:</b> ${o.MedicoSolicitante || ""}</div>
-    <div class="campo" style="grid-column: span 2;"><b>Vendedor:</b> ${o.Vendedor || ""}</div>
-    
-    <div class="campo"><b>Foja:</b> ${boolTag(o.Foja)}</div>
-    <div class="campo"><b>CI:</b> ${boolTag(o.CI)}</div>
-    <div class="campo" style="grid-column: span 2;"><b>Devolución:</b> ${boolTag(o.Devolucion,"dev")}</div>
+    // 2. Renderizado de campos (Nueva estructura)
+    // Línea 1: Fecha CX - DNI - Obra - Institución
+    cab.innerHTML = `
+        <div class="campo"><b>Fecha CX:</b> ${o.FechaCX || ""}</div>
+        <div class="campo"><b>DNI:</b> ${o.Dni || ""}</div>
+        <div class="campo"><b>Obra:</b> ${o.ObraSocial || ""}</div>
+        <div class="campo"><b>Institución:</b> ${o.Institucion || ""}</div>
+        
+        <div class="campo"><b>Médico:</b> ${o.Medico || ""}</div>
+        <div class="campo"><b>Solicitante:</b> ${o.MedicoSolicitante || ""}</div>
+        <div class="campo" style="grid-column: span 2;"><b>Vendedor:</b> ${o.Vendedor || ""}</div>
+        
+        <div class="campo"><b>Foja:</b> ${boolTag(o.Foja)}</div>
+        <div class="campo"><b>CI:</b> ${boolTag(o.CI)}</div>
+        <div class="campo" style="grid-column: span 2;"><b>Devolución:</b> ${boolTag(o.Devolucion, "dev")}</div>
 
-    <div class="campo" style="grid-column: span 4; margin-top: 8px; white-space: normal; border-top: 1px solid #eee; pt-5">
-      <b>Actividades:</b> ${o.Actividades || ""}
-    </div>
-  `;
-
-  // Detalle de productos (esto se mantiene igual)
-  const body=document.getElementById("detalleBody");
-  body.innerHTML="";
-
-  o.detalles.forEach(d=>{
-    body.innerHTML+=`
-      <tr>
-        <td>${d.Remito||""}</td>
-        <td>${d.FechaR||""}</td>
-        <td>${d.Producto||""}</td>
-        <td>${d.Q||""}</td>
-        <td>${d.Lote||""}</td>
-        <td>${d.Serie||""}</td>
-        <td>${d.Vencimiento||""}</td>
-      </tr>
+        <div class="campo" style="grid-column: span 4; margin-top: 8px; white-space: normal; border-top: 1px solid #eee; padding-top: 8px;">
+            <b>Actividades:</b> ${o.Actividades || ""}
+        </div>
     `;
-  });
+
+    // 3. Detalle de productos
+    const body = document.getElementById("detalleBody");
+    body.innerHTML = "";
+    o.detalles.forEach(d => {
+        body.innerHTML += `
+            <tr>
+                <td>${d.Remito || ""}</td>
+                <td>${d.FechaR || ""}</td>
+                <td>${d.Producto || ""}</td>
+                <td>${d.Q || ""}</td>
+                <td>${d.Lote || ""}</td>
+                <td>${d.Serie || ""}</td>
+                <td>${d.Vencimiento || ""}</td>
+            </tr>`;
+    });
 }
 
 /* =========================
