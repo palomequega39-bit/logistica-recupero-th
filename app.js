@@ -485,12 +485,24 @@ function preProcesarExcel(rows) {
     datosCrudos.forEach((r) => {
         if (r[0] && r[0].toString().trim() !== "") {
             ref = {
-                Orden: r[0], Apellido: r[3], Nombre: r[4], Dni: r[5],
-                ObraSocial: r[6], FechaCX: r[7], Vendedor: r[12],
-                Medico: r[13], MedicoSolicitante: r[14], Foja: r[15],
-                Certificado: r[16], Actividades: r[17], Direccion: r[18],
-                Ciudad: r[19], Expediente: r[21], Favorito: r[22],
-                Devolucion: r[23], Prioridad: r[24]
+                Orden: r[0], 
+                Apellido: r[3], 
+                Nombre: r[4], 
+                Dni: r[5],
+                ObraSocial: r[6], 
+                FechaCX: r[7], 
+                Vendedor: r[12],
+                Medico: r[13], 
+                MedicoSolicitante: r[14], 
+                Foja: r[15],
+                Certificado: r[16], 
+                Actividades: r[17], 
+                Direccion: r[18],
+                Ciudad: r[19], 
+                Expediente: r[21], 
+                Favorito: r[22],
+                Devolucion: r[23], 
+                Prioridad: r[24]
             };
         }
 
@@ -510,17 +522,19 @@ function preProcesarExcel(rows) {
             Vendedor: r[12] || ref.Vendedor,
             Medico: r[13] || ref.Medico,
             MedicoSolicitante: r[14] || ref.MedicoSolicitante,
-            Foja: r[15] || ref.Foja,
-            CI: r[16] || ref.Certificado,
+            // 🔴 APLICAMOS LA FUNCIÓN bool() AQUÍ PARA NORMALIZAR A VERDADERO/FALSO
+            Foja: bool(r[15] || ref.Foja),
+            CI: bool(r[16] || ref.Certificado),
+            Devolucion: bool(r[23] || ref.Devolucion),
+            
             Actividades: r[17] || ref.Actividades,
             Institucion: r[18] || ref.Direccion,
             Ciudad: r[19] || ref.Ciudad,
             Vencimiento: formatFecha(r[20]),
             Expediente: r[21] || ref.Expediente,
             Favorito: r[22] || ref.Favorito,
-            Devolucion: r[23] || ref.Devolucion,
             Prioridad: r[24] || ref.Prioridad,
-            Column1: "" // <-- AGREGADO AQUÍ PARA QUE APAREZCA EN EL CSV
+            Column1: "" 
         };
 
         // Lógica de cantidad Q
@@ -533,7 +547,7 @@ function preProcesarExcel(rows) {
         resultadoIntermedio.push(fila);
     });
 
-    // ... (resto del código de agrupamiento y retorno igual a como lo tienes)
+    // Agrupamiento por Orden
     const grupos = {};
     resultadoIntermedio.forEach(f => {
         if (!grupos[f.Orden]) grupos[f.Orden] = [];
@@ -544,7 +558,9 @@ function preProcesarExcel(rows) {
     Object.values(grupos).forEach(bloque => {
         const tieneCantidadValida = bloque.some(f => !isNaN(f.Q) && Number(f.Q) > 0);
         if (tieneCantidadValida) {
-            bloque.forEach(f => { if (f.Q && Number(f.Q) > 0) resultadoFinal.push(f); });
+            bloque.forEach(f => { 
+                if (f.Q && Number(f.Q) > 0) resultadoFinal.push(f); 
+            });
         } else {
             resultadoFinal.push(bloque[0]);
         }
