@@ -79,8 +79,10 @@
   <main class="contenido">
 
     <section class="panel">
-      <div class="titulo">Órdenes</div>
-
+      <div class="titulo header-flex">
+    <span>Órdenes</span>
+    <button id="btnExportarPDF" class="btn-exportar-verde">Exportar PDF</button>
+  </div>
       <div class="tabla-header">
         <input type="checkbox" id="selectAll" onclick="toggleSeleccionarTodos(event)">
         <span onclick="sortBy('Orden')">Orden</span>
