@@ -148,10 +148,10 @@ async function exportarDetallePDF(ordenes, seleccionados) {
             y += (textLines.length * 3) + 1;
         }
 
-        y += 2; // Espacio entre órdenes
+        y += 1; // Espacio entre órdenes
         doc.setDrawColor(245, 245, 245);
         doc.line(margin, y, 195, y);
-        y += 4; 
+        y += 2; 
     });
 
     // --- PIE DE PÁGINA ---
