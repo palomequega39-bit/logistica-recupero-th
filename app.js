@@ -121,10 +121,19 @@ function procesar(data){
 function cargarFiltros(){
   fill("filtroPrioridad","Prioridad");
   fill("filtroCiudad","Ciudad");
+  fill("filtroVendedor", "Vendedor"); // Nuevo
+  fill("filtroMedico", "Medico");     // Nuevo
 
   fillBool("filtroDevolucion");
   fillBool("filtroFoja");
   fillBool("filtroCI");
+  
+  // Nuevo Filtro Favoritos
+  document.getElementById("filtroFavorito").innerHTML = `
+    <option value="">Todos</option>
+    <option value="SI">Solo Favoritos</option>
+    <option value="NO">Normales</option>
+  `;
 
   fillFecha();
   cargarInstituciones();
@@ -160,49 +169,55 @@ function fillFecha(){
 ========================= */
 
 function aplicarFiltros(){
+  const f = id => document.getElementById(id).value;
+  const texto = document.getElementById("buscadorGlobal").value.toLowerCase();
 
-  const f=id=>document.getElementById(id).value;
-  const texto=document.getElementById("buscadorGlobal").value.toLowerCase();
-
-  const hoy=new Date();
+  const hoy = new Date();
   hoy.setHours(0,0,0,0);
 
-  filtradas=ordenes.filter(o=>{
+  filtradas = ordenes.filter(o => {
+    // Filtros de Selección Simple
+    if(f("filtroInstitucion") && o.Institucion !== f("filtroInstitucion")) return false;
+    if(f("filtroCiudad") && o.Ciudad !== f("filtroCiudad")) return false;
+    if(f("filtroPrioridad") && o.Prioridad !== f("filtroPrioridad")) return false;
+    if(f("filtroVendedor") && o.Vendedor !== f("filtroVendedor")) return false;
+    if(f("filtroMedico") && o.Medico !== f("filtroMedico")) return false;
 
-    if(f("filtroInstitucion") && o.Institucion!==f("filtroInstitucion")) return false;
-    if(f("filtroCiudad") && o.Ciudad!==f("filtroCiudad")) return false;
-    if(f("filtroPrioridad") && o.Prioridad!==f("filtroPrioridad")) return false;
-
-    if(f("filtroDevolucion") && o.Devolucion!==f("filtroDevolucion")) return false;
-    if(f("filtroFoja") && o.Foja!==f("filtroFoja")) return false;
-    if(f("filtroCI") && o.CI!==f("filtroCI")) return false;
-
-    if(f("filtroFecha")){
-      const fecha=new Date(o.FechaCX||"1900-01-01");
-      fecha.setHours(0,0,0,0);
-
-      if(f("filtroFecha")==="realizadas" && fecha>=hoy) return false;
-      if(f("filtroFecha")==="hoy" && fecha.getTime()!==hoy.getTime()) return false;
-      if(f("filtroFecha")==="pendientes" && fecha<hoy) return false;
+    // Filtros Booleanos
+    if(f("filtroDevolucion") && o.Devolucion !== f("filtroDevolucion")) return false;
+    if(f("filtroFoja") && o.Foja !== f("filtroFoja")) return false;
+    if(f("filtroCI") && o.CI !== f("filtroCI")) return false;
+    
+    // Filtro Favoritos
+    if(f("filtroFavorito")){
+       const esFav = (o.Favorito === "FAVORITO" || o.Favorito === "SI");
+       if(f("filtroFavorito") === "SI" && !esFav) return false;
+       if(f("filtroFavorito") === "NO" && esFav) return false;
     }
 
-    if(texto){
-      const combinado=`
-        ${o.Orden}
-        ${o.Apellido}
-        ${o.Nombre}
-        ${o.Dni}
-        ${o.ObraSocial}
-        ${o.Institucion}
-      `.toLowerCase();
+    // Filtro de Fechas (CORREGIDO)
+    if(f("filtroFecha")){
+      // Convertimos DD/MM/YYYY a un objeto Date real para comparar
+      const partes = o.FechaCX.split("/");
+      if(partes.length !== 3) return false;
+      const fechaCX = new Date(partes[2], partes[1] - 1, partes[0]);
+      fechaCX.setHours(0,0,0,0);
 
+      if(f("filtroFecha") === "realizadas" && fechaCX >= hoy) return false;
+      if(f("filtroFecha") === "hoy" && fechaCX.getTime() !== hoy.getTime()) return false;
+      if(f("filtroFecha") === "pendientes" && fechaCX < hoy) return false;
+    }
+
+    // Buscador Global
+    if(texto){
+      const combinado = `${o.Orden} ${o.Apellido} ${o.Nombre} ${o.Dni} ${o.ObraSocial} ${o.Institucion}`.toLowerCase();
       if(!combinado.includes(texto)) return false;
     }
 
     return true;
   });
 
-  indiceSeleccionado=-1;
+  indiceSeleccionado = -1;
   renderLista();
 }
 
@@ -224,9 +239,11 @@ function renderLista(){
         valA = (a.Apellido + " " + a.Nombre).toLowerCase();
         valB = (b.Apellido + " " + b.Nombre).toLowerCase();
       }
-      else if(sortField === "FechaCX"){
-        valA = new Date(a.FechaCX || "1900-01-01");
-        valB = new Date(b.FechaCX || "1900-01-01");
+     else if(sortField === "FechaCX"){
+        const pA = (a.FechaCX || "01/01/1900").split("/");
+        const pB = (b.FechaCX || "01/01/1900").split("/");
+        valA = new Date(pA[2], pA[1]-1, pA[0]);
+        valB = new Date(pB[2], pB[1]-1, pB[0]);
       }
       else{
         valA = (a[sortField] || "").toString().toLowerCase();
@@ -348,19 +365,22 @@ function mostrar(o){
    TAGS
 ========================= */
 
-function boolTag(val,tipo="normal"){
-  const v=(val||"").toUpperCase();
+function boolTag(val, tipo="normal"){
+  const v = (val || "").toUpperCase();
 
-  if(v==="VERDADERO"){
-    if(tipo==="dev") return `<span class="tag dev">SI</span>`;
-    return `<span class="tag si">SI</span>`;
+  if(v === "VERDADERO"){
+    if(tipo === "dev") return `<span class="tag dev">SI</span>`; // Naranja
+    return `<span class="tag si">SI</span>`; // Verde
   }
 
-  if(v==="FALSO") return `<span class="tag no">NO</span>`;
+  if(v === "FALSO") {
+    // Si la devolución es NO, ahora usamos el estilo verde (si)
+    if(tipo === "dev") return `<span class="tag si">NO</span>`; 
+    return `<span class="tag no">NO</span>`; // Rojo para los demás
+  }
 
   return "";
 }
-
 /* =========================
    INSTITUCIONES
 ========================= */
