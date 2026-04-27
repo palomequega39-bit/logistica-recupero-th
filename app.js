@@ -267,34 +267,32 @@ function renderLista(){
   }
 
   filtradas.forEach((o, i) => {
-        const fila = document.createElement("div");
-        
-        // Verificamos si es favorito
-        const esFav = o.Favorito === "FAVORITO" || o.Favorito === "SI";
-        
-        // Añadimos la clase 'favorito' si corresponde
-        fila.className = `fila ${esFav ? 'favorito' : ''}`;
+    const fila = document.createElement("div");
+    const esFav = o.Favorito === "FAVORITO" || o.Favorito === "SI";
+    fila.className = `fila ${esFav ? 'favorito' : ''}`;
 
-        // Añadimos la estrella antes del número de orden si es favorito
-        const estrellaHtml = esFav ? `<span class="estrella">★</span>` : "";
-       // Verificamos si esta orden ya estaba seleccionada (por si filtramos y volvemos)
-         const estaChequeado = seleccionados.has(o.Orden) ? "checked" : "";
-     
-        fila.innerHTML = `
-            <input type="checkbox" class="check-orden" data-id="${o.Orden}" ${estaChequeado} 
-            onclick="handleCheck(event, '${o.Orden}')">
-            <span>${o.Orden}</span>
-            <span title="${o.Apellido} ${o.Nombre}">${o.Apellido} ${o.Nombre}</span>
-            <span>${o.Dni}</span>
-            <span>${o.ObraSocial}</span>
-            <span>${o.FechaCX || ""}</span>
-            <span title="${o.Institucion}">${o.Institucion}</span>
-            <span>${o.Prioridad}</span>
-        `;
+    // Verificamos si esta orden ya estaba seleccionada
+    const estaChequeado = seleccionados.has(o.Orden) ? "checked" : "";
 
-    fila.onclick=()=>{
-      indiceSeleccionado=i;
-      actualizarSeleccion();
+    // IMPORTANTE: El input tipo checkbox DEBE ser el primer elemento 
+    fila.innerHTML = `
+      <input type="checkbox" class="check-orden" data-id="${o.Orden}" ${estaChequeado} 
+             onclick="handleCheck(event, '${o.Orden}')">
+      <span>${o.Orden}</span>
+      <span title="${o.Apellido} ${o.Nombre}">${o.Apellido} ${o.Nombre}</span>
+      <span>${o.Dni}</span>
+      <span>${o.ObraSocial}</span>
+      <span>${o.FechaCX || ""}</span>
+      <span title="${o.Institucion}">${o.Institucion}</span>
+      <span>${o.Prioridad}</span>
+    `;
+
+    fila.onclick = (e) => {
+      // Evitamos que se dispare si se hizo click directamente en el checkbox 
+      if (e.target.type !== 'checkbox') {
+        indiceSeleccionado = i;
+        actualizarSeleccion();
+      }
     };
 
     cont.appendChild(fila);
