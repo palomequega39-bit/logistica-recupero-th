@@ -104,7 +104,7 @@ function procesar(data){
     r.Foja = r.Foja || "";
     r.CI = r.CI || "";
     r.Favorito = (r.Favorito || "").toUpperCase();
-
+   
     if(!map[r.Orden]){
       map[r.Orden] = {...r, detalles:[]};
     }
@@ -368,7 +368,8 @@ function mostrar(o){
     <div class="campo"><b>DNI:</b> ${o.Dni || ""}</div>
     <div class="campo"><b>Obra Social:</b> ${o.ObraSocial || ""}</div>
     <div class="campo"><b>Institución:</b> ${o.Institucion || ""}</div>
-    
+
+    <div class="campo"><b>Expte:</b> ${o.Expediente || ""}</div>
     <div class="campo"><b>Médico:</b> ${o.Medico || ""}</div>
     <div class="campo"><b>Solicitante:</b> ${o.MedicoSolicitante || ""}</div>
     <div class="campo" style="grid-column: span 2;"><b>Vendedor:</b> ${o.Vendedor || ""}</div>
