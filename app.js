@@ -9,12 +9,11 @@ let ordenAsc = true;
 ========================= */
 
 document.getElementById("btnFiltrar").onclick = aplicarFiltros;
-
 document.getElementById("buscadorGlobal")
   .addEventListener("input", aplicarFiltros);
 
 /* =========================
-   DROPZONE (NUEVO)
+   DROPZONE
 ========================= */
 
 const dz = document.getElementById("dropzone");
@@ -64,7 +63,7 @@ function handleFile(file){
 
     const csvProcesado = preprocesarExacto(raw);
 
-    // 🔥 DEBUG opcional
+    // DEBUG opcional
     descargarCSV(csvProcesado, "debug_preprocesado.csv");
 
     Papa.parse(csvProcesado, {
@@ -76,422 +75,68 @@ function handleFile(file){
 
   reader.readAsArrayBuffer(file);
 }
-/* =========================
-   DATA
-========================= */
-
-function procesar(data){
-
-  const map = {};
-
-  data.forEach(r=>{
-
-    // 🔴 NORMALIZAR HEADERS (BOM + espacios)
-    const limpio = {};
-    Object.keys(r).forEach(k=>{
-      const key = k.replace(/\uFEFF/g, "").trim();
-      limpio[key] = r[k];
-    });
-
-    r = limpio;
-
-    if(!r.Orden) return;
-
-    r.Paciente = (r.Apellido || "") + " " + (r.Nombre || "");
-    r.Institucion = r.Institucion || "";
-    r.Ciudad = r.Ciudad || "";
-    r.Prioridad = r.Prioridad || "";
-    r.Devolucion = r.Devolucion || "";
-    r.Foja = r.Foja || "";
-    r.CI = r.CI || "";
-    r.Favorito = (r.Favorito || "").toUpperCase();
-
-    if(!map[r.Orden]){
-      map[r.Orden] = {...r, detalles:[]};
-    }
-
-    map[r.Orden].detalles.push(r);
-  });
-
-  ordenes = Object.values(map);
-
-  console.log("Órdenes cargadas:", ordenes.length);
-
-  cargarFiltros();
-  aplicarFiltros();
-}
 
 /* =========================
-   FILTROS
+   HELPERS (GLOBAL)
 ========================= */
 
-function cargarFiltros(){
-  fill("filtroPrioridad","Prioridad");
-  fill("filtroCiudad","Ciudad");
-
-  fillBool("filtroDevolucion");
-  fillBool("filtroFoja");
-  fillBool("filtroCI");
-
-  fillFecha();
-  cargarInstituciones();
+function booleanTexto(valor){
+  if (valor === true || String(valor).toLowerCase() === "true") return "VERDADERO";
+  if (valor === false || String(valor).toLowerCase() === "false") return "FALSO";
+  return valor;
 }
 
-function fill(id,campo){
-  const sel=document.getElementById(id);
-  const vals=[...new Set(ordenes.map(o=>o[campo]).filter(Boolean))];
+function excelFechaAJS(valor){
+  if (!valor) return "";
 
-  sel.innerHTML=`<option value="">Todos</option>`+
-    vals.map(v=>`<option>${v}</option>`).join("");
-}
-
-function fillBool(id){
-  document.getElementById(id).innerHTML=`
-    <option value="">Todos</option>
-    <option value="VERDADERO">SI</option>
-    <option value="FALSO">NO</option>
-  `;
-}
-
-function fillFecha(){
-  document.getElementById("filtroFecha").innerHTML=`
-    <option value="">Todas</option>
-    <option value="realizadas">Realizadas</option>
-    <option value="hoy">Hoy</option>
-    <option value="pendientes">Sin realizar</option>
-  `;
-}
-
-/* =========================
-   FILTRAR
-========================= */
-
-function aplicarFiltros(){
-
-  const f=id=>document.getElementById(id).value;
-  const texto=document.getElementById("buscadorGlobal").value.toLowerCase();
-
-  const hoy=new Date();
-  hoy.setHours(0,0,0,0);
-
-  filtradas=ordenes.filter(o=>{
-
-    if(f("filtroInstitucion") && o.Institucion!==f("filtroInstitucion")) return false;
-    if(f("filtroCiudad") && o.Ciudad!==f("filtroCiudad")) return false;
-    if(f("filtroPrioridad") && o.Prioridad!==f("filtroPrioridad")) return false;
-
-    if(f("filtroDevolucion") && o.Devolucion!==f("filtroDevolucion")) return false;
-    if(f("filtroFoja") && o.Foja!==f("filtroFoja")) return false;
-    if(f("filtroCI") && o.CI!==f("filtroCI")) return false;
-
-    if(f("filtroFecha")){
-      const fecha=new Date(o.FechaCX||"1900-01-01");
-      fecha.setHours(0,0,0,0);
-
-      if(f("filtroFecha")==="realizadas" && fecha>=hoy) return false;
-      if(f("filtroFecha")==="hoy" && fecha.getTime()!==hoy.getTime()) return false;
-      if(f("filtroFecha")==="pendientes" && fecha<hoy) return false;
-    }
-
-    if(texto){
-      const combinado=`
-        ${o.Orden}
-        ${o.Apellido}
-        ${o.Nombre}
-        ${o.Dni}
-        ${o.ObraSocial}
-        ${o.Institucion}
-      `.toLowerCase();
-
-      if(!combinado.includes(texto)) return false;
-    }
-
-    return true;
-  });
-
-  indiceSeleccionado=-1;
-  renderLista();
-}
-
-/* =========================
-   LISTA
-========================= */
-
-function renderLista(){
-
-  const cont=document.getElementById("ordenesList");
-  cont.innerHTML="";
-
-  if(sortField){
-    filtradas.sort((a,b)=>{
-
-      let valA, valB;
-
-      if(sortField === "Paciente"){
-        valA = (a.Apellido + " " + a.Nombre).toLowerCase();
-        valB = (b.Apellido + " " + b.Nombre).toLowerCase();
-      }
-      else if(sortField === "FechaCX"){
-        valA = new Date(a.FechaCX || "1900-01-01");
-        valB = new Date(b.FechaCX || "1900-01-01");
-      }
-      else{
-        valA = (a[sortField] || "").toString().toLowerCase();
-        valB = (b[sortField] || "").toString().toLowerCase();
-      }
-
-      if(valA < valB) return ordenAsc ? -1 : 1;
-      if(valA > valB) return ordenAsc ? 1 : -1;
-      return 0;
-    });
-
-     
+  if (typeof valor === "number") {
+    const fecha = new Date((valor - 25569) * 86400 * 1000);
+    return fecha.toLocaleDateString("es-AR");
   }
 
-  filtradas.forEach((o, i) => {
-        const fila = document.createElement("div");
-        
-        // Verificamos si es favorito
-        const esFav = o.Favorito === "FAVORITO" || o.Favorito === "SI";
-        
-        // Añadimos la clase 'favorito' si corresponde
-        fila.className = `fila ${esFav ? 'favorito' : ''}`;
-
-        // Añadimos la estrella antes del número de orden si es favorito
-        const estrellaHtml = esFav ? `<span class="estrella">★</span>` : "";
-
-        fila.innerHTML = `
-            <span>${estrellaHtml}${o.Orden}</span>
-            <span title="${o.Apellido} ${o.Nombre}">${o.Apellido} ${o.Nombre}</span>
-            <span>${o.Dni}</span>
-            <span>${o.ObraSocial}</span>
-            <span>${o.FechaCX || ""}</span>
-            <span title="${o.Institucion}">${o.Institucion}</span>
-            <span>${o.Prioridad}</span>
-        `;
-
-    fila.onclick=()=>{
-      indiceSeleccionado=i;
-      actualizarSeleccion();
-    };
-
-    cont.appendChild(fila);
-  });
+  return valor;
 }
 
-/* =========================
-   SELECCION
-========================= */
+function procesarObraSocial(textoOriginal){
+  let texto = (textoOriginal || "").toUpperCase().trim();
 
-document.addEventListener("keydown",e=>{
-  if(e.key==="ArrowDown") indiceSeleccionado++;
-  if(e.key==="ArrowUp") indiceSeleccionado--;
-  actualizarSeleccion();
-});
+  if (!texto) return null;
 
-function actualizarSeleccion(){
+  if (texto.includes("APROSS")) return "Apross";
 
-  const filas=document.querySelectorAll(".fila");
-  filas.forEach(f=>f.classList.remove("active"));
-
-  const fila=filas[indiceSeleccionado];
-  if(!fila) return;
-
-  fila.classList.add("active");
-
-  mostrar(filtradas[indiceSeleccionado]);
-
-  fila.scrollIntoView({block:"nearest"});
-}
-
-/* =========================
-   DETALLE
-========================= */
-
-function mostrar(o){
-
-   const cab = document.getElementById("cabecera");
-   const estrellaTitulo = (o.Favorito === "FAVORITO" || o.Favorito === "SI") ? " ★" : "";
-  cab.innerHTML = `
-    <div class="campo"><b>Paciente:</b> ${o.Apellido} ${o.Nombre}${estrellaTitulo}</div>
-    <div class="campo"><b>DNI:</b> ${o.Dni}</div>
-    <div class="campo"><b>Obra:</b> ${o.ObraSocial}</div>
-    <div class="campo"><b>Institución:</b> ${o.Institucion}</div>
-    <div class="campo"><b>Fecha CX:</b> ${o.FechaCX}</div>
-    <div class="campo"><b>Médico:</b> ${o.Medico}</div>
-    <div class="campo"><b>Solicitante:</b> ${o.MedicoSolicitante}</div>
-    <div class="campo"><b>Vendedor:</b> ${o.Vendedor}</div>
-
-    <div class="campo"><b>Foja:</b> ${boolTag(o.Foja)}</div>
-    <div class="campo"><b>CI:</b> ${boolTag(o.CI)}</div>
-    <div class="campo"><b>Devolución:</b> ${boolTag(o.Devolucion,"dev")}</div>
-  `;
-
-  cab.innerHTML += `
-    <div class="campo" style="grid-column: span 4;">
-      <b>Actividades:</b> ${o.Actividades || ""}
-    </div>
-  `;
-
-  const body=document.getElementById("detalleBody");
-  body.innerHTML="";
-
-  o.detalles.forEach(d=>{
-    body.innerHTML+=`
-      <tr>
-        <td>${d.Remito||""}</td>
-        <td>${d.FechaR||""}</td>
-        <td>${d.Producto||""}</td>
-        <td>${d.Q||""}</td>
-        <td>${d.Lote||""}</td>
-        <td>${d.Serie||""}</td>
-        <td>${d.Vencimiento||""}</td>
-      </tr>
-    `;
-  });
-}
-
-/* =========================
-   TAGS
-========================= */
-
-function boolTag(val,tipo="normal"){
-  const v=(val||"").toUpperCase();
-
-  if(v==="VERDADERO"){
-    if(tipo==="dev") return `<span class="tag dev">SI</span>`;
-    return `<span class="tag si">SI</span>`;
+  if (texto.includes("BSC") || texto.includes("BOSTON SCIENTIFIC")) {
+    if (texto.includes("PAMI")) return "Pami - BSC";
+    if (texto.includes("OSECAC")) return "Osecac - BSC";
   }
 
-  if(v==="FALSO") return `<span class="tag no">NO</span>`;
+  return null;
+}
 
-  return "";
+function descargarCSV(csv, nombre){
+  const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = nombre;
+  a.click();
 }
 
 /* =========================
-   INSTITUCIONES
+   PREPROCESO EXACTO (CLAVE)
 ========================= */
-
-function cargarInstituciones(){
-
-  const input=document.getElementById("filtroInstitucion");
-  const lista=document.getElementById("listaInstituciones");
-
-  const valores=[...new Set(ordenes.map(o=>o.Institucion).filter(Boolean))];
-
-  input.oninput=()=>{
-    const texto=input.value.toLowerCase();
-
-    lista.innerHTML=valores
-      .filter(v=>v.toLowerCase().includes(texto))
-      .slice(0,50)
-      .map(v=>`<div class="item-inst">${v}</div>`)
-      .join("");
-  };
-
-  lista.onclick=e=>{
-    if(e.target.classList.contains("item-inst")){
-      input.value=e.target.textContent;
-      lista.innerHTML="";
-      aplicarFiltros();
-    }
-  };
-}
-
-/* =========================
-   SORT
-========================= */
-
-function sortBy(field){
-
-  if(sortField === field){
-    ordenAsc = !ordenAsc;
-  } else {
-    sortField = field;
-    ordenAsc = true;
-  }
-
-  document.querySelectorAll(".tabla-header span").forEach(s=>{
-    s.classList.remove("active","asc","desc");
-  });
-
-  document.querySelectorAll(".tabla-header span").forEach(h=>{
-    if(h.getAttribute("onclick").includes(field)){
-      h.classList.add("active");
-      h.classList.add(ordenAsc ? "asc" : "desc");
-    }
-  });
-
-  renderLista();
-}
-
-/* =========================
-   UI HELPERS (NUEVO)
-========================= */
-
-function configurarPlaceholders() {
-    const buscadorGlobal = document.getElementById("buscadorGlobal");
-    
-    // Estos son los campos que definiste en tu función aplicarFiltros()
-    const camposPermitidos = ["Orden", "Apellido", "Nombre", "DNI", "Obra Social", "Institución"];
-    
-    // Unimos los campos con una coma y los ponemos en el placeholder
-    buscadorGlobal.placeholder = "Buscar por: " + camposPermitidos.join(", ") + "...";
-}
-
-// Llamamos a la función al cargar el script
-configurarPlaceholders();
-
-function leerExcel(file){
-
-  const reader = new FileReader();
-
-  reader.onload = function(e){
-
-    const data = new Uint8Array(e.target.result);
-    const workbook = XLSX.read(data, {type: "array"});
-
-    const sheet = workbook.Sheets[workbook.SheetNames[0]];
-
-    // Convertimos a array plano
-    let json = XLSX.utils.sheet_to_json(sheet, {header:1});
-   
-    // 🔥 acá entra tu magia
-    const procesado = preProcesarExcel(json);
-     
-   // 👇 EXPORTAR DEBUG
-exportarCSV(procesado);
-     
-    // Convertimos a CSV
-    const csv = Papa.unparse(procesado, {
-      delimiter: ";"
-    });
-
-    // Volvemos a tu flujo actual
-    Papa.parse(csv,{
-      header:true,
-      delimiter:";",
-      skipEmptyLines:true,
-      complete: res=>procesar(res.data)
-    });
-
-  };
-
-  reader.readAsArrayBuffer(file);
-}
 
 function preprocesarExacto(datos){
 
-  let headers = datos[0];
   datos = datos.slice(1);
 
-  let refOrden, apellido, nombre, direccion;
+  let refOrden, apellido, nombre;
   let dni, cliente, fechaCirugia;
   let vendedor, medico, medicoSolicitante;
   let foja, certificado, actividades;
-  let ciudad, expediente, favorito, devolucion, prioridad;
+  let direccion, ciudad, expediente, favorito, devolucion, prioridad;
 
-  // === 1. RELLENO
+  // 1. Relleno
   for (let i = 0; i < datos.length; i++) {
     let row = datos[i];
 
@@ -536,31 +181,25 @@ function preprocesarExacto(datos){
     }
   }
 
-  // === 2. BOOLEANOS + FECHAS
+  // 2. Booleanos + fechas
   for (let i = 0; i < datos.length; i++) {
     let row = datos[i];
 
     row[22] = booleanTexto(row[22]);
-
     row[2] = excelFechaAJS(row[2]);
     row[7] = excelFechaAJS(row[7]);
     row[20] = excelFechaAJS(row[20]);
   }
 
-  // === 3. FILTRO OBRA SOCIAL
-  for (let i = 0; i < datos.length; i++) {
-    let os = procesarObraSocial(datos[i][6]);
+  // 3. Obra social
+  datos = datos.filter(row => {
+    let os = procesarObraSocial(row[6]);
+    if (!os) return false;
+    row[6] = os;
+    return true;
+  });
 
-    if (!os) {
-      datos[i]._eliminar = true;
-    } else {
-      datos[i][6] = os;
-    }
-  }
-
-  datos = datos.filter(r => !r._eliminar);
-
-  // === 4. J ← Y
+  // 4. J ← Y
   for (let i = 0; i < datos.length; i++) {
     let j = datos[i][9];
     let y = datos[i][24];
@@ -572,7 +211,7 @@ function preprocesarExacto(datos){
     }
   }
 
-  // === 5. BLOQUES
+  // 5. Bloques
   let resultado = [];
   let i = 0;
 
@@ -596,59 +235,17 @@ function preprocesarExacto(datos){
     resultado.push(...bloque);
   }
 
-  // === 6. HEADERS + COLUMN1
-  const nuevosHeaders = [
+  // 6. Headers + Column1
+  const headers = [
     "Orden","Remito","FechaR","Apellido","Nombre","Dni","ObraSocial",
     "FechaCX","Producto","Q","Lote","Serie","Vendedor","Medico",
     "MedicoSolicitante","Foja","CI","Actividades","Institucion",
     "Ciudad","Vencimiento","Expediente","Favorito","Devolucion","Prioridad","Column1"
   ];
 
-  const resultadoConColumna = resultado.map(row => [...row, ""]);
+  const resultadoFinal = resultado.map(r => [...r, ""]);
 
-  const ws = XLSX.utils.aoa_to_sheet([nuevosHeaders, ...resultadoConColumna]);
+  const ws = XLSX.utils.aoa_to_sheet([headers, ...resultadoFinal]);
 
   return XLSX.utils.sheet_to_csv(ws);
-}
-
-function booleanTexto(valor){
-  if (valor === true || String(valor).toLowerCase() === "true") return "VERDADERO";
-  if (valor === false || String(valor).toLowerCase() === "false") return "FALSO";
-  return valor;
-}
-
-function excelFechaAJS(valor){
-  if (!valor) return "";
-
-  if (typeof valor === "number") {
-    const fecha = new Date((valor - 25569) * 86400 * 1000);
-    return fecha.toLocaleDateString("es-AR");
-  }
-
-  return valor;
-}
-
-function procesarObraSocial(textoOriginal){
-  let texto = (textoOriginal || "").toUpperCase().trim();
-
-  if (!texto) return null;
-
-  if (texto.includes("APROSS")) return "Apross";
-
-  if (texto.includes("BSC") || texto.includes("BOSTON SCIENTIFIC")) {
-    if (texto.includes("PAMI")) return "Pami - BSC";
-    if (texto.includes("OSECAC")) return "Osecac - BSC";
-  }
-
-  return null;
-}
-
-function descargarCSV(csv, nombre){
-  const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = nombre;
-  a.click();
 }
