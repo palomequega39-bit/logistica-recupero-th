@@ -338,31 +338,24 @@ function actualizarSeleccion() {
 ========================= */
 
 function mostrar(o){
-     // Verificamos si es favorito para la estrella
+  // Verificamos si es favorito para la estrella
   const esFav = (o.Favorito === "FAVORITO" || o.Favorito === "SI");
   const estrellaHtml = esFav ? `<span class="estrella">★</span>` : "";
    
-  // 1. Actualizamos el título del panel (N° de orden + Paciente )
+  // 1. Actualizamos el título del panel
+  // IMPORTANTE: Usamos .innerHTML en lugar de .textContent para que procese la estrella
   const panelTitulo = document.querySelector(".panel:nth-of-type(2) .titulo");
   if (panelTitulo) {
-    panelTitulo.textContent = `Datos de la Orden - ${o.Orden} ${estrellaHtml} - ${o.Apellido} ${o.Nombre}`;
+    panelTitulo.innerHTML = `Datos de la Orden - ${o.Orden} ${estrellaHtml} - ${o.Apellido} ${o.Nombre}`;
   }
    
   const cab = document.getElementById("cabecera");
-  
 
-
-  // 2. Renderizado Compacto
-  // Fila 1: Paciente (con estrella)
-  // Fila 2: Fecha CX - DNI - Obra - Institución
-  // Fila 3: Médico - Solicitante - Vendedor
-  // Fila 4: Foja - CI - Devolución
-  // Fila 5: Actividades (una sola vez)
-  
+  // 2. Renderizado Compacto (Sin duplicar actividades y con el orden pedido)
   cab.innerHTML = `
     <div class="campo"><b>Fecha CX:</b> ${o.FechaCX || ""}</div>
     <div class="campo"><b>DNI:</b> ${o.Dni || ""}</div>
-    <div class="campo"><b>Obra:</b> ${o.ObraSocial || ""}</div>
+    <div class="campo"><b>Obra Social:</b> ${o.ObraSocial || ""}</div>
     <div class="campo"><b>Institución:</b> ${o.Institucion || ""}</div>
     
     <div class="campo"><b>Médico:</b> ${o.Medico || ""}</div>
@@ -373,12 +366,12 @@ function mostrar(o){
     <div class="campo"><b>CI:</b> ${boolTag(o.CI)}</div>
     <div class="campo" style="grid-column: span 2;"><b>Devolución:</b> ${boolTag(o.Devolucion,"dev")}</div>
 
-    <div class="campo" style="grid-column: span 4; margin-top: 5px; white-space: normal; color: #444;">
+    <div class="campo" style="grid-column: span 4; margin-top: 5px; white-space: normal; color: #444; border-top: 1px solid #eee; padding-top: 5px;">
       <b>Actividades:</b> ${o.Actividades || ""}
     </div>
   `;
 
-  // 3. Detalle de productos (esto se mantiene igual)
+  // 3. Detalle de productos
   const body=document.getElementById("detalleBody");
   body.innerHTML="";
 
