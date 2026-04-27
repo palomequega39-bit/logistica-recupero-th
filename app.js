@@ -317,7 +317,7 @@ function mostrar(o){
 
     <div class="campo"><b>Foja:</b> ${boolTag(o.Foja)}</div>
     <div class="campo"><b>CI:</b> ${boolTag(o.CI)}</div>
-    <div class="campo"><b>Devolución:</b> ${boolTag(o.Devolucion,"dev")}</div>
+    <div class="campo"><b>Devolución Pendiente:</b> ${boolTag(o.Devolucion,"dev")}</div>
   `;
 
   cab.innerHTML += `
