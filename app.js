@@ -48,27 +48,34 @@ fileInput.addEventListener("change", e=>{
 ========================= */
 
 function handleFile(file){
-
   if(!file) return;
 
   document.getElementById("fileName").textContent = file.name;
   document.getElementById("fileStatus").classList.remove("hidden");
 
-  const ext = file.name.split(".").pop().toLowerCase();
+  const reader = new FileReader();
 
-  if(ext === "xlsx" || ext === "xls"){
-    leerExcel(file);
-  } else {
-    // sigue funcionando CSV normal
-    Papa.parse(file,{
-      header:true,
-      delimiter:";",
-      skipEmptyLines:true,
-      complete: res=>procesar(res.data)
+  reader.onload = function(e){
+    const data = new Uint8Array(e.target.result);
+
+    const workbook = XLSX.read(data, { type: "array" });
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const raw = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+    const csvProcesado = preprocesarExacto(raw);
+
+    // 🔥 DEBUG opcional
+    descargarCSV(csvProcesado, "debug_preprocesado.csv");
+
+    Papa.parse(csvProcesado, {
+      header: true,
+      skipEmptyLines: true,
+      complete: res => procesar(res.data)
     });
-  }
-}
+  };
 
+  reader.readAsArrayBuffer(file);
+}
 /* =========================
    DATA
 ========================= */
@@ -473,143 +480,171 @@ exportarCSV(procesado);
   reader.readAsArrayBuffer(file);
 }
 
-function preProcesarExcel(rows){
+function preprocesarExacto(datos){
 
-  if(rows.length < 2) return [];
+  let headers = datos[0];
+  datos = datos.slice(1);
 
-  rows = rows.slice(1); // quitar encabezado original
+  let refOrden, apellido, nombre, direccion;
+  let dni, cliente, fechaCirugia;
+  let vendedor, medico, medicoSolicitante;
+  let foja, certificado, actividades;
+  let ciudad, expediente, favorito, devolucion, prioridad;
 
-  let resultado = [];
-  let ref = {};
+  // === 1. RELLENO (CLAVE)
+  for (let i = 0; i < datos.length; i++) {
+    let row = datos[i];
 
-  rows.forEach(r=>{
-
-    if(r[0]){ // nueva orden
-      ref = {
-        Orden: r[0],
-        Apellido: r[3],
-        Nombre: r[4],
-        Dni: r[5],
-        ObraSocial: r[6],
-        FechaCX: r[7],
-        Vendedor: r[12],
-        Medico: r[13],
-        MedicoSolicitante: r[14],
-        Foja: r[15],
-        CI: r[16],
-        Actividades: r[17],
-        Institucion: r[18],
-        Ciudad: r[19],
-        Expediente: r[21],
-        Favorito: r[22],
-        Devolucion: r[23],
-        Prioridad: r[24]
-      };
-    }
-
-    let fila = {
-      Orden: r[0] || ref.Orden,
-      Remito: r[1],
-      FechaR: formatFecha(r[2]),
-      Apellido: r[3] || ref.Apellido,
-      Nombre: r[4] || ref.Nombre,
-      Dni: r[5] || ref.Dni,
-      ObraSocial: normalizarOS(r[6] || ref.ObraSocial),
-      FechaCX: formatFecha(r[7] || ref.FechaCX),
-      Producto: r[8],
-      Q: r[9],
-      Lote: r[10],
-      Serie: r[11],
-      Vendedor: r[12] || ref.Vendedor,
-      Medico: r[13] || ref.Medico,
-      MedicoSolicitante: r[14] || ref.MedicoSolicitante,
-      Foja: bool(r[15] || ref.Foja),
-      CI: bool(r[16] || ref.CI),
-      Actividades: r[17] || ref.Actividades,
-      Institucion: r[18] || ref.Institucion,
-      Ciudad: r[19] || ref.Ciudad,
-      Vencimiento: formatFecha(r[20]),
-      Expediente: r[21] || ref.Expediente,
-      Favorito: bool(r[22] || ref.Favorito),
-      Devolucion: bool(r[23] || ref.Devolucion),
-      Prioridad: r[24] || ref.Prioridad,
-      Column1: "" // 👈 compatibilidad VBA
-    };
-
-    // 🔴 FILTRO OBRA SOCIAL (como definiste)
-    const os = (fila.ObraSocial || "").toUpperCase();
-
-    const valido =
-      os.includes("APROSS") ||
-      (os.includes("PAMI") && os.includes("BSC")) ||
-      (os.includes("OSECAC") && os.includes("BSC"));
-
-    if(!valido) return;
-
-    // 🔴 LOGICA Q (igual VBA)
-    if((!fila.Q || fila.Q == 0) && Number(r[24]) > 0){
-      fila.Q = r[24];
-    }
-
-    resultado.push(fila);
-  });
-
-  // =========================
-  // 🔥 LIMPIEZA POR BLOQUE (CLAVE)
-  // =========================
-
-  const grupos = {};
-
-  resultado.forEach(f=>{
-    if(!grupos[f.Orden]) grupos[f.Orden] = [];
-    grupos[f.Orden].push(f);
-  });
-
-  let limpio = [];
-
-  Object.values(grupos).forEach(filas=>{
-
-    const tieneValido = filas.some(f => Number(f.Q) > 0);
-
-    if(tieneValido){
-      filas.forEach(f=>{
-        if(Number(f.Q) > 0 && f.Producto){
-          limpio.push(f);
-        }
-      });
+    if (row[0]) {
+      refOrden = row[0];
+      apellido = row[3];
+      nombre = row[4];
+      dni = row[5];
+      cliente = row[6];
+      fechaCirugia = row[7];
+      vendedor = row[12];
+      medico = row[13];
+      medicoSolicitante = row[14];
+      foja = row[15];
+      certificado = row[16];
+      actividades = row[17];
+      direccion = row[18];
+      ciudad = row[19];
+      expediente = row[21];
+      favorito = row[22];
+      devolucion = row[23];
+      prioridad = row[24];
     } else {
-      // dejar solo la primera (cabecera tipo VBA)
-      limpio.push(filas[0]);
+      row[0] = refOrden;
+      if (!row[3]) row[3] = apellido;
+      if (!row[4]) row[4] = nombre;
+      if (!row[5]) row[5] = dni;
+      if (!row[6]) row[6] = cliente;
+      if (!row[7]) row[7] = fechaCirugia;
+      if (!row[12]) row[12] = vendedor;
+      if (!row[13]) row[13] = medico;
+      if (!row[14]) row[14] = medicoSolicitante;
+      if (!row[15]) row[15] = foja;
+      if (!row[16]) row[16] = certificado;
+      if (!row[17]) row[17] = actividades;
+      if (!row[18]) row[18] = direccion;
+      if (!row[19]) row[19] = ciudad;
+      if (!row[21]) row[21] = expediente;
+      if (!row[22]) row[22] = favorito;
+      if (!row[23]) row[23] = devolucion;
+      if (!row[24]) row[24] = prioridad;
+    }
+  }
+
+  // === 2. BOOLEANOS + FECHAS
+  for (let i = 0; i < datos.length; i++) {
+    let row = datos[i];
+
+    row[22] = booleanTexto(row[22]);
+
+    row[2] = excelFechaAJS(row[2]);
+    row[7] = excelFechaAJS(row[7]);
+    row[20] = excelFechaAJS(row[20]);
+  }
+
+  // === 3. OBRA SOCIAL (FILTRO DURO)
+  for (let i = 0; i < datos.length; i++) {
+    let os = procesarObraSocial(datos[i][6]);
+
+    if (!os) {
+      datos[i]._eliminar = true;
+    } else {
+      datos[i][6] = os;
+    }
+  }
+
+  datos = datos.filter(r => !r._eliminar);
+
+  // === 4. J ← Y
+  for (let i = 0; i < datos.length; i++) {
+    let j = datos[i][9];
+    let y = datos[i][24];
+
+    if (!j || Number(j) === 0) {
+      if (!isNaN(y) && Number(y) !== 0) {
+        datos[i][9] = y;
+      }
+    }
+  }
+
+  // ❌ IMPORTANTE: NO fallback prioridad → Q
+
+  // === 5. ELIMINACIÓN POR BLOQUES
+  let resultado = [];
+  let i = 0;
+
+  while (i < datos.length) {
+    let orden = datos[i][0];
+    let bloque = [];
+
+    while (i < datos.length && datos[i][0] === orden) {
+      bloque.push(datos[i]);
+      i++;
     }
 
-  });
+    let tieneCantidad = bloque.some(r => Number(r[9]) > 0);
 
-  return limpio;
-}
-function bool(v){
-  if(!v) return "FALSO";
-  const val = v.toString().toLowerCase();
-  return (val === "true" || val === "1" || val === "si")
-    ? "VERDADERO"
-    : "FALSO";
-}
+    if (tieneCantidad) {
+      bloque = bloque.filter(r => Number(r[9]) > 0);
+    } else {
+      bloque = bloque.slice(0, 1);
+    }
 
-function formatFecha(v){
-  if(!v) return "";
-
-  if(typeof v === "number"){
-    const fecha = XLSX.SSF.parse_date_code(v);
-    return `${pad(fecha.d)}/${pad(fecha.m)}/${fecha.y}`;
+    resultado.push(...bloque);
   }
 
-  const d = new Date(v);
-  if(!isNaN(d)){
-    return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()}`;
-  }
+  // === 6. HEADERS EXACTOS
+  const nuevosHeaders = [
+    "Orden","Remito","FechaR","Apellido","Nombre","Dni","ObraSocial",
+    "FechaCX","Producto","Q","Lote","Serie","Vendedor","Medico",
+    "MedicoSolicitante","Foja","CI","Actividades","Institucion",
+    "Ciudad","Vencimiento","Expediente","Favorito","Devolucion","Prioridad","Column1"
+  ];
+   const resultadoConColumna = resultado.map(row => {
+  return [...row, ""];
+});
 
-  return "";
+// Crear sheet
+const ws = XLSX.utils.aoa_to_sheet([nuevosHeaders, ...resultadoConColumna]);
+
+return XLSX.utils.sheet_to_csv(ws);
+
+function booleanTexto(valor){
+  if (valor === true || String(valor).toLowerCase() === "true") return "VERDADERO";
+  if (valor === false || String(valor).toLowerCase() === "false") return "FALSO";
+  return valor;
 }
 
+function excelFechaAJS(valor){
+  if (!valor) return "";
+
+  if (typeof valor === "number") {
+    const fecha = new Date((valor - 25569) * 86400 * 1000);
+    return fecha.toLocaleDateString("es-AR");
+  }
+
+  return valor;
+}
+
+function procesarObraSocial(textoOriginal){
+  let texto = (textoOriginal || "").toUpperCase().trim();
+
+  if (!texto) return null;
+
+  if (texto.includes("APROSS")) return "Apross";
+
+  if (texto.includes("BSC") || texto.includes("BOSTON SCIENTIFIC")) {
+    if (texto.includes("PAMI")) return "Pami - BSC";
+    if (texto.includes("OSECAC")) return "Osecac - BSC";
+  }
+
+  return null;
+}
 function pad(n){
   return n.toString().padStart(2,"0");
 }
@@ -628,27 +663,12 @@ function normalizarOS(texto){
 
   return texto;
 }
-function exportarCSV(data, nombre="debug_preprocesado.csv"){
-
-  if(!data || !data.length){
-    console.warn("No hay datos para exportar");
-    return;
-  }
-
-  const csv = Papa.unparse(data, {
-    delimiter: ";"
-  });
-
-  // UTF-8 con BOM (clave para Excel)
-  const BOM = "\uFEFF";
-  const blob = new Blob([BOM + csv], { type: "text/csv;charset=utf-8;" });
-
+function descargarCSV(csv, nombre){
+  const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
 
   const a = document.createElement("a");
   a.href = url;
   a.download = nombre;
   a.click();
-
-  URL.revokeObjectURL(url);
 }
