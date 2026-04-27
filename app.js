@@ -526,7 +526,7 @@ function leerExcel(file){
     const procesado = preProcesarExcel(json);
      
    // 👇 EXPORTAR DEBUG
-exportarCSV(procesado);
+   //exportarCSV(procesado);
      
     // Convertimos a CSV
     const csv = Papa.unparse(procesado, {
