@@ -118,25 +118,32 @@ function procesar(data){
    FILTROS
 ========================= */
 
-function cargarFiltros(){
-  fill("filtroPrioridad","Prioridad");
-  fill("filtroCiudad","Ciudad");
-  fill("filtroVendedor", "Vendedor"); // Nuevo
-  fill("filtroMedico", "Medico");     // Nuevo
+function cargarFiltros() {
+    fill("filtroPrioridad", "Prioridad");
+    fill("filtroCiudad", "Ciudad");
+    fill("filtroVendedor", "Vendedor");
+    fill("filtroMedico", "Medico");
 
-  fillBool("filtroDevolucion");
-  fillBool("filtroFoja");
-  fillBool("filtroCI");
-  
-  // Nuevo Filtro Favoritos
-  document.getElementById("filtroFavorito").innerHTML = `
-    <option value="">Todos</option>
-    <option value="SI">Solo Favoritos</option>
-    <option value="NO">Normales</option>
-  `;
+    // Llenar favoritos
+    document.getElementById("filtroFavorito").innerHTML = `
+        <option value="">Todos</option>
+        <option value="SI">Solo Favoritos</option>
+        <option value="NO">Normales</option>
+    `;
 
-  fillFecha();
-  cargarInstituciones();
+    fillBool("filtroDevolucion");
+    fillBool("filtroFoja");
+    fillBool("filtroCI");
+    fillFecha();
+    cargarInstituciones();
+
+    // --- NUEVO: Hacer que cada select aplique filtros al cambiar ---
+    const selects = document.querySelectorAll('.filters select, .filters .inputFiltro');
+    selects.forEach(el => {
+        el.addEventListener('change', aplicarFiltros);
+        // Para que los inputs de texto (como Institución) también reaccionen al borrar
+        if(el.tagName === "INPUT") el.addEventListener('keyup', aplicarFiltros);
+    });
 }
 
 function fill(id,campo){
@@ -299,19 +306,38 @@ document.addEventListener("keydown",e=>{
   actualizarSeleccion();
 });
 
-function actualizarSeleccion(){
+function actualizarSeleccion() {
+    const filas = document.querySelectorAll(".fila");
+    
+    // Limitar el índice para que no se salga de los bordes
+    if (indiceSeleccionado < 0) indiceSeleccionado = 0;
+    if (indiceSeleccionado >= filas.length) indiceSeleccionado = filas.length - 1;
 
-  const filas=document.querySelectorAll(".fila");
-  filas.forEach(f=>f.classList.remove("active"));
+    filas.forEach(f => f.classList.remove("active"));
 
-  const fila=filas[indiceSeleccionado];
-  if(!fila) return;
+    const fila = filas[indiceSeleccionado];
+    if (!fila) return;
 
-  fila.classList.add("active");
+    fila.classList.add("active");
+    mostrar(filtradas[indiceSeleccionado]);
 
-  mostrar(filtradas[indiceSeleccionado]);
+    // --- SCROLL SINCRONIZADO ---
+    const contenedor = document.getElementById("ordenesList");
+    
+    // Calculamos las posiciones
+    const filaTop = fila.offsetTop;
+    const filaBottom = filaTop + fila.offsetHeight;
+    const contTop = contenedor.scrollTop;
+    const contBottom = contTop + contenedor.offsetHeight;
 
-  fila.scrollIntoView({block:"nearest"});
+    // Si la fila está arriba de lo visible, scrolleamos hacia arriba
+    if (filaTop < contTop) {
+        contenedor.scrollTop = filaTop;
+    } 
+    // Si la fila está abajo de lo visible, scrolleamos hacia abajo
+    else if (filaBottom > contBottom) {
+        contenedor.scrollTop = filaBottom - contenedor.offsetHeight;
+    }
 }
 
 /* =========================
@@ -402,13 +428,13 @@ function cargarInstituciones(){
       .join("");
   };
 
-  lista.onclick=e=>{
-    if(e.target.classList.contains("item-inst")){
-      input.value=e.target.textContent;
-      lista.innerHTML="";
-      aplicarFiltros();
+  lista.onclick = e => {
+    if (e.target.classList.contains("item-inst")) {
+        input.value = e.target.textContent;
+        lista.innerHTML = "";
+        aplicarFiltros(); // Esto ya lo tenías, pero es vital que esté.
     }
-  };
+};
 }
 
 /* =========================
@@ -666,5 +692,19 @@ function exportarCSV(data, nombre="debug_preprocesado.csv"){
 
   URL.revokeObjectURL(url);
 }
+
+document.addEventListener("keydown", e => {
+    if (e.key === "ArrowDown") {
+        e.preventDefault(); // Evita que la ventana se mueva
+        indiceSeleccionado++;
+        actualizarSeleccion();
+    }
+    if (e.key === "ArrowUp") {
+        e.preventDefault(); // Evita que la ventana se mueva
+        indiceSeleccionado--;
+        actualizarSeleccion();
+    }
+});
+
 
 
