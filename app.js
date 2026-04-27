@@ -473,45 +473,27 @@ exportarCSV(procesado);
   reader.readAsArrayBuffer(file);
 }
 
+/* ... resto del código anterior ... */
+
 function preProcesarExcel(rows) {
     if (rows.length < 2) return [];
 
-    // El VBA empieza en fila 2 (índice 1 en JS si el header es index 0)
-    // Pero como sheet_to_json con {header:1} trae todo, rows[0] son los encabezados.
     const datosCrudos = rows.slice(1); 
     let resultadoIntermedio = [];
-    
-    // Variables para replicación (arrastre de datos)
     let ref = {};
 
-    // --- PASO 1: RELLENAR Y NORMALIZAR (Equivalente al primer For i del VBA) ---
     datosCrudos.forEach((r) => {
         if (r[0] && r[0].toString().trim() !== "") {
-            // Es una fila nueva de orden, actualizamos la referencia
             ref = {
-                Orden: r[0],
-                Apellido: r[3],
-                Nombre: r[4],
-                Dni: r[5],
-                ObraSocial: r[6],
-                FechaCX: r[7],
-                Vendedor: r[12],
-                Medico: r[13],
-                MedicoSolicitante: r[14],
-                Foja: r[15],
-                Certificado: r[16], // CI en tu app
-                Actividades: r[17],
-                Direccion: r[18],  // Institucion en tu app
-                Ciudad: r[19],
-                Expediente: r[21],
-                Favorito: r[22],
-                Devolucion: r[23],
-                Prioridad: r[24]
-                Column1: ""
+                Orden: r[0], Apellido: r[3], Nombre: r[4], Dni: r[5],
+                ObraSocial: r[6], FechaCX: r[7], Vendedor: r[12],
+                Medico: r[13], MedicoSolicitante: r[14], Foja: r[15],
+                Certificado: r[16], Actividades: r[17], Direccion: r[18],
+                Ciudad: r[19], Expediente: r[21], Favorito: r[22],
+                Devolucion: r[23], Prioridad: r[24]
             };
         }
 
-        // Creamos el objeto fila replicando el "If datos(i, 4) = "" Then datos(i, 4) = apellido"
         let fila = {
             Orden: r[0] || ref.Orden,
             Remito: r[1],
@@ -522,7 +504,7 @@ function preProcesarExcel(rows) {
             ObraSocial: normalizarOS_VBA(r[6] || ref.ObraSocial),
             FechaCX: formatFecha(r[7] || ref.FechaCX),
             Producto: r[8],
-            Q: r[9], // Columna J
+            Q: r[9], 
             Lote: r[10],
             Serie: r[11],
             Vendedor: r[12] || ref.Vendedor,
@@ -537,23 +519,21 @@ function preProcesarExcel(rows) {
             Expediente: r[21] || ref.Expediente,
             Favorito: r[22] || ref.Favorito,
             Devolucion: r[23] || ref.Devolucion,
-            Prioridad: r[24] || ref.Prioridad
+            Prioridad: r[24] || ref.Prioridad,
+            Column1: "" // <-- AGREGADO AQUÍ PARA QUE APAREZCA EN EL CSV
         };
 
-        // --- PASO 2: LÓGICA DE CANTIDAD Q (Columna J e Y) ---
-        let cantJ = fila.Q;
-        let cantY = fila.Prioridad;
-
-        if (!cantJ || cantJ == 0 || cantJ.toString().trim() === "") {
-            if (!isNaN(cantY) && Number(cantY) !== 0) {
-                fila.Q = cantY;
+        // Lógica de cantidad Q
+        if (!fila.Q || fila.Q == 0 || fila.Q.toString().trim() === "") {
+            if (!isNaN(fila.Prioridad) && Number(fila.Prioridad) !== 0) {
+                fila.Q = fila.Prioridad;
             }
         }
 
         resultadoIntermedio.push(fila);
     });
 
-    // --- PASO 3: ELIMINAR FILAS (Lógica de Bloques del VBA) ---
+    // ... (resto del código de agrupamiento y retorno igual a como lo tienes)
     const grupos = {};
     resultadoIntermedio.forEach(f => {
         if (!grupos[f.Orden]) grupos[f.Orden] = [];
@@ -561,20 +541,11 @@ function preProcesarExcel(rows) {
     });
 
     let resultadoFinal = [];
-
     Object.values(grupos).forEach(bloque => {
-        // ¿Tiene al menos un producto con Q > 0?
         const tieneCantidadValida = bloque.some(f => !isNaN(f.Q) && Number(f.Q) > 0);
-
         if (tieneCantidadValida) {
-            // Si tiene cantidad, eliminamos los que están vacíos o en 0 (como el Collection de VBA)
-            bloque.forEach(f => {
-                if (f.Q && Number(f.Q) > 0) {
-                    resultadoFinal.push(f);
-                }
-            });
+            bloque.forEach(f => { if (f.Q && Number(f.Q) > 0) resultadoFinal.push(f); });
         } else {
-            // Si NINGUNO tiene cantidad, el VBA borra desde filaInicio + 1, o sea, deja solo la primera fila
             resultadoFinal.push(bloque[0]);
         }
     });
@@ -582,6 +553,7 @@ function preProcesarExcel(rows) {
     return resultadoFinal;
 }
 
+/* ... resto del archivo app.js ... */
 
 function bool(v) {
     if (!v) return "FALSO";
