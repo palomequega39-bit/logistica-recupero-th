@@ -777,3 +777,9 @@ function handleCheck(event, ordenId) {
         document.getElementById("selectAll").checked = false;
     }
 }
+// Dentro de app.js, donde configures los eventos:
+document.getElementById("btnExportarPDF").onclick = () => {
+    // Llamamos a la función de export.js pasando las variables globales de app.js
+    exportarDetallePDF(ordenes, seleccionados);
+};
+
