@@ -195,16 +195,7 @@ body {
   text-transform: uppercase;
 }
 
-.panel .titulo {
-    display: block; /* Cambiado de flex a block para permitir el apilado natural */
-    padding-bottom: 10px;
-    margin-bottom: 15px;
-    border-bottom: 1px solid #e5e7eb;
-}
 
-.panel .titulo h1 {
-  color: #1e293b; /* Color oscuro profesional */
-}
 
 
 /* TAGS */
@@ -346,6 +337,8 @@ th:nth-child(3) { width: 40%; }
   inset: 0;
   opacity: 0;
   cursor: pointer;
+}
+
 /* Estilo para el botón de borrar filtros */
 .btn-secundario {
   width: 100%;
