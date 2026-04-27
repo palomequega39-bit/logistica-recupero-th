@@ -3,6 +3,8 @@ let filtradas = [];
 let indiceSeleccionado = -1;
 let sortField = null;
 let ordenAsc = true;
+let seleccionados = new Set(); // Para guardar los IDs de las órdenes seleccionadas
+
 
 /* =========================
    INIT
@@ -141,6 +143,8 @@ function cargarFiltros() {
         el.addEventListener('change', aplicarFiltros);
         if(el.tagName === "INPUT") el.addEventListener('keyup', aplicarFiltros);
     });
+   document.getElementById("btnLimpiar").onclick = borrarFiltros;
+   
 }
 
 function fill(id,campo){
@@ -273,8 +277,12 @@ function renderLista(){
 
         // Añadimos la estrella antes del número de orden si es favorito
         const estrellaHtml = esFav ? `<span class="estrella">★</span>` : "";
-
+       // Verificamos si esta orden ya estaba seleccionada (por si filtramos y volvemos)
+         const estaChequeado = seleccionados.has(o.Orden) ? "checked" : "";
+     
         fila.innerHTML = `
+            <input type="checkbox" class="check-orden" data-id="${o.Orden}" ${estaChequeado} 
+            onclick="handleCheck(event, '${o.Orden}')">
             <span>${o.Orden}</span>
             <span title="${o.Apellido} ${o.Nombre}">${o.Apellido} ${o.Nombre}</span>
             <span>${o.Dni}</span>
@@ -734,4 +742,40 @@ document.addEventListener("click", e => {
         lista.innerHTML = "";
     }
 });
+function borrarFiltros() {
+    // 1. Limpiar inputs de texto
+    document.getElementById("buscadorGlobal").value = "";
+    document.getElementById("filtroInstitucion").value = "";
+    
+    // 2. Limpiar todos los select al valor por defecto ("")
+    const selects = document.querySelectorAll('.filters select');
+    selects.forEach(sel => sel.value = "");
 
+    // 3. Resetear variables de ordenamiento si lo deseas
+    sortField = null;
+    
+    // 4. Aplicar los filtros (que ahora están vacíos)
+    aplicarFiltros();
+}
+
+function toggleSeleccionarTodos(event) {
+    const isChecked = event.target.checked;
+    const checkboxes = document.querySelectorAll(".check-orden");
+    
+    seleccionados.clear();
+    checkboxes.forEach(cb => {
+        cb.checked = isChecked;
+        const ordenId = cb.getAttribute("data-id");
+        if (isChecked) seleccionados.add(ordenId);
+    });
+}
+
+function handleCheck(event, ordenId) {
+    event.stopPropagation(); // Evita que se dispare el click de la fila (selección para detalle)
+    if (event.target.checked) {
+        seleccionados.add(ordenId);
+    } else {
+        seleccionados.delete(ordenId);
+        document.getElementById("selectAll").checked = false;
+    }
+}
