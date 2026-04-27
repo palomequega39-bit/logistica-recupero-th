@@ -9,7 +9,6 @@ let ordenAsc = true;
 ========================= */
 
 document.getElementById("btnFiltrar").onclick = aplicarFiltros;
-
 document.getElementById("buscadorGlobal")
   .addEventListener("input", aplicarFiltros);
 
@@ -44,7 +43,7 @@ fileInput.addEventListener("change", e=>{
 });
 
 /* =========================
-   FILE LOAD (UNIFICADO)
+   FILE LOAD
 ========================= */
 
 function handleFile(file){
@@ -67,8 +66,39 @@ function handleFile(file){
     });
   }
 }
+
 /* =========================
-   DATA
+   EXCEL → PREPROCESO NUEVO
+========================= */
+
+function leerExcel(file){
+
+  const reader = new FileReader();
+
+  reader.onload = function(e){
+
+    const data = new Uint8Array(e.target.result);
+    const workbook = XLSX.read(data, {type: "array"});
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const raw = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+    const csvProcesado = preprocesarExacto(raw);
+
+    descargarCSV(csvProcesado, "debug_preprocesado.csv");
+
+    Papa.parse(csvProcesado,{
+      header:true,
+      skipEmptyLines:true,
+      complete: res=>procesar(res.data)
+    });
+
+  };
+
+  reader.readAsArrayBuffer(file);
+}
+
+/* =========================
+   PROCESAR (ORIGINAL)
 ========================= */
 
 function procesar(data){
@@ -116,11 +146,9 @@ function procesar(data){
 function cargarFiltros(){
   fill("filtroPrioridad","Prioridad");
   fill("filtroCiudad","Ciudad");
-
   fillBool("filtroDevolucion");
   fillBool("filtroFoja");
   fillBool("filtroCI");
-
   fillFecha();
   cargarInstituciones();
 }
@@ -167,30 +195,12 @@ function aplicarFiltros(){
     if(f("filtroInstitucion") && o.Institucion!==f("filtroInstitucion")) return false;
     if(f("filtroCiudad") && o.Ciudad!==f("filtroCiudad")) return false;
     if(f("filtroPrioridad") && o.Prioridad!==f("filtroPrioridad")) return false;
-
     if(f("filtroDevolucion") && o.Devolucion!==f("filtroDevolucion")) return false;
     if(f("filtroFoja") && o.Foja!==f("filtroFoja")) return false;
     if(f("filtroCI") && o.CI!==f("filtroCI")) return false;
 
-    if(f("filtroFecha")){
-      const fecha=new Date(o.FechaCX||"1900-01-01");
-      fecha.setHours(0,0,0,0);
-
-      if(f("filtroFecha")==="realizadas" && fecha>=hoy) return false;
-      if(f("filtroFecha")==="hoy" && fecha.getTime()!==hoy.getTime()) return false;
-      if(f("filtroFecha")==="pendientes" && fecha<hoy) return false;
-    }
-
     if(texto){
-      const combinado=`
-        ${o.Orden}
-        ${o.Apellido}
-        ${o.Nombre}
-        ${o.Dni}
-        ${o.ObraSocial}
-        ${o.Institucion}
-      `.toLowerCase();
-
+      const combinado=`${o.Orden} ${o.Apellido} ${o.Nombre} ${o.Dni} ${o.ObraSocial} ${o.Institucion}`.toLowerCase();
       if(!combinado.includes(texto)) return false;
     }
 
@@ -202,7 +212,7 @@ function aplicarFiltros(){
 }
 
 /* =========================
-   LISTA + FAVORITOS
+   LISTA (FAVORITOS OK)
 ========================= */
 
 function renderLista(){
@@ -210,27 +220,17 @@ function renderLista(){
   const cont=document.getElementById("ordenesList");
   cont.innerHTML="";
 
-  if(sortField){
-    filtradas.sort((a,b)=>{
-      let valA = (a[sortField]||"").toString().toLowerCase();
-      let valB = (b[sortField]||"").toString().toLowerCase();
-      if(valA < valB) return ordenAsc ? -1 : 1;
-      if(valA > valB) return ordenAsc ? 1 : -1;
-      return 0;
-    });
-  }
+  filtradas.forEach((o, i) => {
 
-  filtradas.forEach((o,i)=>{
+    const fila = document.createElement("div");
 
-    const fila=document.createElement("div");
+    const esFav = o.Favorito === "VERDADERO" || o.Favorito === "SI";
 
-    const esFav = o.Favorito === "VERDADERO";
-
-    fila.className = `fila ${esFav ? "favorito" : ""}`;
+    fila.className = `fila ${esFav ? 'favorito' : ''}`;
 
     const estrella = esFav ? `<span class="estrella">★</span>` : "";
 
-    fila.innerHTML=`
+    fila.innerHTML = `
       <span>${estrella}${o.Orden}</span>
       <span>${o.Apellido} ${o.Nombre}</span>
       <span>${o.Dni}</span>
@@ -287,10 +287,6 @@ function mostrar(o){
     <div class="campo"><b>DNI:</b> ${o.Dni}</div>
     <div class="campo"><b>Obra:</b> ${o.ObraSocial}</div>
     <div class="campo"><b>Institución:</b> ${o.Institucion}</div>
-
-    <div class="campo"><b>Foja:</b> ${boolTag(o.Foja)}</div>
-    <div class="campo"><b>CI:</b> ${boolTag(o.CI)}</div>
-    <div class="campo"><b>Devolución:</b> ${boolTag(o.Devolucion,"dev")}</div>
   `;
 
   const body=document.getElementById("detalleBody");
@@ -312,53 +308,7 @@ function mostrar(o){
 }
 
 /* =========================
-   TAGS
-========================= */
-
-function boolTag(val,tipo="normal"){
-  const v=(val||"").toUpperCase();
-
-  if(v==="VERDADERO"){
-    if(tipo==="dev") return `<span class="tag dev">SI</span>`;
-    return `<span class="tag si">SI</span>`;
-  }
-
-  if(v==="FALSO") return `<span class="tag no">NO</span>`;
-
-  return "";
-}
-
-/* =========================
-   INSTITUCIONES
-========================= */
-
-function cargarInstituciones(){
-
-  const input=document.getElementById("filtroInstitucion");
-  const lista=document.getElementById("listaInstituciones");
-
-  const valores=[...new Set(ordenes.map(o=>o.Institucion).filter(Boolean))];
-
-  input.oninput=()=>{
-    const texto=input.value.toLowerCase();
-
-    lista.innerHTML=valores
-      .filter(v=>v.toLowerCase().includes(texto))
-      .map(v=>`<div class="item-inst">${v}</div>`)
-      .join("");
-  };
-
-  lista.onclick=e=>{
-    if(e.target.classList.contains("item-inst")){
-      input.value=e.target.textContent;
-      lista.innerHTML="";
-      aplicarFiltros();
-    }
-  };
-}
-
-/* =========================
-   PREPROCESO EXACTO
+   HELPERS PREPROCESO
 ========================= */
 
 function booleanTexto(valor){
@@ -380,18 +330,34 @@ function procesarObraSocial(textoOriginal){
   let texto = (textoOriginal || "").toUpperCase().trim();
   if (!texto) return null;
   if (texto.includes("APROSS")) return "Apross";
-  if (texto.includes("BSC")){
+  if (texto.includes("BSC")) {
     if (texto.includes("PAMI")) return "Pami - BSC";
     if (texto.includes("OSECAC")) return "Osecac - BSC";
   }
   return null;
 }
 
+function descargarCSV(csv, nombre){
+  const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = nombre;
+  a.click();
+}
+
+/* =========================
+   PREPROCESAR EXACTO
+========================= */
+
 function preprocesarExacto(datos){
 
   datos = datos.slice(1);
 
-  let refOrden, apellido, nombre;
+  let refOrden, apellido, nombre, dni, cliente, fechaCirugia;
+  let vendedor, medico, medicoSolicitante;
+  let foja, certificado, actividades;
+  let direccion, ciudad, expediente, favorito, devolucion, prioridad;
 
   for (let i = 0; i < datos.length; i++) {
     let row = datos[i];
@@ -400,10 +366,40 @@ function preprocesarExacto(datos){
       refOrden = row[0];
       apellido = row[3];
       nombre = row[4];
+      dni = row[5];
+      cliente = row[6];
+      fechaCirugia = row[7];
+      vendedor = row[12];
+      medico = row[13];
+      medicoSolicitante = row[14];
+      foja = row[15];
+      certificado = row[16];
+      actividades = row[17];
+      direccion = row[18];
+      ciudad = row[19];
+      expediente = row[21];
+      favorito = row[22];
+      devolucion = row[23];
+      prioridad = row[24];
     } else {
       row[0] = refOrden;
       if (!row[3]) row[3] = apellido;
       if (!row[4]) row[4] = nombre;
+      if (!row[5]) row[5] = dni;
+      if (!row[6]) row[6] = cliente;
+      if (!row[7]) row[7] = fechaCirugia;
+      if (!row[12]) row[12] = vendedor;
+      if (!row[13]) row[13] = medico;
+      if (!row[14]) row[14] = medicoSolicitante;
+      if (!row[15]) row[15] = foja;
+      if (!row[16]) row[16] = certificado;
+      if (!row[17]) row[17] = actividades;
+      if (!row[18]) row[18] = direccion;
+      if (!row[19]) row[19] = ciudad;
+      if (!row[21]) row[21] = expediente;
+      if (!row[22]) row[22] = favorito;
+      if (!row[23]) row[23] = devolucion;
+      if (!row[24]) row[24] = prioridad;
     }
   }
 
@@ -412,6 +408,7 @@ function preprocesarExacto(datos){
     row[22] = booleanTexto(row[22]);
     row[2] = excelFechaAJS(row[2]);
     row[7] = excelFechaAJS(row[7]);
+    row[20] = excelFechaAJS(row[20]);
   }
 
   datos = datos.filter(row => {
@@ -421,43 +418,10 @@ function preprocesarExacto(datos){
     return true;
   });
 
-  const headers = [
-    "Orden","Remito","FechaR","Apellido","Nombre","Dni","ObraSocial",
-    "FechaCX","Producto","Q","Lote","Serie","Vendedor","Medico",
-    "MedicoSolicitante","Foja","CI","Actividades","Institucion",
-    "Ciudad","Vencimiento","Expediente","Favorito","Devolucion","Prioridad","Column1"
-  ];
-
-  const ws = XLSX.utils.aoa_to_sheet([headers, ...datos]);
-
-  return XLSX.utils.sheet_to_csv(ws);
-}
-function leerExcel(file){
-
-  const reader = new FileReader();
-
-  reader.onload = function(e){
-
-    const data = new Uint8Array(e.target.result);
-    const workbook = XLSX.read(data, {type: "array"});
-    const sheet = workbook.Sheets[workbook.SheetNames[0]];
-
-    let json = XLSX.utils.sheet_to_json(sheet, {header:1});
-
-    // 🔥 ACA enchufás tu nuevo motor
-    const csvProcesado = preprocesarExacto(json);
-
-    // DEBUG opcional
-    descargarCSV(csvProcesado, "debug_preprocesado.csv");
-
-    // 🔁 volvés a tu flujo ORIGINAL
-    Papa.parse(csvProcesado,{
-      header:true,
-      skipEmptyLines:true,
-      complete: res=>procesar(res.data)
-    });
-
-  };
-
-  reader.readAsArrayBuffer(file);
+  return XLSX.utils.sheet_to_csv(
+    XLSX.utils.aoa_to_sheet([
+      ["Orden","Remito","FechaR","Apellido","Nombre","Dni","ObraSocial","FechaCX","Producto","Q","Lote","Serie","Vendedor","Medico","MedicoSolicitante","Foja","CI","Actividades","Institucion","Ciudad","Vencimiento","Expediente","Favorito","Devolucion","Prioridad","Column1"],
+      ...datos.map(r => [...r, ""])
+    ])
+  );
 }
