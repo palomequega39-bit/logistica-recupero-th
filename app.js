@@ -297,11 +297,7 @@ function renderLista(){
    SELECCION
 ========================= */
 
-document.addEventListener("keydown",e=>{
-  if(e.key==="ArrowDown") indiceSeleccionado++;
-  if(e.key==="ArrowUp") indiceSeleccionado--;
-  actualizarSeleccion();
-});
+
 
 function actualizarSeleccion() {
     const filas = document.querySelectorAll(".fila");
