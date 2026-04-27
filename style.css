@@ -381,3 +381,28 @@ th:nth-child(3) { width: 40%; }
 .fila input[type="checkbox"] {
   cursor: pointer;
 }
+
+  /* Esto alinea el título a la izquierda y el botón a la derecha */
+.header-flex {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-right: 10px; /* Un pequeño aire a la derecha */
+}
+
+/* El diseño del botón verde */
+.btn-exportar-verde {
+  background-color: #10b981; /* Verde */
+  color: white;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.btn-exportar-verde:hover {
+  background-color: #059669; /* Verde más oscuro al pasar el mouse */
+}
