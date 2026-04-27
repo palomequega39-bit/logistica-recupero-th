@@ -101,14 +101,22 @@ body {
 .tabla-header,
 .fila {
   display: grid;
-  grid-template-columns: 30px 50px 220px 80px 120px 120px 200px 120px; /* Añadimos los 30px */
-  gap: 6px;
+  /* 30px para el checkbox y el resto distribuido para los datos  */
+  grid-template-columns: 30px 60px 180px 80px 120px 100px 180px 80px; 
+  gap: 8px;
   align-items: center;
 }
 
 .tabla-header {
   font-size: 12px;
   border-bottom: 1px solid #e5e7eb;
+}
+
+.fila input[type="checkbox"], 
+.tabla-header input[type="checkbox"] {
+  justify-self: center;
+  margin: 0;
+  cursor: pointer; [cite: 180]
 }
 
 #ordenesList {
