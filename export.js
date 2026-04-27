@@ -67,11 +67,11 @@ async function exportarDetallePDF(ordenes, seleccionados) {
         const esApross = (o.ObraSocial || "").toLowerCase().includes("apross");
         
         if (esFav) {
-            doc.setFillColor(252, 228, 45); // Amarillo suave
+            doc.setFillColor(255, 235, 133); // Amarillo suave
         } else if (esApross) {
-            doc.setFillColor(130, 173, 217); // Azul pálido
+            doc.setFillColor(174, 202, 230); // Azul pálido
         } else {
-            doc.setFillColor(245, 245, 245); // Gris muy claro
+            doc.setFillColor(148, 148, 148); // Gris muy claro
         }
         
         // AJUSTE AQUÍ: Reducimos el alto de 7 a 4.5 para que quede ceñido a la letra
