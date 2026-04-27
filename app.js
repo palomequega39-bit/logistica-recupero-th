@@ -362,7 +362,7 @@ function mostrar(o){
    
   const cab = document.getElementById("cabecera");
 
-  // 2. Renderizado Compacto (Sin duplicar actividades y con el orden pedido)
+// 2. Renderizado Compacto (Sin duplicar actividades y con el orden pedido)
   cab.innerHTML = `
     <div class="campo"><b>Fecha CX:</b> ${o.FechaCX || ""}</div>
     <div class="campo"><b>DNI:</b> ${o.Dni || ""}</div>
@@ -372,7 +372,7 @@ function mostrar(o){
     <div class="campo"><b>Expte:</b> ${o.Expediente || ""}</div>
     <div class="campo"><b>Médico:</b> ${o.Medico || ""}</div>
     <div class="campo"><b>Solicitante:</b> ${o.MedicoSolicitante || ""}</div>
-    <div class="campo" style="grid-column: span 2;"><b>Vendedor:</b> ${o.Vendedor || ""}</div>
+    <div class="campo"><b>Vendedor:</b> ${o.Vendedor || ""}</div>
     
     <div class="campo"><b>Foja:</b> ${boolTag(o.Foja)}</div>
     <div class="campo"><b>CI:</b> ${boolTag(o.CI)}</div>
