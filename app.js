@@ -337,47 +337,53 @@ function actualizarSeleccion() {
    DETALLE
 ========================= */
 
+/* =========================
+   DETALLE
+========================= */
+
 function mostrar(o){
-   // 1. Actualizamos el título del panel "Datos de la Orden"
+  // 1. Actualizamos el título del panel con Orden y Paciente (H1)
   const panelTitulo = document.querySelector(".panel:nth-of-type(2) .titulo");
   if (panelTitulo) {
-    panelTitulo.textContent = `Datos de la Orden - ${o.Orden}`;
+    const esFav = (o.Favorito === "FAVORITO" || o.Favorito === "SI");
+    const estrellaHtml = esFav ? `<span class="estrella">★</span>` : "";
+    
+    // Inyectamos el H1 con flexbox para alinear a los extremos
+    panelTitulo.innerHTML = `
+      <h1 style="display: flex; justify-content: space-between; width: 100%; margin: 0; font-size: 1.2rem;">
+        <span>Datos de la Orden - ${o.Orden}</span>
+        <span style="font-weight: normal;">${o.Apellido} ${o.Nombre}${estrellaHtml}</span>
+      </h1>`;
   }
    
   const cab = document.getElementById("cabecera");
-  
-  // Verificamos si es favorito para crear el elemento de la estrella
-  const esFav = (o.Favorito === "FAVORITO" || o.Favorito === "SI");
-  const estrellaHtml = esFav ? `<span class="estrella" style="font-size: 1.2em; margin-left: 5px;">★</span>` : "";
 
+  // 2. Renderizado de campos (Nueva estructura solicitada)
+  // Línea 1: Fecha CX - DNI - Obra - Institución
+  // Línea 2: Médico - Solicitante - Vendedor
+  // Línea 3: Foja - CI - Devolución
+  // Línea 4: Actividades
+  
   cab.innerHTML = `
-    <div class="campo" style="grid-column: span 2; font-size: 14px;">
-        <b>Paciente:</b> ${o.Apellido} ${o.Nombre}${estrellaHtml}
-    </div>
-    <div class="campo"><b>DNI:</b> ${o.Dni}</div>
-    <div class="campo"><b>Obra:</b> ${o.ObraSocial}</div>
+    <div class="campo"><b>Fecha CX:</b> ${o.FechaCX || ""}</div>
+    <div class="campo"><b>DNI:</b> ${o.Dni || ""}</div>
+    <div class="campo"><b>Obra:</b> ${o.ObraSocial || ""}</div>
+    <div class="campo"><b>Institución:</b> ${o.Institucion || ""}</div>
     
-    <div class="campo"><b>Institución:</b> ${o.Institucion}</div>
-    <div class="campo"><b>Fecha CX:</b> ${o.FechaCX}</div>
-    <div class="campo"><b>Médico:</b> ${o.Medico}</div>
-    <div class="campo"><b>Solicitante:</b> ${o.MedicoSolicitante}</div>
+    <div class="campo"><b>Médico:</b> ${o.Medico || ""}</div>
+    <div class="campo"><b>Solicitante:</b> ${o.MedicoSolicitante || ""}</div>
+    <div class="campo" style="grid-column: span 2;"><b>Vendedor:</b> ${o.Vendedor || ""}</div>
     
-    <div class="campo"><b>Vendedor:</b> ${o.Vendedor}</div>
     <div class="campo"><b>Foja:</b> ${boolTag(o.Foja)}</div>
     <div class="campo"><b>CI:</b> ${boolTag(o.CI)}</div>
-    <div class="campo"><b>Devolución:</b> ${boolTag(o.Devolucion,"dev")}</div>
+    <div class="campo" style="grid-column: span 2;"><b>Devolución:</b> ${boolTag(o.Devolucion,"dev")}</div>
 
-    <div class="campo" style="grid-column: span 4; margin-top: 5px; white-space: normal;">
+    <div class="campo" style="grid-column: span 4; margin-top: 8px; white-space: normal; border-top: 1px solid #eee; pt-5">
       <b>Actividades:</b> ${o.Actividades || ""}
     </div>
   `;
 
-  cab.innerHTML += `
-    <div class="campo" style="grid-column: span 4;">
-      <b>Actividades:</b> ${o.Actividades || ""}
-    </div>
-  `;
-
+  // Detalle de productos (esto se mantiene igual)
   const body=document.getElementById("detalleBody");
   body.innerHTML="";
 
