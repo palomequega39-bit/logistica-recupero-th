@@ -101,7 +101,7 @@ body {
 .tabla-header,
 .fila {
   display: grid;
-  grid-template-columns: 50px 220px 80px 120px 120px 200px 120px;
+  grid-template-columns: 30px 50px 220px 80px 120px 120px 200px 120px; /* Añadimos los 30px */
   gap: 6px;
   align-items: center;
 }
@@ -338,3 +338,25 @@ th:nth-child(3) { width: 40%; }
   inset: 0;
   opacity: 0;
   cursor: pointer;
+/* Estilo para el botón de borrar filtros */
+.btn-secundario {
+  width: 100%;
+  margin-top: 10px;
+  padding: 8px;
+  background: #334155; /* Gris azulado oscuro */
+  border: none;
+  border-radius: 6px;
+  color: white;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background 0.2s;
+}
+
+.btn-secundario:hover {
+  background: #475569;
+}
+
+/* Ajuste para los checkboxes dentro de la fila */
+.fila input[type="checkbox"] {
+  cursor: pointer;
+}
