@@ -63,8 +63,15 @@ async function exportarDetallePDF(ordenes, seleccionados) {
         }
 
         // --- CABECERA DE ORDEN ---
+        const esFav = (o.Favorito === "FAVORITO" || o.Favorito === "SI");
         const esApross = (o.ObraSocial || "").toLowerCase().includes("apross");
-        doc.setFillColor(esApross ? 245 : 252, esApross ? 245 : 252, esApross ? 255 : 252);
+        if (esFav) {
+                    doc.setFillColor(252, 228, 45); // Amarillo suave para favoritos
+                } else if (esApross) {
+                    doc.setFillColor(130, 173, 217); // Azul pálido para Apross
+                } else {
+                    doc.setFillColor(252, 252, 252); // Gris normal
+                }
         doc.rect(margin, y, 180, 7, "F"); 
         
         if (o.Favorito === "FAVORITO" || o.Favorito === "SI") {
