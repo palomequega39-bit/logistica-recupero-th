@@ -36,7 +36,7 @@ async function exportarDetallePDF(ordenes, seleccionados) {
     const drawHeader = (doc, title) => {
         doc.setFillColor(...primaryColor);
         doc.rect(margin, 15, 2, 7, "F"); 
-        doc.setFontSize(14); // Ligeramente más pequeño para ganar espacio
+        doc.setFontSize(12); // Ligeramente más pequeño para ganar espacio
         doc.setFont("helvetica", "bold");
         doc.setTextColor(44, 62, 80);
         doc.text(title.toUpperCase(), margin + 5, 20.5);
@@ -73,7 +73,7 @@ async function exportarDetallePDF(ordenes, seleccionados) {
             doc.text("★", margin + 2, y + 4.8);
         }
 
-        doc.setFontSize(9);
+        doc.setFontSize(10);
         doc.setFont("helvetica", "bold");
         doc.setTextColor(44, 62, 80);
         doc.text(`${o.Orden}  |  ${o.Apellido}, ${o.Nombre}`, margin + 7, y + 4.8);
@@ -95,7 +95,7 @@ async function exportarDetallePDF(ordenes, seleccionados) {
         y += 10;
 
         // --- SUB-INFO ---
-        doc.setFontSize(7.5);
+        doc.setFontSize(9);
         doc.setFont("helvetica", "normal");
         doc.setTextColor(...secondaryColor);
         doc.text(`DNI: ${o.Dni || "N/C"}  •  OS: ${o.ObraSocial}  •  Exp: ${o.Expediente || "---"}`, margin + 2, y - 2.5);
@@ -111,13 +111,13 @@ async function exportarDetallePDF(ordenes, seleccionados) {
             const [nroRemito, fechaRemito] = claveRemito.split("|");
             const items = remitosMap[claveRemito];
 
-            doc.setFontSize(8);
+            doc.setFontSize(9);
             doc.setFont("helvetica", "bold");
             doc.setTextColor(60);
             doc.text(`Rmt: ${cleanRemito(nroRemito)} (${fechaRemito})`, margin + 2, y + 1.5);
             
             doc.setFont("helvetica", "normal");
-            doc.setFontSize(7.5);
+            doc.setFontSize(8);
             doc.text(`Médico: ${o.MedicoSolicitante || o.Medico || "-"}`, margin + 60, y + 1.5);
             y += 4;
 
@@ -131,7 +131,7 @@ async function exportarDetallePDF(ordenes, seleccionados) {
                     `Vto: ${item.Vencimiento || "-"}`
                 ]),
                 theme: 'striped',
-                styles: { fontSize: 7, cellPadding: 0.5, verticalAlign: 'middle' }, 
+                styles: { fontSize: 8, cellPadding: 0.5, verticalAlign: 'middle' }, 
                 columnStyles: { 0: { cellWidth: 85 } },
                 didDrawPage: (data) => { y = data.cursor.y; }
             });
@@ -140,7 +140,7 @@ async function exportarDetallePDF(ordenes, seleccionados) {
 
         if (o.Actividades) {
             y += 1;
-            doc.setFontSize(7);
+            doc.setFontSize(8);
             doc.setFont("helvetica", "italic");
             doc.setTextColor(100);
             const textLines = doc.splitTextToSize(`Obs: ${o.Actividades}`, 175);
