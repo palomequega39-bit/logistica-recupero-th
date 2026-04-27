@@ -275,7 +275,7 @@ function renderLista(){
         const estrellaHtml = esFav ? `<span class="estrella">★</span>` : "";
 
         fila.innerHTML = `
-            <span>}${o.Orden}</span>
+            <span>${o.Orden}</span>
             <span title="${o.Apellido} ${o.Nombre}">${o.Apellido} ${o.Nombre}</span>
             <span>${o.Dni}</span>
             <span>${o.ObraSocial}</span>
@@ -338,6 +338,12 @@ function actualizarSeleccion() {
 ========================= */
 
 function mostrar(o){
+   // 1. Actualizamos el título del panel "Datos de la Orden"
+  const panelTitulo = document.querySelector(".panel:nth-of-type(2) .titulo");
+  if (panelTitulo) {
+    panelTitulo.textContent = `Datos de la Orden - ${o.Orden}`;
+  }
+   
   const cab = document.getElementById("cabecera");
   
   // Verificamos si es favorito para crear el elemento de la estrella
