@@ -65,6 +65,8 @@
       
       <label>Favoritos</label>
       <select id="filtroFavorito"></select>
+
+      <button id="btnLimpiar" class="btn-secundario">Borrar Filtros</button>
       
     </div>
 
@@ -76,6 +78,8 @@
       <div class="titulo">Órdenes</div>
 
       <div class="tabla-header">
+        <input type="checkbox" id="selectAll" onclick="toggleSeleccionarTodos(event)">
+        <span onclick="sortBy('Orden')">Orden</span>
         <span onclick="sortBy('Orden')">Orden</span>
         <span onclick="sortBy('Paciente')">Paciente</span>
         <span onclick="sortBy('Dni')">DNI</span>
