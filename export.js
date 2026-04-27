@@ -65,34 +65,42 @@ async function exportarDetallePDF(ordenes, seleccionados) {
         // --- CABECERA DE ORDEN ---
         const esFav = (o.Favorito === "FAVORITO" || o.Favorito === "SI");
         const esApross = (o.ObraSocial || "").toLowerCase().includes("apross");
-        if (esFav) {
-                    doc.setFillColor(252, 228, 45); // Amarillo suave para favoritos
-                } else if (esApross) {
-                    doc.setFillColor(130, 173, 217); // Azul pálido para Apross
-                } else {
-                    doc.setFillColor(252, 252, 252); // Gris normal
-                }
-        doc.rect(margin, y, 180, 7, "F"); 
         
-        if (o.Favorito === "FAVORITO" || o.Favorito === "SI") {
+        if (esFav) {
+            doc.setFillColor(252, 228, 45); // Amarillo suave
+        } else if (esApross) {
+            doc.setFillColor(130, 173, 217); // Azul pálido
+        } else {
+            doc.setFillColor(245, 245, 245); // Gris muy claro
+        }
+        
+        // AJUSTE AQUÍ: Reducimos el alto de 7 a 4.5 para que quede ceñido a la letra
+        const altoFondo = 4.5; 
+        doc.rect(margin, y, 180, altoFondo, "F"); 
+        
+        if (esFav) {
             doc.setTextColor(231, 76, 60);
             doc.setFont("helvetica", "bold");
-            doc.text("★", margin + 2, y + 4.8);
+            // Ajustado para que el centro de la estrella coincida
+            doc.text("★", margin + 2, y + 3.5); 
         }
-
+        
         doc.setFontSize(10);
         doc.setFont("helvetica", "bold");
         doc.setTextColor(44, 62, 80);
-        doc.text(`${o.Orden}  |  ${o.Apellido}, ${o.Nombre}`, margin + 7, y + 4.8);
-
-        // Flags
+        
+        // AJUSTE AQUÍ: y + 3.5 posiciona la línea base de la letra casi al final del rectángulo de 4.5
+        doc.text(`${o.Orden}  |  ${o.Apellido}, ${o.Nombre}`, margin + 7, y + 3.5);
+        
+        // Reajustamos la posición de los flags para que no floten fuera del nuevo fondo
         let xFlag = 190;
         const drawFlag = (txt, color) => {
             doc.setFontSize(6.5);
             doc.setDrawColor(...color);
             doc.setTextColor(...color);
-            doc.rect(xFlag - 5, y + 1.5, 4, 3.5, "D");
-            doc.text(txt, xFlag - 3.8, y + 4.2);
+            // Bajamos un poco el rectángulo del flag (y + 0.5)
+            doc.rect(xFlag - 5, y + 0.5, 4, 3.5, "D");
+            doc.text(txt, xFlag - 3.8, y + 3.2);
             xFlag -= 6;
         };
         if (o.Devolucion === "VERDADERO") drawFlag("D", [231, 76, 60]);
