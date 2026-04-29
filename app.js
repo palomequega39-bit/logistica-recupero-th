@@ -744,6 +744,7 @@ document.addEventListener("keydown", e => {
     if (e.key === "ArrowUp") {
         e.preventDefault(); // Evita que la ventana se mueva
         indiceSeleccionado--;
+    }
         actualizarSeleccion();
         if (e.key === " " || e.code === "Space") {
         e.preventDefault();
