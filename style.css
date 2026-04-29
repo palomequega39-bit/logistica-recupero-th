@@ -52,6 +52,27 @@ body {
   color: #1e293b; /* Color oscuro profesional */
 }
 
+.stats-bar {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.stat-chip {
+  font-size: 12px;
+  background: #f1f5f9;
+  color: #0f172a;
+  border: 1px solid #e2e8f0;
+  border-radius: 999px;
+  padding: 4px 10px;
+}
+
+.stat-chip b {
+  color: #1d4ed8;
+}
+
+
 /* DROPZONE */
 .dropzone {
   border: 2px dashed #334155;
