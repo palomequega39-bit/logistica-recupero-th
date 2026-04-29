@@ -57,6 +57,10 @@ function handleFile(file){
 
   if(!file) return;
 
+    limpiarDetalleOrden();
+  seleccionados.clear();
+  document.getElementById("selectAll").checked = false;
+   
   document.getElementById("fileName").textContent = file.name;
   document.getElementById("fileStatus").classList.remove("hidden");
 
@@ -113,7 +117,10 @@ function procesar(data){
   });
 
   ordenes = Object.values(map);
-
+ seleccionados.clear();
+  document.getElementById("selectAll").checked = false;
+  limpiarDetalleOrden();
+   
   console.log("Órdenes cargadas:", ordenes.length);
 
   cargarFiltros();
@@ -231,7 +238,11 @@ function aplicarFiltros(){
   });
 
   indiceSeleccionado = -1;
+    limpiarDetalleOrden();
+  document.getElementById("selectAll").checked = false;
+  seleccionados = new Set([...seleccionados].filter(id => filtradas.some(o => o.Orden === id)));
   renderLista();
+   actualizarLabelsInformativos();
 }
 
 /* =========================
@@ -432,21 +443,23 @@ function cargarInstituciones() {
 
     const valores = [...new Set(ordenes.map(o => o.Institucion).filter(Boolean))];
 
-    input.oninput = () => {
-        const texto = input.value.toLowerCase();
-        const filtrados = valores.filter(v => v.toLowerCase().includes(texto));
-
-        if (texto === "" || filtrados.length === 0) {
-            lista.innerHTML = "";
-            return;
-        }
+    const renderInstituciones = (texto = "") => {
+        const textoNormalizado = texto.toLowerCase().trim();
+        const filtrados = textoNormalizado
+            ? valores.filter(v => v.toLowerCase().includes(textoNormalizado))
+            : valores;
 
         lista.innerHTML = filtrados
             .slice(0, 50)
             .map(v => `<div class="item-inst">${v}</div>`)
             .join("");
     };
+      input.oninput = () => {
+        renderInstituciones(input.value);
+    };
 
+    input.onfocus = () => renderInstituciones(input.value);
+    input.onclick = () => renderInstituciones(input.value);
     // Al hacer clic en un ítem
     lista.onclick = e => {
         if (e.target.classList.contains("item-inst")) {
@@ -722,6 +735,7 @@ function exportarCSV(data, nombre="debug_preprocesado.csv"){
 }
 
 document.addEventListener("keydown", e => {
+   if (["INPUT", "TEXTAREA", "SELECT"].includes(e.target.tagName)) return;
     if (e.key === "ArrowDown") {
         e.preventDefault(); // Evita que la ventana se mueva
         indiceSeleccionado++;
@@ -731,6 +745,9 @@ document.addEventListener("keydown", e => {
         e.preventDefault(); // Evita que la ventana se mueva
         indiceSeleccionado--;
         actualizarSeleccion();
+        if (e.key === " " || e.code === "Space") {
+        e.preventDefault();
+        toggleCheckOrdenSeleccionada();
     }
 });
 
@@ -762,6 +779,24 @@ function borrarFiltros() {
     aplicarFiltros();
 }
 
+function limpiarDetalleOrden() {
+    const panelTitulo = document.querySelector(".panel:nth-of-type(2) .titulo");
+    if (panelTitulo) panelTitulo.textContent = "Datos de la Orden";
+
+    document.getElementById("cabecera").innerHTML = "";
+    document.getElementById("detalleBody").innerHTML = "";
+}
+
+function actualizarLabelsInformativos() {
+    const cantidadOrdenes = filtradas.length;
+    const cantidadProductos = filtradas.reduce((acc, o) => acc + (o.detalles?.length || 0), 0);
+    const cantidadFavoritas = filtradas.filter(o => o.Favorito === "FAVORITO" || o.Favorito === "SI").length;
+
+    document.getElementById("labelCantidadOrdenes").textContent = cantidadOrdenes;
+    document.getElementById("labelCantidadProductos").textContent = cantidadProductos;
+    document.getElementById("labelCantidadFavoritas").textContent = cantidadFavoritas;
+}
+
 function toggleSeleccionarTodos(event) {
     const isChecked = event.target.checked;
     const checkboxes = document.querySelectorAll(".check-orden");
@@ -784,3 +819,19 @@ function handleCheck(event, ordenId) {
     }
 }
 
+function toggleCheckOrdenSeleccionada() {
+    if (indiceSeleccionado < 0 || indiceSeleccionado >= filtradas.length) return;
+
+    const ordenId = filtradas[indiceSeleccionado].Orden;
+    const checkbox = document.querySelector(`.check-orden[data-id="${ordenId}"]`);
+    if (!checkbox) return;
+
+    checkbox.checked = !checkbox.checked;
+
+    if (checkbox.checked) {
+        seleccionados.add(ordenId);
+    } else {
+        seleccionados.delete(ordenId);
+        document.getElementById("selectAll").checked = false;
+    }
+}
