@@ -423,3 +423,7 @@ th:nth-child(3) { width: 40%; }
 .btn-exportar-verde:hover {
   background-color: #059669; /* Verde más oscuro al pasar el mouse */
 }
+.btn-exportar-v2 {
+  margin-left: 8px;
+  background: #0ea5e9;
+}
