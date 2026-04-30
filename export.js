@@ -197,66 +197,139 @@ async function exportarDetallePDFv2(ordenes, seleccionados) {
     const subtitulo = prompt("Ingrese el Hospital o Servicio:", "Servicio / Hospital");
     if (!subtitulo) return;
 
-    const doc = new jsPDF({ orientation: "landscape" });
+    const doc = new jsPDF({ orientation: "portrait" });
+    const margin = 12;
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const headerBottomY = 28;
+    const footerY = pageHeight - 8;
+    const usableBottomY = pageHeight - 14;
+
+    const drawPageHeader = () => {
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(30, 41, 59);
+        doc.setFontSize(12);
+        doc.text(`Planilla de Órdenes v2.0 - ${subtitulo}`, margin, 12);
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8);
+        doc.setTextColor(100);
+        doc.text(`Generado: ${new Date().toLocaleDateString()}`, pageWidth - margin, 12, { align: "right" });
+
+        doc.setDrawColor(220);
+        doc.line(margin, headerBottomY, pageWidth - margin, headerBottomY);
+    };
+
+    const buildFlags = (o) => {
+        const esFav = (o.Favorito === "FAVORITO" || o.Favorito === "SI") ? "SI" : "NO";
+        const faltaF = o.Foja === "FALSO" ? "SI" : "NO";
+        const faltaC = o.CI === "FALSO" ? "SI" : "NO";
+        const devolPend = o.Devolucion === "VERDADERO" ? "SI" : "NO";
+        return { esFav, faltaF, faltaC, devolPend };
+    };
+
+    const getHeaderColor = (o) => {
+        const esFav = (o.Favorito === "FAVORITO" || o.Favorito === "SI");
+        const esApross = (o.ObraSocial || "").toLowerCase().includes("apross");
+        if (esFav) return [255, 235, 133];
+        if (esApross) return [174, 202, 230];
+        return [230, 230, 230];
+    };
+
+    const estimateOrderHeight = (o) => {
+        const detalles = (o.detalles || []).length;
+        const actividadesLines = doc.splitTextToSize(`Prioridad: ${o.Prioridad || "-"} | Actividad: ${o.Actividades || "-"}`, 180).length;
+        return 24 + 12 + Math.max(1, detalles) * 7 + actividadesLines * 4 + 8;
+    };
+
+    drawPageHeader();
+    let y = headerBottomY + 4;
+
     const ordenesParaExportar = ordenes.filter(o => seleccionados.has(o.Orden));
 
-    const body = [];
-    ordenesParaExportar.forEach(o => {
-        const remitosAgrupados = {};
-        (o.detalles || []).forEach(d => {
-            const clave = `${d.Remito || "-"}|${d.FechaR || "-"}`;
-            if (!remitosAgrupados[clave]) remitosAgrupados[clave] = [];
-            remitosAgrupados[clave].push(d);
+    ordenesParaExportar.forEach((o) => {
+        const estimated = estimateOrderHeight(o);
+        if (y + estimated > usableBottomY) {
+            doc.addPage();
+            drawPageHeader();
+            y = headerBottomY + 4;
+        }
+
+        const flags = buildFlags(o);
+
+        doc.autoTable({
+            startY: y,
+            theme: "grid",
+            head: [["N° Orden", "Paciente", "DNI", "Obra Social", "Expediente", "Fecha CX", "Médico", "Fav", "F", "C", "D"]],
+            body: [[
+                o.Orden || "",
+                `${o.Apellido || ""} ${o.Nombre || ""}`.trim(),
+                o.Dni || "",
+                o.ObraSocial || "",
+                o.Expediente || "",
+                o.FechaCX || "",
+                o.MedicoSolicitante || o.Medico || "",
+                flags.esFav,
+                flags.faltaF,
+                flags.faltaC,
+                flags.devolPend
+            ]],
+            margin: { left: margin, right: margin },
+            styles: { fontSize: 7, cellPadding: 1.5, valign: "middle" },
+            headStyles: { fillColor: getHeaderColor(o), textColor: 20, fontStyle: "bold" },
+            bodyStyles: { textColor: 30 },
+            columnStyles: {
+                0: { cellWidth: 16 }, 1: { cellWidth: 30 }, 2: { cellWidth: 18 }, 3: { cellWidth: 28 },
+                4: { cellWidth: 18 }, 5: { cellWidth: 20 }, 6: { cellWidth: 24 }, 7: { cellWidth: 8 },
+                8: { cellWidth: 8 }, 9: { cellWidth: 8 }, 10: { cellWidth: 8 }
+            }
         });
 
-        const remitosTexto = Object.entries(remitosAgrupados).map(([clave, items]) => {
-            const [remito, fechaR] = clave.split("|");
-            const productos = items.map(it => `${it.Q || "-"}x ${it.Producto || "-"}`).join("\n");
-            return `${remito} (${fechaR})\n${productos}`;
-        }).join("\n\n");
+        y = doc.lastAutoTable.finalY + 2;
 
-        body.push([
-            o.Orden || "",
-            `${o.Apellido || ""} ${o.Nombre || ""}`.trim(),
-            o.Dni || "",
-            o.ObraSocial || "",
-            o.Expediente || "",
-            o.FechaCX || "",
-            o.Institucion || "",
-            o.Prioridad || "",
-            o.MedicoSolicitante || o.Medico || "",
-            remitosTexto,
-            o.Actividades || ""
-        ]);
+        doc.autoTable({
+            startY: y,
+            theme: "grid",
+            head: [["N° Remito", "Fecha R", "Q", "Producto", "Lote", "Serie"]],
+            body: (o.detalles || []).map(d => [
+                d.Remito || "",
+                d.FechaR || "",
+                d.Q || "",
+                d.Producto || "",
+                d.Lote || "",
+                d.Serie || ""
+            ]),
+            margin: { left: margin, right: margin },
+            styles: { fontSize: 7, cellPadding: 1.2, valign: "middle" },
+            headStyles: { fillColor: [241, 245, 249], textColor: 30, fontStyle: "bold" },
+            columnStyles: { 0: { cellWidth: 24 }, 1: { cellWidth: 22 }, 2: { cellWidth: 10 }, 3: { cellWidth: 90 }, 4: { cellWidth: 20 }, 5: { cellWidth: 20 } }
+        });
+
+        y = doc.lastAutoTable.finalY + 3;
+
+        doc.setFont("helvetica", "italic");
+        doc.setFontSize(7.5);
+        doc.setTextColor(90);
+        const pie = doc.splitTextToSize(`Prioridad: ${o.Prioridad || "-"} | Actividad: ${o.Actividades || "-"}`, 180);
+        doc.text(pie, margin, y);
+        y += pie.length * 3.5 + 4;
+
+        doc.setDrawColor(230);
+        doc.line(margin, y, pageWidth - margin, y);
+        y += 3;
     });
 
-    doc.setFontSize(12);
-    doc.text(`Planilla de Órdenes - ${subtitulo}`, 14, 12);
-    doc.setFontSize(8);
-    doc.text(`Generado: ${new Date().toLocaleDateString()}`, 14, 17);
+    const totalPages = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= totalPages; i++) {
+        doc.setPage(i);
+        doc.setDrawColor(220);
+        doc.line(margin, footerY - 3, pageWidth - margin, footerY - 3);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(7);
+        doc.setTextColor(110);
+        doc.text(`Página ${i} de ${totalPages}`, pageWidth - margin, footerY, { align: "right" });
+    }
 
-    doc.autoTable({
-        startY: 20,
-        head: [["Orden", "Paciente", "DNI", "Obra Social", "Expediente", "Fecha CX", "Institución", "Prioridad", "Médico", "Remitos y Productos", "Actividades"]],
-        body,
-        theme: "grid",
-        styles: { fontSize: 7, cellPadding: 1.5, valign: "top" },
-        headStyles: { fillColor: [37, 99, 235], textColor: 255, fontStyle: "bold" },
-        columnStyles: {
-            0: { cellWidth: 18 },
-            1: { cellWidth: 35 },
-            2: { cellWidth: 22 },
-            3: { cellWidth: 30 },
-            4: { cellWidth: 22 },
-            5: { cellWidth: 20 },
-            6: { cellWidth: 35 },
-            7: { cellWidth: 16 },
-            8: { cellWidth: 28 },
-            9: { cellWidth: 45 },
-            10: { cellWidth: 35 }
-        }
-    });
-
-    const fechaArchivo = new Date().toISOString().slice(0,10).replace(/-/g, "");
+    const fechaArchivo = new Date().toISOString().slice(0, 10).replace(/-/g, "");
     doc.save(`Planilla_v2_${subtitulo.replace(/\s/g, "_")}_${fechaArchivo}.pdf`);
 }
