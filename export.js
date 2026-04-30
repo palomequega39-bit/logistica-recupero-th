@@ -113,7 +113,7 @@ async function exportarDetallePDF(ordenes, seleccionados) {
         doc.setFontSize(9);
         doc.setFont("helvetica", "normal");
         doc.setTextColor(...secondaryColor);
-        doc.text(`DNI: ${o.Dni || "N/C"}  •  OS: ${o.ObraSocial}  •  Exp: ${o.Expediente || "---"}`, margin + 2, y - 2.5);
+        doc.text(`DNI: ${o.Dni || "N/C"}  •  OS: ${o.ObraSocial}  •  Exp: ${o.Expediente || "---"}  •  Fecha CX: ${o.FechaCX || "---"}`, margin + 2, y - 2.5);
         
         const remitosMap = {};
         o.detalles.forEach(d => {
@@ -185,4 +185,78 @@ async function exportarDetallePDF(ordenes, seleccionados) {
 
     const fechaArchivo = new Date().toISOString().slice(0,10).replace(/-/g, "");
     doc.save(`Planilla_${subtitulo.replace(/\s/g, "_")}_${fechaArchivo}.pdf`);
+}
+async function exportarDetallePDFv2(ordenes, seleccionados) {
+    const { jsPDF } = window.jspdf;
+
+    if (seleccionados.size === 0) {
+        Swal.fire("Atención", "Por favor, selecciona al menos una orden.", "warning");
+        return;
+    }
+
+    const subtitulo = prompt("Ingrese el Hospital o Servicio:", "Servicio / Hospital");
+    if (!subtitulo) return;
+
+    const doc = new jsPDF({ orientation: "landscape" });
+    const ordenesParaExportar = ordenes.filter(o => seleccionados.has(o.Orden));
+
+    const body = [];
+    ordenesParaExportar.forEach(o => {
+        const remitosAgrupados = {};
+        (o.detalles || []).forEach(d => {
+            const clave = `${d.Remito || "-"}|${d.FechaR || "-"}`;
+            if (!remitosAgrupados[clave]) remitosAgrupados[clave] = [];
+            remitosAgrupados[clave].push(d);
+        });
+
+        const remitosTexto = Object.entries(remitosAgrupados).map(([clave, items]) => {
+            const [remito, fechaR] = clave.split("|");
+            const productos = items.map(it => `${it.Q || "-"}x ${it.Producto || "-"}`).join("\n");
+            return `${remito} (${fechaR})\n${productos}`;
+        }).join("\n\n");
+
+        body.push([
+            o.Orden || "",
+            `${o.Apellido || ""} ${o.Nombre || ""}`.trim(),
+            o.Dni || "",
+            o.ObraSocial || "",
+            o.Expediente || "",
+            o.FechaCX || "",
+            o.Institucion || "",
+            o.Prioridad || "",
+            o.MedicoSolicitante || o.Medico || "",
+            remitosTexto,
+            o.Actividades || ""
+        ]);
+    });
+
+    doc.setFontSize(12);
+    doc.text(`Planilla de Órdenes - ${subtitulo}`, 14, 12);
+    doc.setFontSize(8);
+    doc.text(`Generado: ${new Date().toLocaleDateString()}`, 14, 17);
+
+    doc.autoTable({
+        startY: 20,
+        head: [["Orden", "Paciente", "DNI", "Obra Social", "Expediente", "Fecha CX", "Institución", "Prioridad", "Médico", "Remitos y Productos", "Actividades"]],
+        body,
+        theme: "grid",
+        styles: { fontSize: 7, cellPadding: 1.5, valign: "top" },
+        headStyles: { fillColor: [37, 99, 235], textColor: 255, fontStyle: "bold" },
+        columnStyles: {
+            0: { cellWidth: 18 },
+            1: { cellWidth: 35 },
+            2: { cellWidth: 22 },
+            3: { cellWidth: 30 },
+            4: { cellWidth: 22 },
+            5: { cellWidth: 20 },
+            6: { cellWidth: 35 },
+            7: { cellWidth: 16 },
+            8: { cellWidth: 28 },
+            9: { cellWidth: 45 },
+            10: { cellWidth: 35 }
+        }
+    });
+
+    const fechaArchivo = new Date().toISOString().slice(0,10).replace(/-/g, "");
+    doc.save(`Planilla_v2_${subtitulo.replace(/\s/g, "_")}_${fechaArchivo}.pdf`);
 }
