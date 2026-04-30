@@ -125,7 +125,7 @@ body {
 .fila {
   display: grid;
   /* 30px para el checkbox y el resto distribuido para los datos  */
-  grid-template-columns: 30px 60px 180px 80px 120px 100px 180px 80px 52px; 
+  grid-template-columns: 30px 60px 180px 80px 120px 100px 180px 120px 52px; 
   gap: 8px;
   align-items: center;
 }
