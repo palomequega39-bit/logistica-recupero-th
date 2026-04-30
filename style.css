@@ -198,12 +198,19 @@ body {
 }
 
 .btn-odoo {
-  border: 1px solid #cbd5e1;
-  border-radius: 6px;
-  background: #f8fafc;
+  background-color: #714B67;
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
   cursor: pointer;
-  font-size: 13px;
-  padding: 3px 0;
+  font-size: 12px;
+  font-weight: bold;
+  padding: 6px 10px;
+  transition: background-color 0.3s ease;
+}
+
+.btn-odoo:hover {
+  background-color: #5b3c53;
 }
 
 .btn-odoo:hover {
