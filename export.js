@@ -186,6 +186,8 @@ async function exportarDetallePDF(ordenes, seleccionados) {
     const fechaArchivo = new Date().toISOString().slice(0,10).replace(/-/g, "");
     doc.save(`Planilla_${subtitulo.replace(/\s/g, "_")}_${fechaArchivo}.pdf`);
 }
+
+
 async function exportarDetallePDFv2(ordenes, seleccionados) {
     const { jsPDF } = window.jspdf;
 
@@ -198,35 +200,43 @@ async function exportarDetallePDFv2(ordenes, seleccionados) {
     if (!subtitulo) return;
 
     const doc = new jsPDF({ orientation: "portrait" });
-    const margin = 12;
+    const margin = 10;
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
-    const headerBottomY = 28;
-    const footerY = pageHeight - 8;
-    const usableBottomY = pageHeight - 14;
+    const headerBottomY = 24;
+    const footerY = pageHeight - 7;
+    const usableBottomY = pageHeight - 12;
+
+    const cleanRemito = (txt) => {
+        if (!txt) return "";
+        return txt.toString().replace(/^R/i, '').split('-').map(part => parseInt(part, 10)).join('-');
+    };
+
+    const cleanProduct = (txt) => {
+        if (!txt) return "";
+        return txt.toString().replace(/\[.*?\]\s*/g, '').trim();
+    };
 
     const drawPageHeader = () => {
         doc.setFont("helvetica", "bold");
         doc.setTextColor(30, 41, 59);
-        doc.setFontSize(12);
-        doc.text(`Planilla de Órdenes v2.0 - ${subtitulo}`, margin, 12);
+        doc.setFontSize(11);
+        doc.text(`Planilla de Órdenes v2.0 - ${subtitulo}`, margin, 10);
 
         doc.setFont("helvetica", "normal");
-        doc.setFontSize(8);
+        doc.setFontSize(7);
         doc.setTextColor(100);
-        doc.text(`Generado: ${new Date().toLocaleDateString()}`, pageWidth - margin, 12, { align: "right" });
+        doc.text(`Generado: ${new Date().toLocaleDateString()}`, pageWidth - margin, 10, { align: "right" });
 
         doc.setDrawColor(220);
         doc.line(margin, headerBottomY, pageWidth - margin, headerBottomY);
     };
 
-    const buildFlags = (o) => {
-        const esFav = (o.Favorito === "FAVORITO" || o.Favorito === "SI") ? "SI" : "NO";
-        const faltaF = o.Foja === "FALSO" ? "SI" : "NO";
-        const faltaC = o.CI === "FALSO" ? "SI" : "NO";
-        const devolPend = o.Devolucion === "VERDADERO" ? "SI" : "NO";
-        return { esFav, faltaF, faltaC, devolPend };
-    };
+    const buildFlags = (o) => ({
+        faltaF: o.Foja === "FALSO" ? "F" : "",
+        faltaC: o.CI === "FALSO" ? "C" : "",
+        devolPend: o.Devolucion === "VERDADERO" ? "D" : ""
+    });
 
     const getHeaderColor = (o) => {
         const esFav = (o.Favorito === "FAVORITO" || o.Favorito === "SI");
@@ -237,13 +247,13 @@ async function exportarDetallePDFv2(ordenes, seleccionados) {
     };
 
     const estimateOrderHeight = (o) => {
-        const detalles = (o.detalles || []).length;
-        const actividadesLines = doc.splitTextToSize(`Prioridad: ${o.Prioridad || "-"} | Actividad: ${o.Actividades || "-"}`, 180).length;
-        return 24 + 12 + Math.max(1, detalles) * 7 + actividadesLines * 4 + 8;
+        const detalles = Math.max(1, (o.detalles || []).length);
+        const actividadesLines = doc.splitTextToSize(`${o.Prioridad || "-"} | ${o.Actividades || "-"}`, 185).length;
+        return 10 + 6 + (detalles * 5.2) + (actividadesLines * 3.1) + 6;
     };
 
     drawPageHeader();
-    let y = headerBottomY + 4;
+    let y = headerBottomY + 3;
 
     const ordenesParaExportar = ordenes.filter(o => seleccionados.has(o.Orden));
 
@@ -252,80 +262,103 @@ async function exportarDetallePDFv2(ordenes, seleccionados) {
         if (y + estimated > usableBottomY) {
             doc.addPage();
             drawPageHeader();
-            y = headerBottomY + 4;
+            y = headerBottomY + 3;
         }
 
         const flags = buildFlags(o);
+        const esFav = (o.Favorito === "FAVORITO" || o.Favorito === "SI");
+        const ordenConEstrella = `${esFav ? "★ " : ""}${o.Orden || ""}`;
 
         doc.autoTable({
             startY: y,
             theme: "grid",
-            head: [["N° Orden", "Paciente", "DNI", "Obra Social", "Expediente", "Fecha CX", "Médico", "Fav", "F", "C", "D"]],
             body: [[
-                o.Orden || "",
+                ordenConEstrella,
                 `${o.Apellido || ""} ${o.Nombre || ""}`.trim(),
                 o.Dni || "",
                 o.ObraSocial || "",
                 o.Expediente || "",
                 o.FechaCX || "",
                 o.MedicoSolicitante || o.Medico || "",
-                flags.esFav,
                 flags.faltaF,
                 flags.faltaC,
                 flags.devolPend
             ]],
             margin: { left: margin, right: margin },
-            styles: { fontSize: 7, cellPadding: 1.5, valign: "middle" },
-            headStyles: { fillColor: getHeaderColor(o), textColor: 20, fontStyle: "bold" },
-            bodyStyles: { textColor: 30 },
+            styles: {
+                fontSize: 7,
+                cellPadding: 0.8,
+                valign: "middle",
+                overflow: "hidden",
+                lineWidth: 0.1,
+                textColor: 25
+            },
+            bodyStyles: { fillColor: getHeaderColor(o) },
             columnStyles: {
-                0: { cellWidth: 16 }, 1: { cellWidth: 30 }, 2: { cellWidth: 18 }, 3: { cellWidth: 28 },
-                4: { cellWidth: 18 }, 5: { cellWidth: 20 }, 6: { cellWidth: 24 }, 7: { cellWidth: 8 },
-                8: { cellWidth: 8 }, 9: { cellWidth: 8 }, 10: { cellWidth: 8 }
+                0: { cellWidth: 20, fontStyle: "bold" },
+                1: { cellWidth: 33, fontStyle: "bold" },
+                2: { cellWidth: 18, fontStyle: "normal" },
+                3: { cellWidth: 26, fontStyle: "normal" },
+                4: { cellWidth: 18, fontStyle: "normal" },
+                5: { cellWidth: 19, fontStyle: "normal" },
+                6: { cellWidth: 30, fontStyle: "normal" },
+                7: { cellWidth: 5, fontStyle: "bold", halign: "center" },
+                8: { cellWidth: 5, fontStyle: "bold", halign: "center" },
+                9: { cellWidth: 5, fontStyle: "bold", halign: "center" }
             }
         });
 
-        y = doc.lastAutoTable.finalY + 2;
+        y = doc.lastAutoTable.finalY + 1;
 
         doc.autoTable({
             startY: y,
             theme: "grid",
-            head: [["N° Remito", "Fecha R", "Q", "Producto", "Lote", "Serie"]],
+            head: [["Remito", "Fecha R", "Q", "Producto", "Lote", "Serie", "Vencimiento"]],
             body: (o.detalles || []).map(d => [
-                d.Remito || "",
+                cleanRemito(d.Remito || ""),
                 d.FechaR || "",
                 d.Q || "",
-                d.Producto || "",
+                `${cleanProduct(d.Producto || "")}`,
                 d.Lote || "",
-                d.Serie || ""
+                d.Serie || "",
+                d.Vencimiento || ""
             ]),
             margin: { left: margin, right: margin },
-            styles: { fontSize: 7, cellPadding: 1.2, valign: "middle" },
+            styles: {
+                fontSize: 6.6,
+                cellPadding: 0.7,
+                valign: "middle",
+                overflow: "hidden",
+                lineWidth: 0.1
+            },
             headStyles: { fillColor: [241, 245, 249], textColor: 30, fontStyle: "bold" },
-            columnStyles: { 0: { cellWidth: 24 }, 1: { cellWidth: 22 }, 2: { cellWidth: 10 }, 3: { cellWidth: 90 }, 4: { cellWidth: 20 }, 5: { cellWidth: 20 } }
+            columnStyles: {
+                0: { cellWidth: 18 }, 1: { cellWidth: 18 }, 2: { cellWidth: 8 },
+                3: { cellWidth: 82 }, 4: { cellWidth: 18 }, 5: { cellWidth: 18 }, 6: { cellWidth: 20 }
+            }
         });
 
-        y = doc.lastAutoTable.finalY + 3;
+        y = doc.lastAutoTable.finalY + 1.8;
 
         doc.setFont("helvetica", "italic");
-        doc.setFontSize(7.5);
+        doc.setFontSize(7);
         doc.setTextColor(90);
-        const pie = doc.splitTextToSize(`Prioridad: ${o.Prioridad || "-"} | Actividad: ${o.Actividades || "-"}`, 180);
+        const pie = doc.splitTextToSize(`${o.Prioridad || "-"} | ${o.Actividades || "-"}`, 185);
         doc.text(pie, margin, y);
-        y += pie.length * 3.5 + 4;
+        y += pie.length * 2.8 + 2;
 
-        doc.setDrawColor(230);
+        doc.setDrawColor(235);
         doc.line(margin, y, pageWidth - margin, y);
-        y += 3;
+        y += 2;
     });
 
     const totalPages = doc.internal.getNumberOfPages();
     for (let i = 1; i <= totalPages; i++) {
         doc.setPage(i);
         doc.setDrawColor(220);
-        doc.line(margin, footerY - 3, pageWidth - margin, footerY - 3);
+        doc.line(margin, footerY - 2.5, pageWidth - margin, footerY - 2.5);
         doc.setFont("helvetica", "normal");
-        doc.setFontSize(7);
+        doc.setFontSize(6.8);
         doc.setTextColor(110);
         doc.text(`Página ${i} de ${totalPages}`, pageWidth - margin, footerY, { align: "right" });
     }
@@ -333,3 +366,4 @@ async function exportarDetallePDFv2(ordenes, seleccionados) {
     const fechaArchivo = new Date().toISOString().slice(0, 10).replace(/-/g, "");
     doc.save(`Planilla_v2_${subtitulo.replace(/\s/g, "_")}_${fechaArchivo}.pdf`);
 }
+
