@@ -55,8 +55,10 @@ body {
 .stats-bar {
   display: flex;
   gap: 8px;
-  flex-wrap: wrap;
-  margin-bottom: 10px;
+  flex-wrap: nowrap;
+  margin-bottom: 0;
+  flex-grow: 1;
+  justify-content: center;
 }
 
 .stat-chip {
@@ -402,6 +404,7 @@ th:nth-child(3) { width: 40%; }
   justify-content: space-between;
   align-items: center;
   padding-right: 10px; /* Un pequeño aire a la derecha */
+  gap: 20px;
 }
 
 /* El diseño del botón verde */
