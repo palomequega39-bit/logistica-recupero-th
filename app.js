@@ -15,10 +15,11 @@ document.getElementById("buscadorGlobal")
   .addEventListener("input", aplicarFiltros);
 // Dentro de app.js, donde configures los eventos:
 document.getElementById("btnExportarPDF").onclick = () => {
-    // Llamamos a la función de export.js pasando las variables globales de app.js
     exportarDetallePDF(ordenes, seleccionados);
 };
-
+document.getElementById("btnExportarPDFv2").onclick = () => {
+    exportarDetallePDFv2(ordenes, seleccionados);
+};
 /* =========================
    DROPZONE (NUEVO)
 ========================= */
@@ -60,6 +61,8 @@ function handleFile(file){
     limpiarDetalleOrden();
   seleccionados.clear();
   document.getElementById("selectAll").checked = false;
+
+    actualizarLabelsInformativos();
    
   document.getElementById("fileName").textContent = file.name;
   document.getElementById("fileStatus").classList.remove("hidden");
@@ -792,10 +795,11 @@ function actualizarLabelsInformativos() {
     const cantidadOrdenes = filtradas.length;
     const cantidadProductos = filtradas.reduce((acc, o) => acc + (o.detalles?.length || 0), 0);
     const cantidadFavoritas = filtradas.filter(o => o.Favorito === "FAVORITO" || o.Favorito === "SI").length;
-
+    const cantidadSeleccionadas = seleccionados.size;
     document.getElementById("labelCantidadOrdenes").textContent = cantidadOrdenes;
     document.getElementById("labelCantidadProductos").textContent = cantidadProductos;
     document.getElementById("labelCantidadFavoritas").textContent = cantidadFavoritas;
+    document.getElementById("labelCantidadSeleccionadas").textContent = cantidadSeleccionadas;
 }
 
 function toggleSeleccionarTodos(event) {
@@ -808,6 +812,7 @@ function toggleSeleccionarTodos(event) {
         const ordenId = cb.getAttribute("data-id");
         if (isChecked) seleccionados.add(ordenId);
     });
+   actualizarLabelsInformativos();
 }
 
 function handleCheck(event, ordenId) {
@@ -818,6 +823,7 @@ function handleCheck(event, ordenId) {
         seleccionados.delete(ordenId);
         document.getElementById("selectAll").checked = false;
     }
+   actualizarLabelsInformativos();
 }
 
 function toggleCheckOrdenSeleccionada() {
@@ -835,4 +841,5 @@ function toggleCheckOrdenSeleccionada() {
         seleccionados.delete(ordenId);
         document.getElementById("selectAll").checked = false;
     }
+   actualizarLabelsInformativos();
 }
