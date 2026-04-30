@@ -125,7 +125,7 @@ body {
 .fila {
   display: grid;
   /* 30px para el checkbox y el resto distribuido para los datos  */
-  grid-template-columns: 30px 60px 180px 80px 120px 100px 180px 80px; 
+  grid-template-columns: 30px 60px 180px 80px 120px 100px 180px 80px 52px; 
   gap: 8px;
   align-items: center;
 }
@@ -195,6 +195,19 @@ body {
 
 .fila.active {
   background: #dbeafe;
+}
+
+.btn-odoo {
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #f8fafc;
+  cursor: pointer;
+  font-size: 13px;
+  padding: 3px 0;
+}
+
+.btn-odoo:hover {
+  background: #e2e8f0;
 }
 
 /* CABECERA */
