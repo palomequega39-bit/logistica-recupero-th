@@ -235,7 +235,8 @@ function aplicarFiltros(){
 
     // Buscador Global
     if(texto){
-      const combinado = `${o.Orden} ${o.Apellido} ${o.Nombre} ${o.Dni} ${o.ObraSocial} ${o.Institucion}`.toLowerCase();
+      const detalleTexto = (o.detalles || []).map(d => `${d.Serie || ""} ${d.Lote || ""} ${d.Producto || ""} ${d.Remito || ""}`).join(" " );
+      const combinado = `${o.Orden} ${o.Apellido} ${o.Nombre} ${o.Dni} ${o.ObraSocial} ${o.Institucion} ${detalleTexto}`.toLowerCase();
       if(!combinado.includes(texto)) return false;
     }
 
@@ -514,7 +515,8 @@ function sortBy(field){
   });
 
   document.querySelectorAll(".tabla-header span").forEach(h=>{
-    if(h.getAttribute("onclick").includes(field)){
+    const onclick = h.getAttribute("onclick") || "";
+    if(onclick.includes(field)){
       h.classList.add("active");
       h.classList.add(ordenAsc ? "asc" : "desc");
     }
@@ -531,7 +533,7 @@ function configurarPlaceholders() {
     const buscadorGlobal = document.getElementById("buscadorGlobal");
     
     // Estos son los campos que definiste en tu función aplicarFiltros()
-    const camposPermitidos = ["Orden", "Apellido", "Nombre", "DNI", "Obra Social", "Institución"];
+    const camposPermitidos = ["Orden", "Apellido", "Nombre", "DNI", "Obra Social", "Institución", "N° de Serie", "Lote", "Nombre del Producto", "N° de Remito"];
     
     // Unimos los campos con una coma y los ponemos en el placeholder
     buscadorGlobal.placeholder = "Buscar por: " + camposPermitidos.join(", ") + "...";
