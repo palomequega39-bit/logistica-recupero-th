@@ -103,9 +103,9 @@ async function exportarDetallePDF(ordenes, seleccionados) {
             doc.text(txt, xFlag - 3.8, y + 3.2);
             xFlag -= 6;
         };
-        if (o.Devolucion === "VERDADERO") drawFlag("D", [231, 76, 60]);
-        if (o.CI === "FALSO") drawFlag("C", [243, 156, 18]);
-        if (o.Foja === "FALSO") drawFlag("F", [52, 152, 219]);
+        if (o.Devolucion === "VERDADERO") drawFlag("D", [255, 255, 255]);
+        if (o.CI === "FALSO") drawFlag("C", [255, 255, 255]);
+        if (o.Foja === "FALSO") drawFlag("F", [255, 255, 255]);
 
         y += 10;
 
