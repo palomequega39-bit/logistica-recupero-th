@@ -22,6 +22,10 @@ document.getElementById("btnExportarPDF").onclick = () => {
 document.getElementById("btnExportarPDFv2").onclick = () => {
     exportarDetallePDFv2(ordenes, seleccionados);
 };
+document.getElementById("btnExportarWhatsApp").onclick = () => {
+    exportarMensajeWhatsApp(ordenes, seleccionados);
+};
+
 /* =========================
    DROPZONE (NUEVO)
 ========================= */
