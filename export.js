@@ -367,3 +367,54 @@ async function exportarDetallePDFv2(ordenes, seleccionados) {
     doc.save(`Planilla_v2_${subtitulo.replace(/\s/g, "_")}_${fechaArchivo}.pdf`);
 }
 
+
+
+function exportarMensajeWhatsApp(ordenes, seleccionados) {
+    if (seleccionados.size === 0) {
+        Swal.fire("Atención", "Por favor, selecciona al menos una orden.", "warning");
+        return;
+    }
+
+    const ordenesParaExportar = ordenes.filter(o => seleccionados.has(o.Orden));
+
+    const bloques = ordenesParaExportar.map((o) => {
+        const lineas = [];
+        lineas.push(`${o.Orden || "-"} - ${(o.Apellido || "")} ${(o.Nombre || "")}`.trim());
+        lineas.push(`${o.Dni || "-"} / ${o.Afiliado || o.NAfiliado || o["N° Afiliado"] || "-"}`);
+        lineas.push(`${o.ObraSocial || "-"} - ${o.Expediente || "-"}`);
+
+        const remitosMap = {};
+        (o.detalles || []).forEach((d) => {
+            const clave = `${d.Remito || "-"}|${d.FechaR || "-"}`;
+            if (!remitosMap[clave]) remitosMap[clave] = [];
+            remitosMap[clave].push(d);
+        });
+
+        Object.keys(remitosMap).forEach((claveRemito) => {
+            const [remito, fechaRemito] = claveRemito.split("|");
+            lineas.push(`${remito} - ${fechaRemito}`);
+
+            remitosMap[claveRemito].forEach((d) => {
+                lineas.push(`${d.Q || "-"} - ${d.Producto || "-"} -`);
+                lineas.push(`_${d.Lote || "-"} - ${d.Serie || "-"} - ${d.Vencimiento || "-"}_`);
+            });
+        });
+
+        lineas.push(`Observaciones: ${o.Actividades || "-"}`);
+        return lineas.join("\n");
+    });
+
+    const mensaje = bloques.join("\n\n--------------------\n\n");
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(mensaje)
+            .then(() => Swal.fire("Listo", "Mensaje de WhatsApp copiado al portapapeles.", "success"))
+            .catch(() => mostrarPromptWhatsApp(mensaje));
+    } else {
+        mostrarPromptWhatsApp(mensaje);
+    }
+}
+
+function mostrarPromptWhatsApp(mensaje) {
+    window.prompt("Copiá este mensaje para WhatsApp:", mensaje);
+}
