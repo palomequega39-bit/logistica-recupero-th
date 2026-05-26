@@ -571,7 +571,7 @@ function leerExcel(file){
       delimiter: ";"
     });
 
-    // Volvemos a tu flujo actual
+    // Volvemos a tu flujo actual.
     Papa.parse(csv,{
       header:true,
       delimiter:";",
