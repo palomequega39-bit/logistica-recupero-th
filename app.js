@@ -9,6 +9,136 @@ const ODOO_ID_OFFSET = 3;
 const ODOO_QUERY = "cids=1&menu_id=531&action=799&model=sale.order&view_type=form"
 
 /* =========================
+   RECUPERO - ESTADOS
+   El botón de cada fila cicla en este orden.
+   Todo vive en memoria: se reinicia al cargar un nuevo archivo.
+========================= */
+const ESTADOS_RECUPERO = [
+  { key: "no_pedido",     label: "No Pedido"    },
+  { key: "completo",      label: "Completo"     },
+  { key: "faltan",        label: "Faltan cosas" },
+  { key: "sin_realizar",  label: "Sin Realizar" }
+];
+
+function labelEstadoRecupero(key){
+  const e = ESTADOS_RECUPERO.find(e => e.key === key);
+  return e ? e.label : ESTADOS_RECUPERO[0].label;
+}
+
+function buscarOrdenPorId(ordenId){
+  return ordenes.find(o => o.Orden === ordenId);
+}
+
+/* =========================
+   RECUPERO - RESPALDO AUTOMÁTICO (localStorage)
+   Objetivo: que un refresh accidental del navegador no borre
+   una sesión de recupero en curso. NO es un backend ni la nube:
+   vive solo en este navegador y se borra al cargar un archivo nuevo.
+========================= */
+const BACKUP_KEY_DATOS = "recuperoTH_backup_datos_v1";
+const BACKUP_KEY_ESTADOS = "recuperoTH_backup_estados_v1";
+const BACKUP_KEY_META = "recuperoTH_backup_meta_v1";
+
+let nombreArchivoActual = "";
+
+function guardarBackupDatos(dataCruda){
+  try{
+    localStorage.setItem(BACKUP_KEY_DATOS, JSON.stringify(dataCruda));
+    localStorage.setItem(BACKUP_KEY_META, JSON.stringify({
+      archivo: nombreArchivoActual || "archivo sin nombre",
+      fecha: new Date().toLocaleString("es-AR")
+    }));
+  }catch(e){
+    console.warn("No se pudo guardar el respaldo local (datos):", e);
+  }
+}
+
+function guardarBackupEstados(){
+  try{
+    const mapaEstados = {};
+    ordenes.forEach(o=>{
+      mapaEstados[o.Orden] = {
+        EstadoRecupero: o.EstadoRecupero,
+        ObservacionRecupero: o.ObservacionRecupero || ""
+      };
+    });
+    localStorage.setItem(BACKUP_KEY_ESTADOS, JSON.stringify(mapaEstados));
+  }catch(e){
+    console.warn("No se pudo guardar el respaldo local (estados):", e);
+  }
+}
+
+function borrarBackup(){
+  localStorage.removeItem(BACKUP_KEY_DATOS);
+  localStorage.removeItem(BACKUP_KEY_ESTADOS);
+  localStorage.removeItem(BACKUP_KEY_META);
+}
+
+function ocultarBackupBanner(){
+  const banner = document.getElementById("backupBanner");
+  if(banner) banner.classList.add("hidden");
+}
+
+function intentarRestaurarBackup(){
+  const dataCruda = localStorage.getItem(BACKUP_KEY_DATOS);
+  if(!dataCruda) return;
+
+  const banner = document.getElementById("backupBanner");
+  const info = document.getElementById("backupBannerInfo");
+  if(!banner || !info) return;
+
+  let metaObj = {};
+  try{ metaObj = JSON.parse(localStorage.getItem(BACKUP_KEY_META)) || {}; }catch(e){ metaObj = {}; }
+
+  info.textContent = `⚠ Hay una sesión de recupero sin exportar (${metaObj.archivo || "archivo"}, cargada ${metaObj.fecha || ""}). ¿Restaurarla?`;
+  banner.classList.remove("hidden");
+}
+
+function restaurarBackup(){
+  const dataCrudaTxt = localStorage.getItem(BACKUP_KEY_DATOS);
+  const estadosTxt = localStorage.getItem(BACKUP_KEY_ESTADOS);
+  if(!dataCrudaTxt){ ocultarBackupBanner(); return; }
+
+  let data, mapaEstados;
+  try{
+    data = JSON.parse(dataCrudaTxt);
+    mapaEstados = estadosTxt ? JSON.parse(estadosTxt) : {};
+  }catch(e){
+    console.warn("Respaldo local corrupto, se descarta:", e);
+    borrarBackup();
+    ocultarBackupBanner();
+    return;
+  }
+
+  let metaObj = {};
+  try{ metaObj = JSON.parse(localStorage.getItem(BACKUP_KEY_META)) || {}; }catch(e){ metaObj = {}; }
+  nombreArchivoActual = metaObj.archivo || "Sesión restaurada";
+
+  procesar(data);
+
+  // Reaplicamos los estados y observaciones que estaban guardados
+  ordenes.forEach(o=>{
+    if(mapaEstados[o.Orden]){
+      o.EstadoRecupero = mapaEstados[o.Orden].EstadoRecupero || "no_pedido";
+      o.ObservacionRecupero = mapaEstados[o.Orden].ObservacionRecupero || "";
+    }
+  });
+  guardarBackupEstados();
+
+  document.getElementById("fileName").textContent = nombreArchivoActual;
+  document.getElementById("fileStatus").classList.remove("hidden");
+
+  aplicarFiltros();
+  actualizarLabelsInformativos();
+  ocultarBackupBanner();
+}
+
+function descartarBackup(){
+  borrarBackup();
+  ocultarBackupBanner();
+}
+
+/* =========================
    INIT
 ========================= */
 
@@ -63,6 +193,11 @@ fileInput.addEventListener("change", e=>{
 function handleFile(file){
 
   if(!file) return;
+
+  // Un archivo nuevo reinicia todo: se descarta cualquier respaldo previo
+  ocultarBackupBanner();
+  borrarBackup();
+  nombreArchivoActual = file.name;
 
     limpiarDetalleOrden();
   seleccionados.clear();
@@ -119,7 +254,7 @@ function procesar(data){
     r.Favorito = (r.Favorito || "").toUpperCase();
    
     if(!map[r.Orden]){
-      map[r.Orden] = {...r, detalles:[]};
+      map[r.Orden] = {...r, detalles:[], EstadoRecupero:"no_pedido", ObservacionRecupero:""};
     }
 
     map[r.Orden].detalles.push(r);
@@ -129,7 +264,10 @@ function procesar(data){
  seleccionados.clear();
   document.getElementById("selectAll").checked = false;
   limpiarDetalleOrden();
-   
+
+  guardarBackupDatos(data);
+  guardarBackupEstados();
+
   console.log("Órdenes cargadas:", ordenes.length);
 
   cargarFiltros();
@@ -141,6 +279,7 @@ function procesar(data){
 ========================= */
 
 function cargarFiltros() {
+    fillEstadoRecupero();
     fill("filtroPrioridad", "Prioridad");
     fill("filtroCiudad", "Ciudad");
     fill("filtroVendedor", "Vendedor");
@@ -176,6 +315,12 @@ function fill(id,campo){
     vals.map(v=>`<option>${v}</option>`).join("");
 }
 
+function fillEstadoRecupero(){
+  const sel = document.getElementById("filtroEstadoRecupero");
+  sel.innerHTML = `<option value="">Todos</option>` +
+    ESTADOS_RECUPERO.map(e => `<option value="${e.key}">${e.label}</option>`).join("");
+}
+
 function fillBool(id){
   document.getElementById(id).innerHTML=`
     <option value="">Todos</option>
@@ -206,6 +351,7 @@ function aplicarFiltros(){
 
   filtradas = ordenes.filter(o => {
     // Filtros de Selección Simple
+    if(f("filtroEstadoRecupero") && o.EstadoRecupero !== f("filtroEstadoRecupero")) return false;
     if(f("filtroInstitucion") && o.Institucion !== f("filtroInstitucion")) return false;
     if(f("filtroCiudad") && o.Ciudad !== f("filtroCiudad")) return false;
     if(f("filtroPrioridad") && o.Prioridad !== f("filtroPrioridad")) return false;
@@ -311,6 +457,7 @@ function renderLista(){
       <span>${o.FechaCX || ""}</span>
       <span title="${o.Institucion}">${o.Institucion}</span>
       <span>${o.Prioridad}</span>
+      <button class="btn-recupero estado-${o.EstadoRecupero}" onclick="cicloEstadoRecupero(event, '${o.Orden}')" title="Click para cambiar el estado de recupero">${labelEstadoRecupero(o.EstadoRecupero)}</button>
       <button class="btn-odoo" onclick="abrirOrdenOdoo(event, '${o.Orden}')" title="Abrir en Odoo">🔗</button>
     `;
 
@@ -336,6 +483,34 @@ function abrirOrdenOdoo(event, orden) {
 
   const url = `${ODOO_BASE_URL}#id=${odooId}&${ODOO_QUERY}`;
   window.open(url, "_blank", "noopener,noreferrer");
+}
+
+/* =========================
+   RECUPERO - CICLO DE ESTADO
+========================= */
+
+function cicloEstadoRecupero(event, ordenId){
+  event.stopPropagation();
+
+  const orden = buscarOrdenPorId(ordenId);
+  if(!orden) return;
+
+  const idxActual = ESTADOS_RECUPERO.findIndex(e => e.key === orden.EstadoRecupero);
+  const idxSiguiente = (idxActual + 1) % ESTADOS_RECUPERO.length;
+  orden.EstadoRecupero = ESTADOS_RECUPERO[idxSiguiente].key;
+
+  // Actualizamos solo el botón clickeado, sin re-renderizar toda la lista
+  const btn = event.target;
+  btn.className = `btn-recupero estado-${orden.EstadoRecupero}`;
+  btn.textContent = labelEstadoRecupero(orden.EstadoRecupero);
+
+  // Si la orden abierta en el detalle es esta misma, refrescamos el chip de estado
+  if(indiceSeleccionado >= 0 && filtradas[indiceSeleccionado] && filtradas[indiceSeleccionado].Orden === ordenId){
+    mostrar(orden);
+  }
+
+  guardarBackupEstados();
+  actualizarLabelsInformativos();
 }
 
 /* =========================
@@ -415,6 +590,18 @@ function mostrar(o){
     <div class="campo" style="grid-column: span 4; margin-top: 5px; white-space: normal; color: #444; border-top: 1px solid #eee; padding-top: 5px;">
       <b>Actividades:</b> ${o.Actividades || ""}
     </div>
+
+    <div class="campo" style="grid-column: span 4; margin-top: 5px; border-top: 1px solid #eee; padding-top: 8px;">
+      <b>Estado Recupero:</b>
+      <span class="chip-estado estado-${o.EstadoRecupero}">${labelEstadoRecupero(o.EstadoRecupero)}</span>
+    </div>
+
+    <div class="campo" style="grid-column: span 4;">
+      <b>Observación de Recupero:</b>
+      <textarea class="obs-recupero" data-id="${o.Orden}"
+        placeholder="Detalle de la gestión frente a secretaría (qué falta, motivo, próximo paso, etc.)"
+        onchange="actualizarObservacionRecupero(event, '${o.Orden}')">${o.ObservacionRecupero || ""}</textarea>
+    </div>
   `;
 
   // 3. Detalle de productos
@@ -434,6 +621,13 @@ function mostrar(o){
       </tr>
     `;
   });
+}
+
+function actualizarObservacionRecupero(event, ordenId){
+  const orden = buscarOrdenPorId(ordenId);
+  if(!orden) return;
+  orden.ObservacionRecupero = event.target.value;
+  guardarBackupEstados();
 }
 
 /* =========================
@@ -817,10 +1011,12 @@ function actualizarLabelsInformativos() {
     const cantidadOrdenes = filtradas.length;
     const cantidadProductos = filtradas.reduce((acc, o) => acc + (o.detalles?.length || 0), 0);
     const cantidadFavoritas = filtradas.filter(o => o.Favorito === "FAVORITO" || o.Favorito === "SI").length;
+    const cantidadPedidas = filtradas.filter(o => o.EstadoRecupero && o.EstadoRecupero !== "no_pedido").length;
     const cantidadSeleccionadas = seleccionados.size;
     document.getElementById("labelCantidadOrdenes").textContent = cantidadOrdenes;
     document.getElementById("labelCantidadProductos").textContent = cantidadProductos;
     document.getElementById("labelCantidadFavoritas").textContent = cantidadFavoritas;
+    document.getElementById("labelCantidadPedidas").textContent = `${cantidadPedidas}/${cantidadOrdenes}`;
     document.getElementById("labelCantidadSeleccionadas").textContent = cantidadSeleccionadas;
 }
 
@@ -865,3 +1061,8 @@ function toggleCheckOrdenSeleccionada() {
     }
    actualizarLabelsInformativos();
 }
+
+/* =========================
+   RECUPERO - CHEQUEO DE RESPALDO AL INICIAR
+========================= */
+intentarRestaurarBackup();

@@ -1,4 +1,20 @@
 /**
+ * Devuelve color y etiqueta para el Estado Recupero, usado en las exportaciones PDF.
+ */
+function getEstadoRecuperoInfo(estado){
+    switch(estado){
+        case "completo":
+            return { label: "COMPLETO", color: [22, 163, 74], textColor: [255, 255, 255] };
+        case "faltan":
+            return { label: "FALTAN COSAS", color: [249, 115, 22], textColor: [255, 255, 255] };
+        case "sin_realizar":
+            return { label: "SIN REALIZAR", color: [220, 38, 38], textColor: [255, 255, 255] };
+        default:
+            return { label: "NO PEDIDO", color: [226, 232, 240], textColor: [51, 65, 85] };
+    }
+}
+
+/**
  * Exportación Modernizada de Órdenes a PDF
  * Utiliza jsPDF y jsPDF-AutoTable
  */
@@ -109,6 +125,16 @@ async function exportarDetallePDF(ordenes, seleccionados) {
 
         y += 10;
 
+        // --- ESTADO DE RECUPERO ---
+        const recuperoInfo = getEstadoRecuperoInfo(o.EstadoRecupero);
+        doc.setFillColor(...recuperoInfo.color);
+        doc.roundedRect(margin, y - 4, 32, 5, 1, 1, "F");
+        doc.setFontSize(7);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(...recuperoInfo.textColor);
+        doc.text(recuperoInfo.label, margin + 16, y - 0.6, { align: "center" });
+        y += 3;
+
         // --- SUB-INFO ---
         doc.setFontSize(9);
         doc.setFont("helvetica", "normal");
@@ -161,6 +187,16 @@ async function exportarDetallePDF(ordenes, seleccionados) {
             const textLines = doc.splitTextToSize(`Obs: ${o.Actividades}`, 175);
             doc.text(textLines, margin + 2, y);
             y += (textLines.length * 3) + 1;
+        }
+
+        if (o.ObservacionRecupero) {
+            y += 1;
+            doc.setFontSize(8);
+            doc.setFont("helvetica", "bolditalic");
+            doc.setTextColor(180, 83, 9);
+            const recLines = doc.splitTextToSize(`Recupero: ${o.ObservacionRecupero}`, 175);
+            doc.text(recLines, margin + 2, y);
+            y += (recLines.length * 3) + 1;
         }
 
         y += 1; // Espacio entre órdenes
@@ -249,7 +285,10 @@ async function exportarDetallePDFv2(ordenes, seleccionados) {
     const estimateOrderHeight = (o) => {
         const detalles = Math.max(1, (o.detalles || []).length);
         const actividadesLines = doc.splitTextToSize(`${o.Prioridad || "-"} | ${o.Actividades || "-"}`, 185).length;
-        return 10 + 6 + (detalles * 5.2) + (actividadesLines * 3.1) + 6;
+        const recuperoLines = o.ObservacionRecupero
+            ? doc.splitTextToSize(`Recupero: ${o.ObservacionRecupero}`, 185).length
+            : 0;
+        return 10 + 6 + (detalles * 5.2) + (actividadesLines * 3.1) + (recuperoLines * 3.1) + 6;
     };
 
     drawPageHeader();
@@ -269,6 +308,8 @@ async function exportarDetallePDFv2(ordenes, seleccionados) {
         const esFav = (o.Favorito === "FAVORITO" || o.Favorito === "SI");
         const ordenConEstrella = `${esFav ? "★ " : ""}${o.Orden || ""}`;
 
+        const recuperoInfoV2 = getEstadoRecuperoInfo(o.EstadoRecupero);
+
         doc.autoTable({
             startY: y,
             theme: "grid",
@@ -282,7 +323,8 @@ async function exportarDetallePDFv2(ordenes, seleccionados) {
                 o.MedicoSolicitante || o.Medico || "",
                 flags.faltaF,
                 flags.faltaC,
-                flags.devolPend
+                flags.devolPend,
+                recuperoInfoV2.label
             ]],
             margin: { left: margin, right: margin },
             styles: {
@@ -295,16 +337,23 @@ async function exportarDetallePDFv2(ordenes, seleccionados) {
             },
             bodyStyles: { fillColor: getHeaderColor(o) },
             columnStyles: {
-                0: { cellWidth: 20, fontStyle: "bold" },
-                1: { cellWidth: 33, fontStyle: "bold" },
-                2: { cellWidth: 18, fontStyle: "normal" },
-                3: { cellWidth: 26, fontStyle: "normal" },
-                4: { cellWidth: 18, fontStyle: "normal" },
-                5: { cellWidth: 19, fontStyle: "normal" },
-                6: { cellWidth: 30, fontStyle: "normal" },
+                0: { cellWidth: 18, fontStyle: "bold" },
+                1: { cellWidth: 29, fontStyle: "bold" },
+                2: { cellWidth: 16, fontStyle: "normal" },
+                3: { cellWidth: 23, fontStyle: "normal" },
+                4: { cellWidth: 16, fontStyle: "normal" },
+                5: { cellWidth: 17, fontStyle: "normal" },
+                6: { cellWidth: 26, fontStyle: "normal" },
                 7: { cellWidth: 5, fontStyle: "bold", halign: "center" },
                 8: { cellWidth: 5, fontStyle: "bold", halign: "center" },
-                9: { cellWidth: 5, fontStyle: "bold", halign: "center" }
+                9: { cellWidth: 5, fontStyle: "bold", halign: "center" },
+                10: { cellWidth: 19, fontStyle: "bold", halign: "center" }
+            },
+            didParseCell: (data) => {
+                if (data.column.index === 10 && data.row.section === "body") {
+                    data.cell.styles.fillColor = recuperoInfoV2.color;
+                    data.cell.styles.textColor = recuperoInfoV2.textColor;
+                }
             }
         });
 
@@ -346,6 +395,15 @@ async function exportarDetallePDFv2(ordenes, seleccionados) {
         const pie = doc.splitTextToSize(`${o.Prioridad || "-"} | ${o.Actividades || "-"}`, 185);
         doc.text(pie, margin, y);
         y += pie.length * 2.8 + 2;
+
+        if (o.ObservacionRecupero) {
+            doc.setFont("helvetica", "bolditalic");
+            doc.setFontSize(7);
+            doc.setTextColor(180, 83, 9);
+            const pieRecupero = doc.splitTextToSize(`Recupero: ${o.ObservacionRecupero}`, 185);
+            doc.text(pieRecupero, margin, y);
+            y += pieRecupero.length * 2.8 + 2;
+        }
 
         doc.setDrawColor(235);
         doc.line(margin, y, pageWidth - margin, y);
@@ -401,6 +459,10 @@ function exportarMensajeWhatsApp(ordenes, seleccionados) {
         });
 
         lineas.push(`Observaciones: ${o.Actividades || "-"}`);
+        lineas.push(`Estado Recupero: ${getEstadoRecuperoInfo(o.EstadoRecupero).label}`);
+        if (o.ObservacionRecupero) {
+            lineas.push(`Obs. Recupero: ${o.ObservacionRecupero}`);
+        }
         return lineas.join("\n");
     });
 

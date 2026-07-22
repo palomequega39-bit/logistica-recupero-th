@@ -15,6 +15,14 @@
 </head>
 <body>
 
+<div id="backupBanner" class="backup-banner hidden">
+  <span id="backupBannerInfo"></span>
+  <div class="backup-banner-botones">
+    <button onclick="restaurarBackup()" class="btn-restaurar">Restaurar sesión</button>
+    <button onclick="descartarBackup()" class="btn-descartar">Descartar</button>
+  </div>
+</div>
+
 <div class="layout">
 
   <aside class="sidebar">
@@ -40,6 +48,9 @@
     </div>
 
     <div class="filters">
+      <label>Estado Recupero</label>
+      <select id="filtroEstadoRecupero"></select>
+
       <label>Institución</label>
       <input id="filtroInstitucion" class="inputFiltro" placeholder="Buscar por institución...">
       <div id="listaInstituciones" class="dropdown"></div>
@@ -86,6 +97,7 @@
         <span class="stat-chip">Órdenes: <b id="labelCantidadOrdenes">0</b></span>
         <span class="stat-chip">Productos: <b id="labelCantidadProductos">0</b></span>
         <span class="stat-chip">Favoritas: <b id="labelCantidadFavoritas">0</b></span>
+        <span class="stat-chip stat-recupero">Pedidas: <b id="labelCantidadPedidas">0</b></span>
         <span class="stat-chip">Seleccionadas: <b id="labelCantidadSeleccionadas">0</b></span>
       </div>
     <button id="btnExportarWhatsApp" class="btn-exportar-whatsapp" title="Generar mensaje para WhatsApp">🟢 WhatsApp</button>
@@ -102,6 +114,7 @@
         <span onclick="sortBy('FechaCX')">Fecha CX</span>
         <span onclick="sortBy('Institucion')">Institución</span>
         <span onclick="sortBy('Prioridad')">Prioridad</span>
+        <span>Recupero</span>
         <span>Odoo</span>
       </div>
 

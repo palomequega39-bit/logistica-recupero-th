@@ -125,7 +125,7 @@ body {
 .fila {
   display: grid;
   /* 30px para el checkbox y el resto distribuido para los datos  */
-  grid-template-columns: 30px 60px 180px 80px 120px 100px 180px 120px 52px; 
+  grid-template-columns: 30px 60px 180px 80px 120px 100px 180px 120px 130px 52px; 
   gap: 8px;
   align-items: center;
 }
@@ -446,4 +446,145 @@ th:nth-child(3) { width: 40%; }
 .btn-exportar-v2 {
   margin-left: 8px;
   background: #0ea5e9;
+}
+
+/* =========================
+   RECUPERO - ESTADOS
+========================= */
+
+.btn-recupero {
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 5px;
+  padding: 5px 4px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: filter 0.15s ease;
+}
+
+.btn-recupero:hover {
+  filter: brightness(0.95);
+}
+
+.btn-recupero.estado-no_pedido {
+  background: #ffffff;
+  color: #64748b;
+  border-color: #cbd5e1;
+}
+
+.btn-recupero.estado-completo {
+  background: #16a34a;
+  color: #ffffff;
+  border-color: #16a34a;
+}
+
+.btn-recupero.estado-faltan {
+  background: #f97316;
+  color: #ffffff;
+  border-color: #f97316;
+}
+
+.btn-recupero.estado-sin_realizar {
+  background: #dc2626;
+  color: #ffffff;
+  border-color: #dc2626;
+}
+
+/* Chip de estado dentro del detalle de la orden */
+.chip-estado {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  border: 1px solid #cbd5e1;
+}
+
+.chip-estado.estado-no_pedido { background: #ffffff; color: #64748b; }
+.chip-estado.estado-completo { background: #dcfce7; color: #166534; border-color: #86efac; }
+.chip-estado.estado-faltan { background: #ffedd5; color: #c2410c; border-color: #fdba74; }
+.chip-estado.estado-sin_realizar { background: #fee2e2; color: #991b1b; border-color: #fca5a5; }
+
+/* Textarea de Observación de Recupero */
+.obs-recupero {
+  width: 100%;
+  min-height: 50px;
+  margin-top: 4px;
+  padding: 6px;
+  font-family: inherit;
+  font-size: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.obs-recupero:focus {
+  outline: none;
+  border-color: #2563eb;
+}
+
+/* Contador de pedidas en la stats-bar */
+.stat-chip.stat-recupero b {
+  color: #16a34a;
+}
+
+/* =========================
+   RECUPERO - BANNER DE RESPALDO LOCAL
+========================= */
+
+.backup-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 9999;
+  background: #fef3c7;
+  border-bottom: 2px solid #f59e0b;
+  color: #78350f;
+  padding: 10px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.backup-banner-botones {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.btn-restaurar, .btn-descartar {
+  border: none;
+  border-radius: 5px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-restaurar {
+  background: #16a34a;
+  color: white;
+}
+
+.btn-restaurar:hover {
+  background: #15803d;
+}
+
+.btn-descartar {
+  background: #e2e8f0;
+  color: #334155;
+}
+
+.btn-descartar:hover {
+  background: #cbd5e1;
 }
