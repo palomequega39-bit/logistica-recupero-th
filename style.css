@@ -536,25 +536,6 @@ th:nth-child(3) { width: 40%; }
 .chip-estado.estado-faltan { background: #ffedd5; color: #c2410c; border-color: #fdba74; }
 .chip-estado.estado-sin_realizar { background: #fee2e2; color: #991b1b; border-color: #fca5a5; }
 
-/* Textarea de Observación de Recupero */
-.obs-recupero {
-  width: 100%;
-  min-height: 50px;
-  margin-top: 4px;
-  padding: 6px;
-  font-family: inherit;
-  font-size: 12px;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
-  resize: vertical;
-  box-sizing: border-box;
-}
-
-.obs-recupero:focus {
-  outline: none;
-  border-color: #2563eb;
-}
-
 /* Contador de pedidas en la stats-bar */
 .stat-chip.stat-recupero b {
   color: #16a34a;

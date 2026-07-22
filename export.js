@@ -189,16 +189,6 @@ async function exportarDetallePDF(ordenes, seleccionados) {
             y += (textLines.length * 3) + 1;
         }
 
-        if (o.ObservacionRecupero) {
-            y += 1;
-            doc.setFontSize(8);
-            doc.setFont("helvetica", "bolditalic");
-            doc.setTextColor(180, 83, 9);
-            const recLines = doc.splitTextToSize(`Recupero: ${o.ObservacionRecupero}`, 175);
-            doc.text(recLines, margin + 2, y);
-            y += (recLines.length * 3) + 1;
-        }
-
         y += 1; // Espacio entre órdenes
         doc.setDrawColor(245, 245, 245);
         doc.line(margin, y, 195, y);
@@ -285,10 +275,7 @@ async function exportarDetallePDFv2(ordenes, seleccionados) {
     const estimateOrderHeight = (o) => {
         const detalles = Math.max(1, (o.detalles || []).length);
         const actividadesLines = doc.splitTextToSize(`${o.Prioridad || "-"} | ${o.Actividades || "-"}`, 185).length;
-        const recuperoLines = o.ObservacionRecupero
-            ? doc.splitTextToSize(`Recupero: ${o.ObservacionRecupero}`, 185).length
-            : 0;
-        return 10 + 6 + (detalles * 5.2) + (actividadesLines * 3.1) + (recuperoLines * 3.1) + 6;
+        return 10 + 6 + (detalles * 5.2) + (actividadesLines * 3.1) + 6;
     };
 
     drawPageHeader();
@@ -396,15 +383,6 @@ async function exportarDetallePDFv2(ordenes, seleccionados) {
         doc.text(pie, margin, y);
         y += pie.length * 2.8 + 2;
 
-        if (o.ObservacionRecupero) {
-            doc.setFont("helvetica", "bolditalic");
-            doc.setFontSize(7);
-            doc.setTextColor(180, 83, 9);
-            const pieRecupero = doc.splitTextToSize(`Recupero: ${o.ObservacionRecupero}`, 185);
-            doc.text(pieRecupero, margin, y);
-            y += pieRecupero.length * 2.8 + 2;
-        }
-
         doc.setDrawColor(235);
         doc.line(margin, y, pageWidth - margin, y);
         y += 2;
@@ -460,9 +438,6 @@ function exportarMensajeWhatsApp(ordenes, seleccionados) {
 
         lineas.push(`Observaciones: ${o.Actividades || "-"}`);
         lineas.push(`Estado Recupero: ${getEstadoRecuperoInfo(o.EstadoRecupero).label}`);
-        if (o.ObservacionRecupero) {
-            lineas.push(`Obs. Recupero: ${o.ObservacionRecupero}`);
-        }
         return lineas.join("\n");
     });
 

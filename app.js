@@ -58,8 +58,7 @@ function guardarBackupEstados(){
     const mapaEstados = {};
     ordenes.forEach(o=>{
       mapaEstados[o.Orden] = {
-        EstadoRecupero: o.EstadoRecupero,
-        ObservacionRecupero: o.ObservacionRecupero || ""
+        EstadoRecupero: o.EstadoRecupero
       };
     });
     localStorage.setItem(BACKUP_KEY_ESTADOS, JSON.stringify(mapaEstados));
@@ -136,7 +135,6 @@ function restaurarBackup(){
   ordenes.forEach(o=>{
     if(mapaEstados[o.Orden]){
       o.EstadoRecupero = mapaEstados[o.Orden].EstadoRecupero || "no_pedido";
-      o.ObservacionRecupero = mapaEstados[o.Orden].ObservacionRecupero || "";
     }
   });
   guardarBackupEstados();
@@ -270,7 +268,7 @@ function procesar(data){
     r.Favorito = (r.Favorito || "").toUpperCase();
    
     if(!map[r.Orden]){
-      map[r.Orden] = {...r, detalles:[], EstadoRecupero:"no_pedido", ObservacionRecupero:""};
+      map[r.Orden] = {...r, detalles:[], EstadoRecupero:"no_pedido"};
     }
 
     map[r.Orden].detalles.push(r);
@@ -368,11 +366,6 @@ function aplicarFiltros(){
   filtradas = ordenes.filter(o => {
     // Filtros de Selección Simple
     if(f("filtroEstadoRecupero") && o.EstadoRecupero !== f("filtroEstadoRecupero")) return false;
-
-    const filtroObs = f("filtroObservacionRecupero");
-    const tieneObs = !!(o.ObservacionRecupero && o.ObservacionRecupero.trim());
-    if(filtroObs === "con" && !tieneObs) return false;
-    if(filtroObs === "sin" && tieneObs) return false;
 
     if(f("filtroInstitucion") && o.Institucion !== f("filtroInstitucion")) return false;
     if(f("filtroCiudad") && o.Ciudad !== f("filtroCiudad")) return false;
@@ -607,22 +600,11 @@ function mostrar(o){
     
     <div class="campo"><b>Foja:</b> ${boolTag(o.Foja)}</div>
     <div class="campo"><b>CI:</b> ${boolTag(o.CI)}</div>
-    <div class="campo" style="grid-column: span 2;"><b>Devolución:</b> ${boolTag(o.Devolucion,"dev")}</div>
+    <div class="campo"><b>Devolución:</b> ${boolTag(o.Devolucion,"dev")}</div>
+    <div class="campo"><b>Estado Recupero:</b> <span class="chip-estado estado-${o.EstadoRecupero}">${labelEstadoRecupero(o.EstadoRecupero)}</span></div>
 
     <div class="campo" style="grid-column: span 4; margin-top: 5px; white-space: normal; color: #444; border-top: 1px solid #eee; padding-top: 5px;">
       <b>Actividades:</b> ${o.Actividades || ""}
-    </div>
-
-    <div class="campo" style="grid-column: span 4; margin-top: 5px; border-top: 1px solid #eee; padding-top: 8px;">
-      <b>Estado Recupero:</b>
-      <span class="chip-estado estado-${o.EstadoRecupero}">${labelEstadoRecupero(o.EstadoRecupero)}</span>
-    </div>
-
-    <div class="campo" style="grid-column: span 4;">
-      <b>Observación de Recupero:</b>
-      <textarea class="obs-recupero" data-id="${o.Orden}"
-        placeholder="Detalle de la gestión frente a secretaría (qué falta, motivo, próximo paso, etc.)"
-        onchange="actualizarObservacionRecupero(event, '${o.Orden}')">${o.ObservacionRecupero || ""}</textarea>
     </div>
   `;
 
@@ -643,13 +625,6 @@ function mostrar(o){
       </tr>
     `;
   });
-}
-
-function actualizarObservacionRecupero(event, ordenId){
-  const orden = buscarOrdenPorId(ordenId);
-  if(!orden) return;
-  orden.ObservacionRecupero = event.target.value;
-  guardarBackupEstados();
 }
 
 /* =========================
