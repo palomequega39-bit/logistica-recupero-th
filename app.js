@@ -11,7 +11,6 @@ const ODOO_QUERY = "cids=1&menu_id=531&action=799&model=sale.order&view_type=for
 /* =========================
    RECUPERO - ESTADOS
    El botón de cada fila cicla en este orden.
-   Todo vive en memoria: se reinicia al cargar un nuevo archivo.
 ========================= */
 const ESTADOS_RECUPERO = [
   { key: "no_pedido",     label: "No Pedido"    },
@@ -27,6 +26,42 @@ function labelEstadoRecupero(key){
 
 function buscarOrdenPorId(ordenId){
   return ordenes.find(o => o.Orden === ordenId);
+}
+
+/* =========================
+   RECUPERO - HISTORIAL PERSISTENTE POR N° DE ORDEN (localStorage)
+   Objetivo: que el estado de recupero de una orden (Nº X) se recuerde
+   aunque cargues un CSV/Excel distinto más adelante (ej. una versión
+   actualizada del mismo listado). A diferencia del "respaldo de sesión"
+   de más abajo, ESTE historial NO se borra al cargar un archivo nuevo.
+   Vive solo en este navegador (no es un backend ni la nube), así que
+   no se comparte entre computadoras.
+========================= */
+const HISTORIAL_KEY_ESTADOS = "recuperoTH_historialEstados_v1";
+
+function cargarHistorialEstados(){
+  try{
+    return JSON.parse(localStorage.getItem(HISTORIAL_KEY_ESTADOS)) || {};
+  }catch(e){
+    console.warn("Historial de estados corrupto, se descarta:", e);
+    return {};
+  }
+}
+
+function actualizarHistorialEstado(ordenId, estadoKey){
+  try{
+    const historial = cargarHistorialEstados();
+    historial[ordenId] = estadoKey;
+    localStorage.setItem(HISTORIAL_KEY_ESTADOS, JSON.stringify(historial));
+  }catch(e){
+    console.warn("No se pudo guardar el historial de estados:", e);
+  }
+}
+
+function borrarHistorialEstados(){
+  if(!confirm("¿Borrar el historial de estados de recupero guardado en este navegador? Esta acción no se puede deshacer.")) return;
+  localStorage.removeItem(HISTORIAL_KEY_ESTADOS);
+  alert("Historial de estados borrado.");
 }
 
 /* =========================
@@ -275,7 +310,17 @@ function procesar(data){
   });
 
   ordenes = Object.values(map);
- seleccionados.clear();
+
+  // 🔴 Restauramos el estado de recupero de cada orden desde el historial
+  // persistente (si esa orden ya se había trabajado en un archivo anterior)
+  const historial = cargarHistorialEstados();
+  ordenes.forEach(o=>{
+    if(historial[o.Orden]){
+      o.EstadoRecupero = historial[o.Orden];
+    }
+  });
+
+  seleccionados.clear();
   document.getElementById("selectAll").checked = false;
   limpiarDetalleOrden();
 
@@ -318,6 +363,7 @@ function cargarFiltros() {
         if(el.tagName === "INPUT") el.addEventListener('keyup', aplicarFiltros);
     });
    document.getElementById("btnLimpiar").onclick = borrarFiltros;
+   document.getElementById("btnBorrarHistorial").onclick = borrarHistorialEstados;
    
 }
 
@@ -536,6 +582,7 @@ function cicloEstadoRecupero(event, ordenId){
   }
 
   guardarBackupEstados();
+  actualizarHistorialEstado(ordenId, orden.EstadoRecupero);
   actualizarLabelsInformativos();
 }
 
