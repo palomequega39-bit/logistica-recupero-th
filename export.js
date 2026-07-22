@@ -125,16 +125,6 @@ async function exportarDetallePDF(ordenes, seleccionados) {
 
         y += 10;
 
-        // --- ESTADO DE RECUPERO ---
-        const recuperoInfo = getEstadoRecuperoInfo(o.EstadoRecupero);
-        doc.setFillColor(...recuperoInfo.color);
-        doc.roundedRect(margin, y - 4, 32, 5, 1, 1, "F");
-        doc.setFontSize(7);
-        doc.setFont("helvetica", "bold");
-        doc.setTextColor(...recuperoInfo.textColor);
-        doc.text(recuperoInfo.label, margin + 16, y - 0.6, { align: "center" });
-        y += 3;
-
         // --- SUB-INFO ---
         doc.setFontSize(9);
         doc.setFont("helvetica", "normal");
@@ -295,8 +285,6 @@ async function exportarDetallePDFv2(ordenes, seleccionados) {
         const esFav = (o.Favorito === "FAVORITO" || o.Favorito === "SI");
         const ordenConEstrella = `${esFav ? "★ " : ""}${o.Orden || ""}`;
 
-        const recuperoInfoV2 = getEstadoRecuperoInfo(o.EstadoRecupero);
-
         doc.autoTable({
             startY: y,
             theme: "grid",
@@ -310,8 +298,7 @@ async function exportarDetallePDFv2(ordenes, seleccionados) {
                 o.MedicoSolicitante || o.Medico || "",
                 flags.faltaF,
                 flags.faltaC,
-                flags.devolPend,
-                recuperoInfoV2.label
+                flags.devolPend
             ]],
             margin: { left: margin, right: margin },
             styles: {
@@ -324,23 +311,16 @@ async function exportarDetallePDFv2(ordenes, seleccionados) {
             },
             bodyStyles: { fillColor: getHeaderColor(o) },
             columnStyles: {
-                0: { cellWidth: 18, fontStyle: "bold" },
-                1: { cellWidth: 29, fontStyle: "bold" },
-                2: { cellWidth: 16, fontStyle: "normal" },
-                3: { cellWidth: 23, fontStyle: "normal" },
-                4: { cellWidth: 16, fontStyle: "normal" },
-                5: { cellWidth: 17, fontStyle: "normal" },
-                6: { cellWidth: 26, fontStyle: "normal" },
+                0: { cellWidth: 20, fontStyle: "bold" },
+                1: { cellWidth: 33, fontStyle: "bold" },
+                2: { cellWidth: 18, fontStyle: "normal" },
+                3: { cellWidth: 26, fontStyle: "normal" },
+                4: { cellWidth: 18, fontStyle: "normal" },
+                5: { cellWidth: 19, fontStyle: "normal" },
+                6: { cellWidth: 30, fontStyle: "normal" },
                 7: { cellWidth: 5, fontStyle: "bold", halign: "center" },
                 8: { cellWidth: 5, fontStyle: "bold", halign: "center" },
-                9: { cellWidth: 5, fontStyle: "bold", halign: "center" },
-                10: { cellWidth: 19, fontStyle: "bold", halign: "center" }
-            },
-            didParseCell: (data) => {
-                if (data.column.index === 10 && data.row.section === "body") {
-                    data.cell.styles.fillColor = recuperoInfoV2.color;
-                    data.cell.styles.textColor = recuperoInfoV2.textColor;
-                }
+                9: { cellWidth: 5, fontStyle: "bold", halign: "center" }
             }
         });
 
