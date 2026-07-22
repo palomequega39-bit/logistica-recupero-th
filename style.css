@@ -125,7 +125,7 @@ body {
 .fila {
   display: grid;
   /* 30px para el checkbox y el resto distribuido para los datos  */
-  grid-template-columns: 30px 60px 180px 80px 120px 100px 180px 120px 130px 52px; 
+  grid-template-columns: 30px 60px 160px 80px 110px 95px 150px 90px 36px 36px 36px 130px 52px; 
   gap: 8px;
   align-items: center;
 }
@@ -167,6 +167,35 @@ body {
 .fila:hover {
   background: #eef2ff;
 }
+
+/* --- Columnas de semáforo CI / FOJA / DEV --- */
+.col-semaforo {
+  text-align: center;
+  padding-right: 0 !important;
+}
+
+.semaforo-dot {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin: 0 auto;
+}
+
+.fila .semaforo-celda {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: visible;
+}
+
+/* Verde: OK / al día. Rojo: falta. Usado para CI y FOJA (VERDADERO = está OK) */
+.semaforo-dot.si { background: #16a34a; }
+.semaforo-dot.no { background: #dc2626; }
+
+/* Para Devolución el sentido es inverso: VERDADERO = pendiente (alerta) */
+.semaforo-dot.dev-pendiente { background: #dc2626; }
+.semaforo-dot.dev-ok { background: #16a34a; }
 
 /* --- Tinte de fila según Estado Recupero (para ver de un vistazo qué ya se pidió) --- */
 .fila.recupero-completo {

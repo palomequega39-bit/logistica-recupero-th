@@ -161,13 +161,13 @@ document.getElementById("buscadorGlobal")
   .addEventListener("input", aplicarFiltros);
 // Dentro de app.js, donde configures los eventos:
 document.getElementById("btnExportarPDF").onclick = () => {
-    exportarDetallePDF(ordenes, seleccionados);
+    exportarDetallePDF(filtradas, seleccionados);
 };
 document.getElementById("btnExportarPDFv2").onclick = () => {
-    exportarDetallePDFv2(ordenes, seleccionados);
+    exportarDetallePDFv2(filtradas, seleccionados);
 };
 document.getElementById("btnExportarWhatsApp").onclick = () => {
-    exportarMensajeWhatsApp(ordenes, seleccionados);
+    exportarMensajeWhatsApp(filtradas, seleccionados);
 };
 
 /* =========================
@@ -472,6 +472,9 @@ function renderLista(){
       <span>${o.FechaCX || ""}</span>
       <span title="${o.Institucion}">${o.Institucion}</span>
       <span>${o.Prioridad}</span>
+      <span class="semaforo-celda" title="Certificado de Implante: ${o.CI === 'VERDADERO' ? 'OK' : 'Falta'}"><span class="semaforo-dot ${o.CI === 'VERDADERO' ? 'si' : 'no'}"></span></span>
+      <span class="semaforo-celda" title="Foja Quirúrgica: ${o.Foja === 'VERDADERO' ? 'OK' : 'Falta'}"><span class="semaforo-dot ${o.Foja === 'VERDADERO' ? 'si' : 'no'}"></span></span>
+      <span class="semaforo-celda" title="Devolución: ${o.Devolucion === 'VERDADERO' ? 'Pendiente' : 'OK'}"><span class="semaforo-dot ${o.Devolucion === 'VERDADERO' ? 'dev-pendiente' : 'dev-ok'}"></span></span>
       <button class="btn-recupero estado-${o.EstadoRecupero}" onclick="cicloEstadoRecupero(event, '${o.Orden}')" title="Click para cambiar el estado de recupero">${labelEstadoRecupero(o.EstadoRecupero)}</button>
       <button class="btn-odoo" onclick="abrirOrdenOdoo(event, '${o.Orden}')" title="Abrir en Odoo">🔗</button>
     `;
@@ -514,10 +517,18 @@ function cicloEstadoRecupero(event, ordenId){
   const idxSiguiente = (idxActual + 1) % ESTADOS_RECUPERO.length;
   orden.EstadoRecupero = ESTADOS_RECUPERO[idxSiguiente].key;
 
-  // Actualizamos solo el botón clickeado, sin re-renderizar toda la lista
+  // Actualizamos el botón clickeado, sin re-renderizar toda la lista
   const btn = event.target;
   btn.className = `btn-recupero estado-${orden.EstadoRecupero}`;
   btn.textContent = labelEstadoRecupero(orden.EstadoRecupero);
+
+  // 🔴 FIX: también actualizamos el pintado (background) de la fila completa,
+  // que antes solo se refrescaba al re-renderizar toda la lista (ej. al filtrar).
+  const fila = btn.closest(".fila");
+  if(fila){
+    const esFav = fila.classList.contains("favorito");
+    fila.className = `fila ${esFav ? 'favorito' : ''} recupero-${orden.EstadoRecupero}`;
+  }
 
   // Si la orden abierta en el detalle es esta misma, refrescamos el chip de estado
   if(indiceSeleccionado >= 0 && filtradas[indiceSeleccionado] && filtradas[indiceSeleccionado].Orden === ordenId){

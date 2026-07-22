@@ -1,4 +1,17 @@
 /**
+ * Trunca un texto agregando "…" si su ancho renderizado supera anchoMaxMm,
+ * usando la fuente/tamaño actualmente seteados en el doc.
+ */
+function truncarTextoAncho(doc, texto, anchoMaxMm){
+    if (doc.getTextWidth(texto) <= anchoMaxMm) return texto;
+    let recortado = texto;
+    while (recortado.length > 1 && doc.getTextWidth(recortado + "…") > anchoMaxMm) {
+        recortado = recortado.slice(0, -1);
+    }
+    return recortado + "…";
+}
+
+/**
  * Devuelve color y etiqueta para el Estado Recupero, usado en las exportaciones PDF.
  */
 function getEstadoRecuperoInfo(estado){
@@ -104,9 +117,20 @@ async function exportarDetallePDF(ordenes, seleccionados) {
         doc.setFontSize(10);
         doc.setFont("helvetica", "bold");
         doc.setTextColor(44, 62, 80);
-        
+
+        // Cuántos flags van a dibujarse, para saber cuánto espacio reservarles a la derecha
+        const cantidadFlags = [o.Devolucion === "VERDADERO", o.CI === "FALSO", o.Foja === "FALSO"].filter(Boolean).length;
+        const anchoFlags = cantidadFlags * 6 + 3; // 6mm por flag + margen de aire
+
+        // 🔴 FIX: antes este texto no tenía límite de ancho y con nombres largos
+        // se metía debajo de los flags F/C/D. Ahora se trunca con "…" para que
+        // nunca invada esa zona, sin importar cuántos flags haya.
+        const textoOrden = `${o.Orden}  |  ${o.Apellido}, ${o.Nombre}`;
+        const anchoDisponible = (195 - anchoFlags) - (margin + 7);
+        const textoOrdenTruncado = truncarTextoAncho(doc, textoOrden, anchoDisponible);
+
         // AJUSTE AQUÍ: y + 3.5 posiciona la línea base de la letra casi al final del rectángulo de 4.5
-        doc.text(`${o.Orden}  |  ${o.Apellido}, ${o.Nombre}`, margin + 7, y + 3.5);
+        doc.text(textoOrdenTruncado, margin + 7, y + 3.5);
         
         // Reajustamos la posición de los flags para que no floten fuera del nuevo fondo
         let xFlag = 190;
