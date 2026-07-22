@@ -306,7 +306,7 @@ body {
 
 .fila {
   padding: 4px 4px;
-  font-size: 11px;
+  font-size: 13px;
   border-bottom: 1px solid #eee;
   cursor: pointer;
   /* IMPORTANTE: Esto evita que la fila crezca a lo ancho */
