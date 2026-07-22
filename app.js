@@ -308,6 +308,38 @@ function cerrarModalFiltros(){
 document.getElementById("btnAbrirFiltros").onclick = abrirModalFiltros;
 document.getElementById("btnCerrarFiltros").onclick = cerrarModalFiltros;
 
+/* =========================
+   PANTALLA COMPLETA
+   Oculta la barra del navegador en tablets/celulares mientras se usa
+   la app (se sale tocando el mismo botón o con el gesto propio del SO).
+========================= */
+const btnPantallaCompleta = document.getElementById("btnPantallaCompleta");
+
+function estaEnPantallaCompleta(){
+  return !!(document.fullscreenElement || document.webkitFullscreenElement);
+}
+
+function actualizarBotonPantallaCompleta(){
+  if(!btnPantallaCompleta) return;
+  btnPantallaCompleta.textContent = estaEnPantallaCompleta() ? "⛶ Salir de pantalla completa" : "⛶ Pantalla completa";
+}
+
+btnPantallaCompleta.onclick = () => {
+  const el = document.documentElement;
+  if(!estaEnPantallaCompleta()){
+    const solicitar = el.requestFullscreen || el.webkitRequestFullscreen;
+    if(solicitar) solicitar.call(el).catch(() => {
+      alert("Este navegador no permite pantalla completa automática. Probá 'Agregar a pantalla de inicio' desde el menú del navegador: eso abre la app sin barras.");
+    });
+  } else {
+    const salir = document.exitFullscreen || document.webkitExitFullscreen;
+    if(salir) salir.call(document);
+  }
+};
+
+document.addEventListener("fullscreenchange", actualizarBotonPantallaCompleta);
+document.addEventListener("webkitfullscreenchange", actualizarBotonPantallaCompleta);
+
 // Cerrar al hacer click afuera del panel (sobre el fondo oscuro)
 modalFiltros.addEventListener("click", e => {
   if(e.target === modalFiltros) cerrarModalFiltros();

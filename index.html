@@ -4,6 +4,17 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Logística Recupero</title>
+
+<!-- Permite instalar la app en Android/iPad (Agregar a pantalla de inicio)
+     para que abra sin la barra del navegador -->
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#020617">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Recupero TH">
+
   
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
@@ -56,6 +67,7 @@
 
   <div class="topbar-actions">
     <span id="syncStatus" class="sync-status" title="Estado de la sincronización en vivo">⚪ Iniciando...</span>
+    <button id="btnPantallaCompleta" class="btn-topbar" title="Ver a pantalla completa (oculta la barra del navegador)">⛶ Pantalla completa</button>
     <button id="btnAbrirFiltros" class="btn-topbar">☰ Filtros</button>
     <button id="btnExportarWhatsApp" class="btn-exportar-whatsapp" title="Generar mensaje para WhatsApp">🟢 WhatsApp</button>
     <button id="btnExportarPDF" class="btn-exportar-verde">Exportar PDF</button>
