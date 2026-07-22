@@ -111,22 +111,7 @@ function borrarBackup(){
 function ocultarBackupBanner(){
   const banner = document.getElementById("backupBanner");
   if(banner) banner.classList.add("hidden");
-  ajustarEspacioLayoutPorBanner();
 }
-
-function ajustarEspacioLayoutPorBanner(){
-  const banner = document.getElementById("backupBanner");
-  const layout = document.querySelector(".layout");
-  if(!banner || !layout) return;
-
-  if(banner.classList.contains("hidden")){
-    layout.style.height = "100vh";
-  } else {
-    layout.style.height = `calc(100vh - ${banner.offsetHeight}px)`;
-  }
-}
-
-window.addEventListener("resize", ajustarEspacioLayoutPorBanner);
 
 function intentarRestaurarBackup(){
   const dataCruda = localStorage.getItem(BACKUP_KEY_DATOS);
@@ -141,8 +126,8 @@ function intentarRestaurarBackup(){
 
   info.textContent = `⚠ Hay una sesión de recupero sin exportar (${metaObj.archivo || "archivo"}, cargada ${metaObj.fecha || ""}). ¿Restaurarla?`;
   banner.classList.remove("hidden");
-  ajustarEspacioLayoutPorBanner();
 }
+
 
 function restaurarBackup(){
   const dataCrudaTxt = localStorage.getItem(BACKUP_KEY_DATOS);
@@ -204,6 +189,35 @@ document.getElementById("btnExportarPDFv2").onclick = () => {
 document.getElementById("btnExportarWhatsApp").onclick = () => {
     exportarMensajeWhatsApp(filtradas, seleccionados);
 };
+
+/* =========================
+   MODAL DE FILTROS
+========================= */
+
+const modalFiltros = document.getElementById("modalFiltros");
+
+function abrirModalFiltros(){
+  modalFiltros.classList.remove("hidden");
+}
+
+function cerrarModalFiltros(){
+  modalFiltros.classList.add("hidden");
+}
+
+document.getElementById("btnAbrirFiltros").onclick = abrirModalFiltros;
+document.getElementById("btnCerrarFiltros").onclick = cerrarModalFiltros;
+
+// Cerrar al hacer click afuera del panel (sobre el fondo oscuro)
+modalFiltros.addEventListener("click", e => {
+  if(e.target === modalFiltros) cerrarModalFiltros();
+});
+
+// Cerrar con la tecla Escape
+document.addEventListener("keydown", e => {
+  if(e.key === "Escape" && !modalFiltros.classList.contains("hidden")){
+    cerrarModalFiltros();
+  }
+});
 
 /* =========================
    DROPZONE (NUEVO)

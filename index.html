@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Logística Recupero</title>
   
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -10,41 +11,63 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 
 
-<link rel="stylesheet" href="style.css?v=2.4.2">
+<link rel="stylesheet" href="style.css?v=3.0.0">
 
 </head>
 <body>
 
-<div id="backupBanner" class="backup-banner hidden">
-  <span id="backupBannerInfo"></span>
-  <div class="backup-banner-botones">
-    <button onclick="restaurarBackup()" class="btn-restaurar">Restaurar sesión</button>
-    <button onclick="descartarBackup()" class="btn-descartar">Descartar</button>
+<!-- =========================
+     TOPBAR
+     Reemplaza al sidebar fijo: título, carga de archivo, botones de
+     export y acceso a Filtros (que ahora se abren en un modal flotante).
+========================= -->
+<header class="topbar">
+
+  <div class="topbar-title">
+    Logística de Recupero <span class="topbar-title-sub">TH</span>
   </div>
-</div>
 
-<div class="layout">
+  <!-- Aviso de sesión sin exportar (antes era un banner de ancho completo) -->
+  <div id="backupBanner" class="backup-inline hidden">
+    <span id="backupBannerInfo"></span>
+    <div class="backup-banner-botones">
+      <button onclick="restaurarBackup()" class="btn-restaurar">Restaurar sesión</button>
+      <button onclick="descartarBackup()" class="btn-descartar">Descartar</button>
+    </div>
+  </div>
 
-  <aside class="sidebar">
+  <!-- DROPZONE compacta -->
+  <div id="dropzone" class="dropzone-compact">
+    <div class="dz-content">
+      <span class="icon">⬆</span>
+      <span class="dz-title">Cargar CSV / Excel</span>
+    </div>
+    <div id="fileStatus" class="file-status hidden">
+      <span id="fileName"></span>
+      <span class="check">✔</span>
+    </div>
+    <input type="file" id="fileInput">
+  </div>
 
-    <h2>Recupero TH</h2>
+  <div class="topbar-actions">
+    <button id="btnAbrirFiltros" class="btn-topbar">☰ Filtros</button>
+    <button id="btnExportarWhatsApp" class="btn-exportar-whatsapp" title="Generar mensaje para WhatsApp">🟢 WhatsApp</button>
+    <button id="btnExportarPDF" class="btn-exportar-verde">Exportar PDF</button>
+    <button id="btnExportarPDFv2" class="btn-exportar-verde btn-exportar-v2">Exportar PDF v2.0</button>
+  </div>
 
-    <!-- DROPZONE -->
-    <div id="dropzone" class="dropzone">
+</header>
 
-      <div class="dz-content">
-        <div class="icon">⬆</div>
-        <div class="dz-title">Arrastrar CSV</div>
-        <div class="dz-sub">o hacer click para seleccionar</div>
-      </div>
-
-      <div id="fileStatus" class="file-status hidden">
-        <span id="fileName"></span>
-        <span class="check">✔</span>
-      </div>
-
-     <input type="file" id="fileInput">
-
+<!-- =========================
+     MODAL DE FILTROS
+     Antes vivían fijos en el sidebar; ahora flotan sobre la pantalla
+     y se abren/cierran con el botón "Filtros" de la topbar.
+========================= -->
+<div id="modalFiltros" class="modal-overlay hidden">
+  <div class="modal-filtros">
+    <div class="modal-filtros-header">
+      <h2>Filtros</h2>
+      <button id="btnCerrarFiltros" class="btn-cerrar-modal" title="Cerrar">✕</button>
     </div>
 
     <div class="filters">
@@ -84,27 +107,25 @@
 
       <button id="btnLimpiar" class="btn-secundario">Borrar Filtros</button>
       <button id="btnBorrarHistorial" class="btn-secundario" title="Borra el historial de estados de recupero guardado en este navegador">Borrar Historial de Estados</button>
-      
     </div>
+  </div>
+</div>
 
-  </aside>
+<div class="layout">
 
   <main class="contenido">
 
     <section class="panel">
       <div class="titulo header-flex">
-    <span>Órdenes</span>
+        <span>Órdenes</span>
         <div class="stats-bar">
-        <span class="stat-chip">Órdenes: <b id="labelCantidadOrdenes">0</b></span>
-        <span class="stat-chip">Productos: <b id="labelCantidadProductos">0</b></span>
-        <span class="stat-chip">Favoritas: <b id="labelCantidadFavoritas">0</b></span>
-        <span class="stat-chip stat-recupero">Pedidas: <b id="labelCantidadPedidas">0</b></span>
-        <span class="stat-chip">Seleccionadas: <b id="labelCantidadSeleccionadas">0</b></span>
+          <span class="stat-chip">Órdenes: <b id="labelCantidadOrdenes">0</b></span>
+          <span class="stat-chip">Productos: <b id="labelCantidadProductos">0</b></span>
+          <span class="stat-chip">Favoritas: <b id="labelCantidadFavoritas">0</b></span>
+          <span class="stat-chip stat-recupero">Pedidas: <b id="labelCantidadPedidas">0</b></span>
+          <span class="stat-chip">Seleccionadas: <b id="labelCantidadSeleccionadas">0</b></span>
+        </div>
       </div>
-    <button id="btnExportarWhatsApp" class="btn-exportar-whatsapp" title="Generar mensaje para WhatsApp">🟢 WhatsApp</button>
-    <button id="btnExportarPDF" class="btn-exportar-verde">Exportar PDF</button>
-    <button id="btnExportarPDFv2" class="btn-exportar-verde btn-exportar-v2">Exportar PDF v2.0</button>
-  </div>
        
       <div class="tabla-header">
         <input type="checkbox" id="selectAll" onclick="toggleSeleccionarTodos(event)">
@@ -154,6 +175,6 @@
   </main>
 
 </div>
-  <script src="export.js"></script> <script src="app.js?v=3.0.0"></script>
+  <script src="export.js"></script> <script src="app.js?v=3.1.0"></script>
 </body>
 </html>

@@ -5,17 +5,168 @@ body {
   color: #1f2937;
 }
 
-.layout {
-  display: grid;
-  grid-template-columns: 260px 1fr;
-  height: 100vh;
-}
-
-/* SIDEBAR */
-.sidebar {
+/* =========================
+   TOPBAR
+   Reemplaza al sidebar fijo de 260px: ahora todo el ancho de pantalla
+   queda disponible para la tabla de órdenes. Queda "pegada" arriba
+   (sticky) mientras el contenido scrollea debajo.
+========================= */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 500;
   background: #020617;
   color: white;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 15px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.topbar-title {
+  font-size: 16px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.topbar-title-sub {
+  font-weight: 400;
+  color: #94a3b8;
+}
+
+.topbar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.btn-topbar {
+  background: #1e293b;
+  color: white;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  padding: 8px 14px;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn-topbar:hover {
+  background: #334155;
+}
+
+/* Dropzone compacta dentro de la topbar */
+.dropzone-compact {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px dashed #475569;
+  border-radius: 6px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 13px;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+
+.dropzone-compact:hover {
+  border-color: #2563eb;
+  background: rgba(37,99,235,0.15);
+}
+
+.dropzone-compact input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.dropzone-compact .dz-content {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  pointer-events: none;
+}
+
+.dropzone-compact .icon {
+  font-size: 16px;
+  margin-bottom: 0;
+}
+
+.dropzone-compact:has(.file-status:not(.hidden)) .dz-content {
+  display: none;
+}
+
+/* Aviso de sesión sin exportar, ahora integrado en la topbar */
+.backup-inline {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #78350f;
+  border: 1px solid #f59e0b;
+  color: #fef3c7;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+/* =========================
+   MODAL DE FILTROS
+   Los filtros ya no viven fijos en pantalla: se abren como un panel
+   flotante sobre el contenido al tocar "Filtros" en la topbar.
+========================= */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(2, 6, 23, 0.6);
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 40px 15px;
+  overflow-y: auto;
+}
+
+.modal-filtros {
+  background: #020617;
+  color: white;
+  width: 100%;
+  max-width: 340px;
+  border-radius: 10px;
   padding: 15px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+}
+
+.modal-filtros-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #334155;
+  padding-bottom: 10px;
+  margin-bottom: 5px;
+}
+
+.modal-filtros-header h2 {
+  font-size: 16px;
+  margin: 0;
+}
+
+.btn-cerrar-modal {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+.btn-cerrar-modal:hover {
+  color: white;
 }
 
 /* CONTENIDO */
@@ -24,7 +175,6 @@ body {
   flex-direction: column;
   gap: 15px;
   padding: 15px;
-  overflow-y: auto;
 }
 
 /* PANEL */
@@ -408,17 +558,17 @@ th:nth-child(3) { width: 40%; }
   color: #94a3b8;
 }
 
-/* FILE STATUS */
+/* FILE STATUS (dentro de la dropzone compacta de la topbar) */
 .file-status {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  background: #020617;
+  gap: 8px;
+  background: #1e293b;
   border: 1px solid #334155;
-  padding: 6px 10px;
-  border-radius: 8px;
-  margin-top: 10px;
+  padding: 5px 10px;
+  border-radius: 6px;
   font-size: 12px;
+  white-space: nowrap;
 }
 
 .file-status .check {
@@ -573,21 +723,6 @@ th:nth-child(3) { width: 40%; }
 /* =========================
    RECUPERO - BANNER DE RESPALDO LOCAL
 ========================= */
-
-.backup-banner {
-  position: relative;
-  z-index: 9999;
-  background: #fef3c7;
-  border-bottom: 2px solid #f59e0b;
-  color: #78350f;
-  padding: 10px 20px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  font-size: 13px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-}
 
 .backup-banner-botones {
   display: flex;
