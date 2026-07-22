@@ -59,6 +59,12 @@ body {
   background: #334155;
 }
 
+.sync-status {
+  font-size: 12px;
+  white-space: nowrap;
+  color: #cbd5e1;
+}
+
 /* Dropzone compacta dentro de la topbar */
 .dropzone-compact {
   position: relative;
@@ -276,12 +282,13 @@ body {
   display: grid;
   /* 30px para el checkbox y el resto distribuido para los datos  */
   grid-template-columns: 30px 60px 160px 80px 110px 95px 150px 90px 36px 36px 36px 130px 52px; 
-  gap: 8px;
+  gap: 6px;
   align-items: center;
 }
 
 .tabla-header {
-  font-size: 12px;
+  font-size: 11px;
+  padding: 4px 6px;
   border-bottom: 1px solid #e5e7eb;
 }
 
@@ -298,8 +305,8 @@ body {
 }
 
 .fila {
-  padding: 6px;
-  font-size: 12px;
+  padding: 2px 6px;
+  font-size: 11px;
   border-bottom: 1px solid #eee;
   cursor: pointer;
   /* IMPORTANTE: Esto evita que la fila crezca a lo ancho */
@@ -408,9 +415,9 @@ body {
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: bold;
-  padding: 6px 10px;
+  padding: 3px 8px;
   transition: background-color 0.3s ease;
 }
 
@@ -423,6 +430,55 @@ body {
 }
 
 /* CABECERA */
+.panel-orden {
+  padding: 8px 10px;
+}
+
+.cabecera-titulo {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+  padding-bottom: 6px;
+  margin-bottom: 6px;
+  border-bottom: 1px solid #eee;
+}
+
+.ch-orden { color: #1d4ed8; }
+.ch-sep { color: #cbd5e1; font-weight: 400; }
+.ch-nombre { }
+.ch-dni, .ch-os {
+  font-weight: 400;
+  font-size: 12px;
+  color: #475569;
+}
+
+.ch-badges {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.badge-semaforo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  font-size: 10px;
+  font-weight: 700;
+  color: white;
+}
+
+.badge-semaforo.si { background: #16a34a; }
+.badge-semaforo.no { background: #dc2626; }
+.badge-semaforo.dev-pendiente { background: #dc2626; }
+.badge-semaforo.dev-ok { background: #16a34a; }
+
 .cabecera {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -661,8 +717,9 @@ th:nth-child(3) { width: 40%; }
   width: 100%;
   border: 1px solid #cbd5e1;
   border-radius: 5px;
-  padding: 5px 4px;
-  font-size: 11px;
+  padding: 3px 4px;
+  font-size: 10px;
+  line-height: 1.2;
   font-weight: 700;
   cursor: pointer;
   text-align: center;

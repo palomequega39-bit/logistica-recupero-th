@@ -65,6 +65,104 @@ function borrarHistorialEstados(){
 }
 
 /* =========================
+   RECUPERO - SINCRONIZACIÓN EN VIVO ENTRE DISPOSITIVOS (Firebase)
+   Objetivo: que al tocar el botón de Recupero en una computadora, el
+   cambio se vea al instante en las otras (celular, notebook, etc.).
+   Requiere que /firebase-config.js tenga las credenciales del proyecto
+   de Firebase (ver instrucciones en ese archivo). Si no está configurado,
+   la app sigue funcionando igual que antes, solo que sin sincronizar.
+========================= */
+let firebaseListo = false;
+let estadosRemotosRef = null;
+let estadosRemotosCache = {}; // último snapshot conocido de Firebase, para aplicarlo también al cargar un archivo nuevo
+
+function inicializarSyncRemoto(){
+  const indicador = document.getElementById("syncStatus");
+
+  if (typeof FIREBASE_CONFIG === "undefined" || !FIREBASE_CONFIG.apiKey || FIREBASE_CONFIG.apiKey === "TU_API_KEY") {
+    console.warn("Firebase no está configurado (ver firebase-config.js). La sincronización en vivo está desactivada.");
+    if (indicador) { indicador.textContent = "⚪ Sync no configurada"; indicador.title = "Completá firebase-config.js para activar la sincronización entre dispositivos"; }
+    return;
+  }
+
+  try {
+    firebase.initializeApp(FIREBASE_CONFIG);
+    estadosRemotosRef = firebase.database().ref("estadosRecupero");
+    firebaseListo = true;
+
+    // Estado de conexión (path especial de Firebase RTDB)
+    firebase.database().ref(".info/connected").on("value", snap => {
+      const conectado = snap.val() === true;
+      if (indicador) {
+        indicador.textContent = conectado ? "🟢 Sincronizado" : "🔴 Sin conexión";
+        indicador.title = conectado
+          ? "Los cambios de estado se comparten en vivo con los otros dispositivos"
+          : "Sin conexión a la nube: los cambios se guardan localmente y se sincronizan al reconectar";
+      }
+    });
+
+    // Escuchamos TODOS los cambios remotos (de cualquier dispositivo) en vivo
+    estadosRemotosRef.on("value", snapshot => {
+      const remoto = snapshot.val() || {};
+      estadosRemotosCache = remoto;
+      Object.keys(remoto).forEach(ordenId => {
+        aplicarCambioEstado(ordenId, remoto[ordenId].estado, { publicarRemoto: false });
+      });
+    });
+  } catch (e) {
+    console.warn("No se pudo inicializar la sincronización remota:", e);
+    if (indicador) { indicador.textContent = "🔴 Error de sync"; }
+  }
+}
+
+function publicarEstadoRemoto(ordenId, estadoKey){
+  if (!firebaseListo || !estadosRemotosRef) return;
+  estadosRemotosRef.child(ordenId).set({
+    estado: estadoKey,
+    ts: firebase.database.ServerValue.TIMESTAMP
+  }).catch(e => console.warn("No se pudo sincronizar el estado en la nube:", e));
+}
+
+/**
+ * Aplica un estado de recupero a una orden (en memoria + DOM visible + chip
+ * de detalle + historial local), sin importar si vino de un click local o
+ * de una actualización remota de otro dispositivo. Si publicarRemoto es
+ * true, además lo empuja a Firebase para que lo vean los demás.
+ */
+function aplicarCambioEstado(ordenId, estadoKey, { publicarRemoto = false } = {}){
+  const orden = buscarOrdenPorId(ordenId);
+
+  // Igual guardamos en el historial local aunque la orden no esté cargada
+  // ahora mismo, para que aparezca correcta si se carga más tarde.
+  actualizarHistorialEstado(ordenId, estadoKey);
+
+  if (orden) {
+    orden.EstadoRecupero = estadoKey;
+
+    const checkbox = document.querySelector(`.check-orden[data-id="${CSS.escape(ordenId)}"]`);
+    const fila = checkbox ? checkbox.closest(".fila") : null;
+    if (fila) {
+      const esFav = fila.classList.contains("favorito");
+      fila.className = `fila ${esFav ? 'favorito' : ''} recupero-${estadoKey}`;
+      const btn = fila.querySelector(".btn-recupero");
+      if (btn) {
+        btn.className = `btn-recupero estado-${estadoKey}`;
+        btn.textContent = labelEstadoRecupero(estadoKey);
+      }
+    }
+
+    if (indiceSeleccionado >= 0 && filtradas[indiceSeleccionado] && filtradas[indiceSeleccionado].Orden === ordenId) {
+      mostrar(orden);
+    }
+
+    guardarBackupEstados();
+    actualizarLabelsInformativos();
+  }
+
+  if (publicarRemoto) publicarEstadoRemoto(ordenId, estadoKey);
+}
+
+/* =========================
    RECUPERO - RESPALDO AUTOMÁTICO (localStorage)
    Objetivo: que un refresh accidental del navegador no borre
    una sesión de recupero en curso. NO es un backend ni la nube:
@@ -179,6 +277,9 @@ function descartarBackup(){
 
 document.getElementById("buscadorGlobal")
   .addEventListener("input", aplicarFiltros);
+
+inicializarSyncRemoto();
+
 // Dentro de app.js, donde configures los eventos:
 document.getElementById("btnExportarPDF").onclick = () => {
     exportarDetallePDF(filtradas, seleccionados);
@@ -307,6 +408,10 @@ function procesar(data){
 
     if(!r.Orden) return;
 
+    // 🔴 Normalizamos el Nº de Orden (trim) para que el cruce entre exports
+    // de distintas personas no falle por un espacio de más al final/inicio.
+    r.Orden = r.Orden.toString().trim();
+
     r.Paciente = (r.Apellido || "") + " " + (r.Nombre || "");
     r.Institucion = r.Institucion || "";
     r.Ciudad = r.Ciudad || "";
@@ -326,11 +431,19 @@ function procesar(data){
   ordenes = Object.values(map);
 
   // 🔴 Restauramos el estado de recupero de cada orden desde el historial
-  // persistente (si esa orden ya se había trabajado en un archivo anterior)
+  // persistente local (si esa orden ya se había trabajado en un archivo anterior)
   const historial = cargarHistorialEstados();
   ordenes.forEach(o=>{
     if(historial[o.Orden]){
       o.EstadoRecupero = historial[o.Orden];
+    }
+  });
+
+  // 🔴 Si ya tenemos un snapshot de Firebase (llegó antes de cargar este
+  // archivo), tiene prioridad por ser la fuente compartida más actualizada.
+  ordenes.forEach(o=>{
+    if(estadosRemotosCache[o.Orden]){
+      o.EstadoRecupero = estadosRemotosCache[o.Orden].estado;
     }
   });
 
@@ -575,29 +688,11 @@ function cicloEstadoRecupero(event, ordenId){
 
   const idxActual = ESTADOS_RECUPERO.findIndex(e => e.key === orden.EstadoRecupero);
   const idxSiguiente = (idxActual + 1) % ESTADOS_RECUPERO.length;
-  orden.EstadoRecupero = ESTADOS_RECUPERO[idxSiguiente].key;
+  const nuevoEstado = ESTADOS_RECUPERO[idxSiguiente].key;
 
-  // Actualizamos el botón clickeado, sin re-renderizar toda la lista
-  const btn = event.target;
-  btn.className = `btn-recupero estado-${orden.EstadoRecupero}`;
-  btn.textContent = labelEstadoRecupero(orden.EstadoRecupero);
-
-  // 🔴 FIX: también actualizamos el pintado (background) de la fila completa,
-  // que antes solo se refrescaba al re-renderizar toda la lista (ej. al filtrar).
-  const fila = btn.closest(".fila");
-  if(fila){
-    const esFav = fila.classList.contains("favorito");
-    fila.className = `fila ${esFav ? 'favorito' : ''} recupero-${orden.EstadoRecupero}`;
-  }
-
-  // Si la orden abierta en el detalle es esta misma, refrescamos el chip de estado
-  if(indiceSeleccionado >= 0 && filtradas[indiceSeleccionado] && filtradas[indiceSeleccionado].Orden === ordenId){
-    mostrar(orden);
-  }
-
-  guardarBackupEstados();
-  actualizarHistorialEstado(ordenId, orden.EstadoRecupero);
-  actualizarLabelsInformativos();
+  // publicarRemoto:true → además de actualizar acá, lo empuja a Firebase
+  // para que el cambio se vea en vivo en los otros dispositivos.
+  aplicarCambioEstado(ordenId, nuevoEstado, { publicarRemoto: true });
 }
 
 /* =========================
@@ -648,36 +743,35 @@ function mostrar(o){
   // Verificamos si es favorito para la estrella
   const esFav = (o.Favorito === "FAVORITO" || o.Favorito === "SI");
   const estrellaHtml = esFav ? `<span class="estrella">★</span>` : "";
-   
-  // 1. Actualizamos el título del panel
-  // IMPORTANTE: Usamos .innerHTML en lugar de .textContent para que procese la estrella
-  const panelTitulo = document.querySelector(".panel:nth-of-type(2) .titulo");
-  if (panelTitulo) {
-    panelTitulo.innerHTML = `Datos de la Orden - ${o.Orden} ${estrellaHtml} - ${o.Apellido} ${o.Nombre}`;
+
+  // 1. Línea principal: estrella - N° Orden - Paciente - DNI - Obra Social - semáforo C/F/D
+  const cabTitulo = document.getElementById("cabeceraTitulo");
+  if (cabTitulo) {
+    cabTitulo.innerHTML = `
+      ${estrellaHtml}
+      <span class="ch-orden">${o.Orden}</span>
+      <span class="ch-sep">·</span>
+      <span class="ch-nombre">${o.Apellido} ${o.Nombre}</span>
+      <span class="ch-sep">·</span>
+      <span class="ch-dni">DNI ${o.Dni || "-"}</span>
+      <span class="ch-sep">·</span>
+      <span class="ch-os">${o.ObraSocial || ""}</span>
+      <span class="ch-badges">
+        <span class="badge-semaforo ${o.CI === 'VERDADERO' ? 'si' : 'no'}" title="Certificado de Implante: ${o.CI === 'VERDADERO' ? 'OK' : 'Falta'}">C</span>
+        <span class="badge-semaforo ${o.Foja === 'VERDADERO' ? 'si' : 'no'}" title="Foja Quirúrgica: ${o.Foja === 'VERDADERO' ? 'OK' : 'Falta'}">F</span>
+        <span class="badge-semaforo ${o.Devolucion === 'VERDADERO' ? 'dev-pendiente' : 'dev-ok'}" title="Devolución: ${o.Devolucion === 'VERDADERO' ? 'Pendiente' : 'OK'}">D</span>
+      </span>
+    `;
   }
-   
+
   const cab = document.getElementById("cabecera");
 
-// 2. Renderizado Compacto (Sin duplicar actividades y con el orden pedido)
+  // 2. Línea de datos extra, solo lo pedido: Fecha CX - Médico - Solicitante - Expediente
   cab.innerHTML = `
     <div class="campo"><b>Fecha CX:</b> ${o.FechaCX || ""}</div>
-    <div class="campo"><b>DNI:</b> ${o.Dni || ""}</div>
-    <div class="campo"><b>Obra Social:</b> ${o.ObraSocial || ""}</div>
-    <div class="campo"><b>Institución:</b> ${o.Institucion || ""}</div>
-
-    <div class="campo"><b>Expte:</b> ${o.Expediente || ""}</div>
     <div class="campo"><b>Médico:</b> ${o.Medico || ""}</div>
     <div class="campo"><b>Solicitante:</b> ${o.MedicoSolicitante || ""}</div>
-    <div class="campo"><b>Vendedor:</b> ${o.Vendedor || ""}</div>
-    
-    <div class="campo"><b>Foja:</b> ${boolTag(o.Foja)}</div>
-    <div class="campo"><b>CI:</b> ${boolTag(o.CI)}</div>
-    <div class="campo"><b>Devolución:</b> ${boolTag(o.Devolucion,"dev")}</div>
-    <div class="campo"><b>Estado Recupero:</b> <span class="chip-estado estado-${o.EstadoRecupero}">${labelEstadoRecupero(o.EstadoRecupero)}</span></div>
-
-    <div class="campo" style="grid-column: span 4; margin-top: 5px; white-space: normal; color: #444; border-top: 1px solid #eee; padding-top: 5px;">
-      <b>Actividades:</b> ${o.Actividades || ""}
-    </div>
+    <div class="campo"><b>Expte:</b> ${o.Expediente || ""}</div>
   `;
 
   // 3. Detalle de productos
@@ -881,7 +975,7 @@ function preProcesarExcel(rows) {
         }
 
         let fila = {
-            Orden: r[0] || ref.Orden,
+            Orden: (r[0] || ref.Orden || "").toString().trim(),
             Remito: r[1],
             FechaR: formatFecha(r[2]),
             Apellido: r[3] || ref.Apellido,
@@ -1069,8 +1163,8 @@ function borrarFiltros() {
 }
 
 function limpiarDetalleOrden() {
-    const panelTitulo = document.querySelector(".panel:nth-of-type(2) .titulo");
-    if (panelTitulo) panelTitulo.textContent = "Datos de la Orden";
+    const cabTitulo = document.getElementById("cabeceraTitulo");
+    if (cabTitulo) cabTitulo.textContent = "Seleccioná una orden de la lista para ver el detalle";
 
     document.getElementById("cabecera").innerHTML = "";
     document.getElementById("detalleBody").innerHTML = "";

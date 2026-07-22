@@ -10,6 +10,11 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 
+<!-- Firebase (solo Realtime Database) para sincronizar el estado de recupero en vivo entre dispositivos -->
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
+<script src="firebase-config.js"></script>
+
 
 <link rel="stylesheet" href="style.css?v=3.0.0">
 
@@ -50,6 +55,7 @@
   </div>
 
   <div class="topbar-actions">
+    <span id="syncStatus" class="sync-status" title="Estado de la sincronización en vivo">⚪ Iniciando...</span>
     <button id="btnAbrirFiltros" class="btn-topbar">☰ Filtros</button>
     <button id="btnExportarWhatsApp" class="btn-exportar-whatsapp" title="Generar mensaje para WhatsApp">🟢 WhatsApp</button>
     <button id="btnExportarPDF" class="btn-exportar-verde">Exportar PDF</button>
@@ -148,8 +154,8 @@
 
    <input id="buscadorGlobal" class="buscador" placeholder="Buscar por...">
 
-    <section class="panel">
-      <div class="titulo">Datos de la Orden</div>
+    <section class="panel panel-orden">
+      <div id="cabeceraTitulo" class="cabecera-titulo">Seleccioná una orden de la lista para ver el detalle</div>
       <div id="cabecera" class="cabecera"></div>
     </section>
 
