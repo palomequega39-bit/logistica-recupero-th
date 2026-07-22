@@ -52,8 +52,8 @@
  */
 
 const FIREBASE_CONFIG = {
-  apiKey: "TU_API_KEY",
-  authDomain: "TU_PROYECTO.firebaseapp.com",
-  databaseURL: "https://TU_PROYECTO-default-rtdb.firebaseio.com",
-  projectId: "TU_PROYECTO",
+  apiKey: "AIzaSyDmoZB8MnF-vlC9Hhl_Jgup3CeV_jgTJUI",
+  authDomain: "logistica-recupero-th.firebaseapp.com",
+  databaseURL: "https://logistica-recupero-th-default-rtdb.firebaseio.com",
+  projectId: "logistica-recupero-th",
 };
