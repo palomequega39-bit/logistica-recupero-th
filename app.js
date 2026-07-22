@@ -77,7 +77,22 @@ function borrarBackup(){
 function ocultarBackupBanner(){
   const banner = document.getElementById("backupBanner");
   if(banner) banner.classList.add("hidden");
+  ajustarEspacioLayoutPorBanner();
 }
+
+function ajustarEspacioLayoutPorBanner(){
+  const banner = document.getElementById("backupBanner");
+  const layout = document.querySelector(".layout");
+  if(!banner || !layout) return;
+
+  if(banner.classList.contains("hidden")){
+    layout.style.height = "100vh";
+  } else {
+    layout.style.height = `calc(100vh - ${banner.offsetHeight}px)`;
+  }
+}
+
+window.addEventListener("resize", ajustarEspacioLayoutPorBanner);
 
 function intentarRestaurarBackup(){
   const dataCruda = localStorage.getItem(BACKUP_KEY_DATOS);
@@ -92,6 +107,7 @@ function intentarRestaurarBackup(){
 
   info.textContent = `⚠ Hay una sesión de recupero sin exportar (${metaObj.archivo || "archivo"}, cargada ${metaObj.fecha || ""}). ¿Restaurarla?`;
   banner.classList.remove("hidden");
+  ajustarEspacioLayoutPorBanner();
 }
 
 function restaurarBackup(){
@@ -352,6 +368,12 @@ function aplicarFiltros(){
   filtradas = ordenes.filter(o => {
     // Filtros de Selección Simple
     if(f("filtroEstadoRecupero") && o.EstadoRecupero !== f("filtroEstadoRecupero")) return false;
+
+    const filtroObs = f("filtroObservacionRecupero");
+    const tieneObs = !!(o.ObservacionRecupero && o.ObservacionRecupero.trim());
+    if(filtroObs === "con" && !tieneObs) return false;
+    if(filtroObs === "sin" && tieneObs) return false;
+
     if(f("filtroInstitucion") && o.Institucion !== f("filtroInstitucion")) return false;
     if(f("filtroCiudad") && o.Ciudad !== f("filtroCiudad")) return false;
     if(f("filtroPrioridad") && o.Prioridad !== f("filtroPrioridad")) return false;
@@ -441,7 +463,7 @@ function renderLista(){
   filtradas.forEach((o, i) => {
     const fila = document.createElement("div");
     const esFav = o.Favorito === "FAVORITO" || o.Favorito === "SI";
-    fila.className = `fila ${esFav ? 'favorito' : ''}`;
+    fila.className = `fila ${esFav ? 'favorito' : ''} recupero-${o.EstadoRecupero}`;
 
     // Verificamos si esta orden ya estaba seleccionada
     const estaChequeado = seleccionados.has(o.Orden) ? "checked" : "";

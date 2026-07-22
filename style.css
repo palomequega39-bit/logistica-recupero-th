@@ -167,6 +167,32 @@ body {
 .fila:hover {
   background: #eef2ff;
 }
+
+/* --- Tinte de fila según Estado Recupero (para ver de un vistazo qué ya se pidió) --- */
+.fila.recupero-completo {
+  background: #dcfce7;
+  box-shadow: inset 4px 0 0 0 #16a34a;
+}
+.fila.recupero-completo:hover {
+  background: #bbf7d0;
+}
+
+.fila.recupero-faltan {
+  background: #ffedd5;
+  box-shadow: inset 4px 0 0 0 #f97316;
+}
+.fila.recupero-faltan:hover {
+  background: #fed7aa;
+}
+
+.fila.recupero-sin_realizar {
+  background: #fee2e2;
+  box-shadow: inset 4px 0 0 0 #dc2626;
+}
+.fila.recupero-sin_realizar:hover {
+  background: #fecaca;
+}
+
 /* --- Estilos para la fila favorita (Colócalo después de .fila:hover) --- */
 
 .fila.favorito {
@@ -539,10 +565,7 @@ th:nth-child(3) { width: 40%; }
 ========================= */
 
 .backup-banner {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
+  position: relative;
   z-index: 9999;
   background: #fef3c7;
   border-bottom: 2px solid #f59e0b;
