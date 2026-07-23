@@ -281,7 +281,7 @@ body {
 .fila {
   display: grid;
   /* 30px para el checkbox y el resto distribuido para los datos  */
-  grid-template-columns: 30px 60px 160px 80px 110px 95px 150px 90px 36px 36px 36px 130px 52px; 
+  grid-template-columns: 30px 60px 150px 75px 100px 90px 130px 80px 32px 32px 32px 110px 130px 52px; 
   gap: 6px;
   align-items: center;
 }
@@ -305,8 +305,8 @@ body {
 }
 
 .fila {
-  padding: 4px 4px;
-  font-size: 13px;
+  padding: 5px 6px;
+  font-size: 11px;
   border-bottom: 1px solid #eee;
   cursor: pointer;
   /* IMPORTANTE: Esto evita que la fila crezca a lo ancho */
@@ -353,6 +353,16 @@ body {
 /* Para Devolución el sentido es inverso: VERDADERO = pendiente (alerta) */
 .semaforo-dot.dev-pendiente { background: #dc2626; }
 .semaforo-dot.dev-ok { background: #16a34a; }
+
+.select-secretaria {
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 5px;
+  padding: 3px 2px;
+  font-size: 10px;
+  background: white;
+  color: #1f2937;
+}
 
 /* --- Tinte de fila según Estado Recupero (para ver de un vistazo qué ya se pidió) --- */
 .fila.recupero-completo {

@@ -65,6 +65,133 @@ function borrarHistorialEstados(){
 }
 
 /* =========================
+   SECRETARÍA
+   Lista de valores abierta: cualquier operario puede agregar una
+   Secretaría nueva desde el propio select de la fila ("+ Agregar nueva...").
+   La asignación por orden funciona EXACTAMENTE igual que el Estado de
+   Recupero: se guarda por Nº de Orden, sobrevive a cargar un archivo
+   nuevo, y se sincroniza en vivo entre dispositivos vía Firebase.
+========================= */
+const SECRETARIAS_LISTA_KEY = "recuperoTH_listaSecretarias_v1";
+const HISTORIAL_KEY_SECRETARIA = "recuperoTH_historialSecretaria_v1";
+
+let listaSecretarias = [];          // lista compartida de valores disponibles
+let secretariasRef = null;          // ref de Firebase para la lista
+let secretariaPorOrdenRef = null;   // ref de Firebase para la asignación por orden
+let secretariaRemotaCache = {};     // último snapshot remoto, para aplicar al cargar un archivo nuevo
+
+function cargarListaSecretariasLocal(){
+  try{ return JSON.parse(localStorage.getItem(SECRETARIAS_LISTA_KEY)) || []; }
+  catch(e){ console.warn("Lista de secretarías corrupta, se descarta:", e); return []; }
+}
+
+function guardarListaSecretariasLocal(lista){
+  try{ localStorage.setItem(SECRETARIAS_LISTA_KEY, JSON.stringify(lista)); }
+  catch(e){ console.warn("No se pudo guardar la lista de secretarías:", e); }
+}
+
+listaSecretarias = cargarListaSecretariasLocal();
+
+function cargarHistorialSecretaria(){
+  try{ return JSON.parse(localStorage.getItem(HISTORIAL_KEY_SECRETARIA)) || {}; }
+  catch(e){ console.warn("Historial de secretarías corrupto, se descarta:", e); return {}; }
+}
+
+function actualizarHistorialSecretaria(ordenId, nombre){
+  try{
+    const historial = cargarHistorialSecretaria();
+    if(nombre) historial[ordenId] = nombre; else delete historial[ordenId];
+    localStorage.setItem(HISTORIAL_KEY_SECRETARIA, JSON.stringify(historial));
+  }catch(e){ console.warn("No se pudo guardar el historial de secretarías:", e); }
+}
+
+/**
+ * Agrega una Secretaría nueva a la lista compartida (si no existe ya,
+ * sin distinguir mayúsculas/minúsculas) y la sincroniza a Firebase.
+ */
+function agregarSecretaria(nombre){
+  const limpio = (nombre || "").trim();
+  if(!limpio) return;
+
+  const yaExiste = listaSecretarias.some(s => s.toLowerCase() === limpio.toLowerCase());
+  if(!yaExiste){
+    listaSecretarias.push(limpio);
+    listaSecretarias.sort((a,b) => a.localeCompare(b));
+    guardarListaSecretariasLocal(listaSecretarias);
+    actualizarSelectsSecretaria();
+  }
+
+  if(firebaseListo && secretariasRef){
+    secretariasRef.push(limpio).catch(e => console.warn("No se pudo sincronizar la nueva Secretaría:", e));
+  }
+}
+
+function publicarSecretariaRemota(ordenId, nombre){
+  if(!firebaseListo || !secretariaPorOrdenRef) return;
+  secretariaPorOrdenRef.child(ordenId).set({
+    secretaria: nombre,
+    ts: firebase.database.ServerValue.TIMESTAMP
+  }).catch(e => console.warn("No se pudo sincronizar la Secretaría en la nube:", e));
+}
+
+/**
+ * Asigna una Secretaría a una orden (en memoria + DOM visible + historial
+ * local), sin importar si vino de un click local o de una actualización
+ * remota de otro dispositivo.
+ */
+function aplicarCambioSecretaria(ordenId, nombre, { publicarRemoto = false } = {}){
+  const orden = buscarOrdenPorId(ordenId);
+
+  actualizarHistorialSecretaria(ordenId, nombre);
+
+  if(orden){
+    orden.Secretaria = nombre || "";
+    const sel = document.querySelector(`.select-secretaria[data-id="${CSS.escape(ordenId)}"]`);
+    if(sel) sel.value = orden.Secretaria;
+  }
+
+  if(publicarRemoto) publicarSecretariaRemota(ordenId, nombre);
+}
+
+/** Maneja el cambio del select de Secretaría de una fila, incluida la opción "+ Agregar nueva...". */
+function manejarCambioSecretariaSelect(selectEl, ordenId){
+  const valor = selectEl.value;
+
+  if(valor === "__nueva__"){
+    const nombre = prompt("Nombre de la nueva Secretaría:");
+    const limpio = (nombre || "").trim();
+    if(!limpio){
+      const orden = buscarOrdenPorId(ordenId);
+      selectEl.value = (orden && orden.Secretaria) || "";
+      return;
+    }
+    agregarSecretaria(limpio);
+    aplicarCambioSecretaria(ordenId, limpio, { publicarRemoto: true });
+    return;
+  }
+
+  aplicarCambioSecretaria(ordenId, valor, { publicarRemoto: true });
+}
+
+/** Arma las <option> del select de Secretaría, con la actual ya seleccionada. */
+function opcionesSecretariaHTML(seleccionActual){
+  const actual = seleccionActual || "";
+  const opciones = listaSecretarias.map(s =>
+    `<option value="${s}" ${s === actual ? "selected" : ""}>${s}</option>`
+  ).join("");
+  return `<option value="" ${!actual ? "selected" : ""}>— Sin asignar —</option>${opciones}<option value="__nueva__">+ Agregar nueva…</option>`;
+}
+
+/** Refresca las <option> de todos los selects de Secretaría visibles y del filtro, sin perder la selección de cada uno. */
+function actualizarSelectsSecretaria(){
+  document.querySelectorAll(".select-secretaria").forEach(sel => {
+    const orden = buscarOrdenPorId(sel.dataset.id);
+    sel.innerHTML = opcionesSecretariaHTML(orden ? orden.Secretaria : sel.value);
+  });
+  fillSecretariaFiltro();
+}
+
+/* =========================
    RECUPERO - SINCRONIZACIÓN EN VIVO ENTRE DISPOSITIVOS (Firebase)
    Objetivo: que al tocar el botón de Recupero en una computadora, el
    cambio se vea al instante en las otras (celular, notebook, etc.).
@@ -107,6 +234,26 @@ function inicializarSyncRemoto(){
       estadosRemotosCache = remoto;
       Object.keys(remoto).forEach(ordenId => {
         aplicarCambioEstado(ordenId, remoto[ordenId].estado, { publicarRemoto: false });
+      });
+    });
+
+    // --- Secretaría: lista compartida ---
+    secretariasRef = firebase.database().ref("secretarias");
+    secretariasRef.on("value", snapshot => {
+      const val = snapshot.val() || {};
+      listaSecretarias = Object.values(val).filter(Boolean);
+      listaSecretarias.sort((a,b) => a.localeCompare(b));
+      guardarListaSecretariasLocal(listaSecretarias);
+      actualizarSelectsSecretaria();
+    });
+
+    // --- Secretaría: asignación por orden ---
+    secretariaPorOrdenRef = firebase.database().ref("secretariaPorOrden");
+    secretariaPorOrdenRef.on("value", snapshot => {
+      const remoto = snapshot.val() || {};
+      secretariaRemotaCache = remoto;
+      Object.keys(remoto).forEach(ordenId => {
+        aplicarCambioSecretaria(ordenId, remoto[ordenId].secretaria, { publicarRemoto: false });
       });
     });
   } catch (e) {
@@ -479,6 +626,18 @@ function procesar(data){
     }
   });
 
+  // 🔴 Igual que el Estado de Recupero: restauramos la Secretaría asignada
+  // (historial local primero, Firebase después si ya llegó, con prioridad).
+  const historialSecretaria = cargarHistorialSecretaria();
+  ordenes.forEach(o=>{
+    o.Secretaria = historialSecretaria[o.Orden] || "";
+  });
+  ordenes.forEach(o=>{
+    if(secretariaRemotaCache[o.Orden]){
+      o.Secretaria = secretariaRemotaCache[o.Orden].secretaria || "";
+    }
+  });
+
   seleccionados.clear();
   document.getElementById("selectAll").checked = false;
   limpiarDetalleOrden();
@@ -499,6 +658,7 @@ function procesar(data){
 function cargarFiltros() {
     fillEstadoRecupero();
     fill("filtroPrioridad", "Prioridad");
+    fillSecretariaFiltro();
     fill("filtroCiudad", "Ciudad");
     fill("filtroVendedor", "Vendedor");
     fill("filtroMedico", "Medico");
@@ -540,6 +700,15 @@ function fillEstadoRecupero(){
     ESTADOS_RECUPERO.map(e => `<option value="${e.key}">${e.label}</option>`).join("");
 }
 
+function fillSecretariaFiltro(){
+  const sel = document.getElementById("filtroSecretaria");
+  if(!sel) return;
+  const actual = sel.value;
+  sel.innerHTML = `<option value="">Todas</option>` +
+    listaSecretarias.map(s => `<option value="${s}">${s}</option>`).join("");
+  if(listaSecretarias.includes(actual)) sel.value = actual;
+}
+
 function fillBool(id){
   document.getElementById(id).innerHTML=`
     <option value="">Todos</option>
@@ -575,6 +744,7 @@ function aplicarFiltros(){
     if(f("filtroInstitucion") && o.Institucion !== f("filtroInstitucion")) return false;
     if(f("filtroCiudad") && o.Ciudad !== f("filtroCiudad")) return false;
     if(f("filtroPrioridad") && o.Prioridad !== f("filtroPrioridad")) return false;
+    if(f("filtroSecretaria") && (o.Secretaria || "") !== f("filtroSecretaria")) return false;
     if(f("filtroVendedor") && o.Vendedor !== f("filtroVendedor")) return false;
     if(f("filtroMedico") && o.Medico !== f("filtroMedico")) return false;
 
@@ -680,6 +850,7 @@ function renderLista(){
       <span class="semaforo-celda" title="Certificado de Implante: ${o.CI === 'VERDADERO' ? 'OK' : 'Falta'}"><span class="semaforo-dot ${o.CI === 'VERDADERO' ? 'si' : 'no'}"></span></span>
       <span class="semaforo-celda" title="Foja Quirúrgica: ${o.Foja === 'VERDADERO' ? 'OK' : 'Falta'}"><span class="semaforo-dot ${o.Foja === 'VERDADERO' ? 'si' : 'no'}"></span></span>
       <span class="semaforo-celda" title="Devolución: ${o.Devolucion === 'VERDADERO' ? 'Pendiente' : 'OK'}"><span class="semaforo-dot ${o.Devolucion === 'VERDADERO' ? 'dev-pendiente' : 'dev-ok'}"></span></span>
+      <select class="select-secretaria" data-id="${o.Orden}" onclick="event.stopPropagation()" onchange="manejarCambioSecretariaSelect(this, '${o.Orden}')">${opcionesSecretariaHTML(o.Secretaria)}</select>
       <button class="btn-recupero estado-${o.EstadoRecupero}" onclick="cicloEstadoRecupero(event, '${o.Orden}')" title="Click para cambiar el estado de recupero">${labelEstadoRecupero(o.EstadoRecupero)}</button>
       <button class="btn-odoo" onclick="abrirOrdenOdoo(event, '${o.Orden}')" title="Abrir en Odoo">🔗</button>
     `;
