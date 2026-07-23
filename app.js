@@ -235,16 +235,37 @@ function inicializarSyncRemoto(){
       Object.keys(remoto).forEach(ordenId => {
         aplicarCambioEstado(ordenId, remoto[ordenId].estado, { publicarRemoto: false });
       });
+
+      // 🔴 Subimos automáticamente los estados que ya teníamos guardados
+      // localmente (ej. cargados antes de terminar de configurar Firebase)
+      // y que todavía no están en la nube. Así no se pierden ni hay que
+      // volver a cargarlos a mano.
+      const historialLocalEstados = cargarHistorialEstados();
+      Object.keys(historialLocalEstados).forEach(ordenId => {
+        if(!remoto[ordenId]) publicarEstadoRemoto(ordenId, historialLocalEstados[ordenId]);
+      });
     });
 
     // --- Secretaría: lista compartida ---
     secretariasRef = firebase.database().ref("secretarias");
     secretariasRef.on("value", snapshot => {
       const val = snapshot.val() || {};
-      listaSecretarias = Object.values(val).filter(Boolean);
-      listaSecretarias.sort((a,b) => a.localeCompare(b));
+      const remotas = Object.values(val).filter(Boolean);
+
+      // 🔴 FIX: antes esto pisaba directamente la lista local con la
+      // remota. Si la remota llegaba vacía (recién conectado Firebase),
+      // borraba las secretarías que ya tenías cargadas localmente. Ahora
+      // fusionamos ambas listas en vez de pisar.
+      const localesNoSubidas = listaSecretarias.filter(local =>
+        !remotas.some(r => r.toLowerCase() === local.toLowerCase())
+      );
+
+      listaSecretarias = [...new Set([...remotas, ...localesNoSubidas])].sort((a,b) => a.localeCompare(b));
       guardarListaSecretariasLocal(listaSecretarias);
       actualizarSelectsSecretaria();
+
+      // Subimos automáticamente a Firebase las que todavía no estaban ahí
+      localesNoSubidas.forEach(nombre => secretariasRef.push(nombre));
     });
 
     // --- Secretaría: asignación por orden ---
@@ -254,6 +275,14 @@ function inicializarSyncRemoto(){
       secretariaRemotaCache = remoto;
       Object.keys(remoto).forEach(ordenId => {
         aplicarCambioSecretaria(ordenId, remoto[ordenId].secretaria, { publicarRemoto: false });
+      });
+
+      // 🔴 Igual que con los estados: subimos automáticamente las
+      // asignaciones por orden que ya teníamos guardadas localmente y
+      // todavía no están en la nube.
+      const historialLocalSecretaria = cargarHistorialSecretaria();
+      Object.keys(historialLocalSecretaria).forEach(ordenId => {
+        if(!remoto[ordenId]) publicarSecretariaRemota(ordenId, historialLocalSecretaria[ordenId]);
       });
     });
   } catch (e) {
