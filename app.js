@@ -704,8 +704,9 @@ function cargarFiltros() {
     fillFecha();
     cargarInstituciones();
 
-    // Escuchar cambios en todos los select y inputs de la barra lateral
-    const controles = document.querySelectorAll('.filters select, .filters input');
+    // Escuchar cambios en todos los select y inputs de filtros
+    // (tanto los del modal de Filtros como los rápidos de la barra de contadores)
+    const controles = document.querySelectorAll('.filters select, .filters input, .quick-filters select');
     controles.forEach(el => {
         el.addEventListener('change', aplicarFiltros);
         if(el.tagName === "INPUT") el.addEventListener('keyup', aplicarFiltros);
@@ -1396,7 +1397,7 @@ function borrarFiltros() {
     document.getElementById("filtroInstitucion").value = "";
     
     // 2. Limpiar todos los select al valor por defecto ("")
-    const selects = document.querySelectorAll('.filters select');
+    const selects = document.querySelectorAll('.filters select, .quick-filters select');
     selects.forEach(sel => sel.value = "");
 
     // 3. Resetear variables de ordenamiento si lo deseas
