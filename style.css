@@ -297,7 +297,7 @@ body {
 .fila {
   display: grid;
   /* 30px para el checkbox y el resto distribuido para los datos  */
-  grid-template-columns: 30px 60px 150px 75px 100px 90px 130px 80px 32px 32px 32px 110px 130px 52px; 
+  grid-template-columns: 30px 60px 150px 75px 100px 90px 180px 80px 32px 32px 32px 110px 130px 52px; 
   gap: 6px;
   align-items: center;
 }
@@ -530,9 +530,9 @@ body {
 
 /* TAGS */
 .tag {
-  padding: 2px 6px;
+  padding: 2px 2px;
   border-radius: 6px;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 600;
 }
 
