@@ -725,7 +725,7 @@ function fill(id,campo){
 
 function fillEstadoRecupero(){
   const sel = document.getElementById("filtroEstadoRecupero");
-  sel.innerHTML = `<option value="">Todos</option>` +
+  sel.innerHTML = `<option value="">Estado: Todos</option>` +
     ESTADOS_RECUPERO.map(e => `<option value="${e.key}">${e.label}</option>`).join("");
 }
 
@@ -733,9 +733,10 @@ function fillSecretariaFiltro(){
   const sel = document.getElementById("filtroSecretaria");
   if(!sel) return;
   const actual = sel.value;
-  sel.innerHTML = `<option value="">Todas</option>` +
+  sel.innerHTML = `<option value="">Secretaría: Todas</option>` +
+    `<option value="__sin_asignar__">Sin Asignar</option>` +
     listaSecretarias.map(s => `<option value="${s}">${s}</option>`).join("");
-  if(listaSecretarias.includes(actual)) sel.value = actual;
+  if(actual === "__sin_asignar__" || listaSecretarias.includes(actual)) sel.value = actual;
 }
 
 function fillBool(id){
@@ -748,7 +749,7 @@ function fillBool(id){
 
 function fillFecha(){
   document.getElementById("filtroFecha").innerHTML=`
-    <option value="">Todas</option>
+    <option value="">Fecha CX: Todas</option>
     <option value="realizadas">Realizadas</option>
     <option value="hoy">Hoy</option>
     <option value="pendientes">Sin realizar</option>
@@ -773,7 +774,14 @@ function aplicarFiltros(){
     if(f("filtroInstitucion") && o.Institucion !== f("filtroInstitucion")) return false;
     if(f("filtroCiudad") && o.Ciudad !== f("filtroCiudad")) return false;
     if(f("filtroPrioridad") && o.Prioridad !== f("filtroPrioridad")) return false;
-    if(f("filtroSecretaria") && (o.Secretaria || "") !== f("filtroSecretaria")) return false;
+
+    const valorFiltroSecretaria = f("filtroSecretaria");
+    if(valorFiltroSecretaria === "__sin_asignar__"){
+      if(o.Secretaria) return false;
+    } else if(valorFiltroSecretaria && (o.Secretaria || "") !== valorFiltroSecretaria){
+      return false;
+    }
+
     if(f("filtroVendedor") && o.Vendedor !== f("filtroVendedor")) return false;
     if(f("filtroMedico") && o.Medico !== f("filtroMedico")) return false;
 
@@ -843,6 +851,10 @@ function renderLista(){
         const pB = (b.FechaCX || "01/01/1900").split("/");
         valA = new Date(pA[2], pA[1]-1, pA[0]);
         valB = new Date(pB[2], pB[1]-1, pB[0]);
+      }
+      else if(sortField === "EstadoRecupero"){
+        valA = ESTADOS_RECUPERO.findIndex(e => e.key === a.EstadoRecupero);
+        valB = ESTADOS_RECUPERO.findIndex(e => e.key === b.EstadoRecupero);
       }
       else{
         valA = (a[sortField] || "").toString().toLowerCase();

@@ -89,18 +89,12 @@
     </div>
 
     <div class="filters">
-      <label>Estado Recupero</label>
-      <select id="filtroEstadoRecupero"></select>
-
       <label>Institución</label>
       <input id="filtroInstitucion" class="inputFiltro" placeholder="Buscar por institución...">
       <div id="listaInstituciones" class="dropdown"></div>
 
       <label>Prioridad</label>
       <select id="filtroPrioridad"></select>
-
-      <label>Secretaría</label>
-      <select id="filtroSecretaria"></select>
 
       <label>Ciudad</label>
       <select id="filtroCiudad"></select>
@@ -113,9 +107,6 @@
 
       <label>CI</label>
       <select id="filtroCI"></select>
-
-      <label>Fecha CX</label>
-      <select id="filtroFecha"></select>
 
       <label>Vendedor</label>
       <select id="filtroVendedor"></select>
@@ -146,6 +137,11 @@
           <span class="stat-chip stat-recupero">Pedidas: <b id="labelCantidadPedidas">0</b></span>
           <span class="stat-chip">Seleccionadas: <b id="labelCantidadSeleccionadas">0</b></span>
         </div>
+        <div class="quick-filters">
+          <select id="filtroEstadoRecupero" class="select-quick"></select>
+          <select id="filtroSecretaria" class="select-quick"></select>
+          <select id="filtroFecha" class="select-quick"></select>
+        </div>
       </div>
        
       <div class="tabla-header">
@@ -160,8 +156,8 @@
         <span class="col-semaforo" title="Certificado de Implante">CI</span>
         <span class="col-semaforo" title="Foja Quirúrgica">FOJA</span>
         <span class="col-semaforo" title="Devolución Pendiente">DEV</span>
-        <span>Secretaría</span>
-        <span>Recupero</span>
+        <span onclick="sortBy('Secretaria')" title="Ordenar por Secretaría">Secretaría ⇅</span>
+        <span onclick="sortBy('EstadoRecupero')" title="Ordenar por Estado de Recupero">Recupero ⇅</span>
         <span>Odoo</span>
       </div>
 

@@ -230,6 +230,22 @@ body {
   color: #1d4ed8;
 }
 
+.quick-filters {
+  display: flex;
+  gap: 6px;
+  flex-wrap: nowrap;
+}
+
+.select-quick {
+  font-size: 12px;
+  padding: 4px 6px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: white;
+  color: #0f172a;
+  max-width: 130px;
+}
+
 
 /* DROPZONE */
 .dropzone {
@@ -692,10 +708,11 @@ th:nth-child(3) { width: 40%; }
   /* Esto alinea el título a la izquierda y el botón a la derecha */
 .header-flex {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
   padding-right: 10px; /* Un pequeño aire a la derecha */
-  gap: 20px;
+  gap: 12px;
 }
 
 /* El diseño del botón verde */
