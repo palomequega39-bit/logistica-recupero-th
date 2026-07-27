@@ -192,6 +192,83 @@ function actualizarSelectsSecretaria(){
 }
 
 /* =========================
+   ESTADO POR PRODUCTO (detalle de cada orden)
+   Click en la fila de un producto para marcarlo como "Usado con Sticker"
+   (azul), "Para Devolver" (verde), o volver a blanco (ninguno aplica /
+   falta algo). Funciona con el mismo patrón que Estado de Recupero y
+   Secretaría: se guarda por producto, sobrevive a un archivo nuevo, y
+   se sincroniza en vivo entre dispositivos.
+   Como el detalle no trae un ID único de Odoo, la "clave" de cada
+   producto se arma combinando Nº de Orden + Remito + Producto + Lote +
+   Serie (lo suficiente para identificar esa línea puntual).
+========================= */
+const HISTORIAL_KEY_PRODUCTO = "recuperoTH_historialProductoEstado_v1";
+const ESTADOS_PRODUCTO = ["", "sticker", "devolver"]; // ciclo: ninguno → sticker → devolver → ninguno
+
+let productoEstadoRef = null;
+let productoEstadoRemotoCache = {};
+
+/** Firebase no admite . # $ [ ] / en las claves; los reemplazamos. */
+function sanearClaveFirebase(str){
+  const limpio = (str || "").toString().trim().replace(/[.#$\[\]\/]/g, "_");
+  return limpio || "x";
+}
+
+function construirClaveProducto(ordenId, d){
+  return [ordenId, d.Remito, d.Producto, d.Lote, d.Serie].map(sanearClaveFirebase).join("__");
+}
+
+function cargarHistorialProducto(){
+  try{ return JSON.parse(localStorage.getItem(HISTORIAL_KEY_PRODUCTO)) || {}; }
+  catch(e){ console.warn("Historial de estado por producto corrupto, se descarta:", e); return {}; }
+}
+
+function actualizarHistorialProducto(clave, estado){
+  try{
+    const historial = cargarHistorialProducto();
+    if(estado) historial[clave] = estado; else delete historial[clave];
+    localStorage.setItem(HISTORIAL_KEY_PRODUCTO, JSON.stringify(historial));
+  }catch(e){ console.warn("No se pudo guardar el historial de estado por producto:", e); }
+}
+
+function publicarProductoEstadoRemoto(clave, estado){
+  if(!firebaseListo || !productoEstadoRef) return;
+  productoEstadoRef.child(clave).set({
+    estado: estado,
+    ts: firebase.database.ServerValue.TIMESTAMP
+  }).catch(e => console.warn("No se pudo sincronizar el estado del producto en la nube:", e));
+}
+
+function claseFilaProducto(estado){
+  if(estado === "sticker") return "fila-producto-sticker";
+  if(estado === "devolver") return "fila-producto-devolver";
+  return "";
+}
+
+/** Aplica un estado a una fila de producto (DOM + historial local), sin importar si vino de un click local o de otro dispositivo. */
+function aplicarCambioProducto(clave, estado, { publicarRemoto = false } = {}){
+  actualizarHistorialProducto(clave, estado);
+
+  const fila = document.querySelector(`tr[data-clave-producto="${CSS.escape(clave)}"]`);
+  if(fila){
+    fila.classList.remove("fila-producto-sticker", "fila-producto-devolver");
+    const clase = claseFilaProducto(estado);
+    if(clase) fila.classList.add(clase);
+  }
+
+  if(publicarRemoto) publicarProductoEstadoRemoto(clave, estado);
+}
+
+/** Click en una fila de producto: cicla ninguno → sticker → devolver → ninguno. */
+function cicloEstadoProducto(event, clave){
+  event.stopPropagation();
+  const actual = cargarHistorialProducto()[clave] || "";
+  const idx = ESTADOS_PRODUCTO.indexOf(actual);
+  const nuevo = ESTADOS_PRODUCTO[(idx + 1) % ESTADOS_PRODUCTO.length];
+  aplicarCambioProducto(clave, nuevo, { publicarRemoto: true });
+}
+
+/* =========================
    RECUPERO - SINCRONIZACIÓN EN VIVO ENTRE DISPOSITIVOS (Firebase)
    Objetivo: que al tocar el botón de Recupero en una computadora, el
    cambio se vea al instante en las otras (celular, notebook, etc.).
@@ -283,6 +360,23 @@ function inicializarSyncRemoto(){
       const historialLocalSecretaria = cargarHistorialSecretaria();
       Object.keys(historialLocalSecretaria).forEach(ordenId => {
         if(!remoto[ordenId]) publicarSecretariaRemota(ordenId, historialLocalSecretaria[ordenId]);
+      });
+    });
+
+    // --- Estado por producto (Usado con Sticker / Para Devolver) ---
+    productoEstadoRef = firebase.database().ref("productoEstado");
+    productoEstadoRef.on("value", snapshot => {
+      const remoto = snapshot.val() || {};
+      productoEstadoRemotoCache = remoto;
+      Object.keys(remoto).forEach(clave => {
+        aplicarCambioProducto(clave, remoto[clave].estado, { publicarRemoto: false });
+      });
+
+      // Subimos automáticamente lo que ya teníamos guardado localmente
+      // y todavía no está en la nube (mismo mecanismo que Estado/Secretaría).
+      const historialLocalProducto = cargarHistorialProducto();
+      Object.keys(historialLocalProducto).forEach(clave => {
+        if(!remoto[clave]) publicarProductoEstadoRemoto(clave, historialLocalProducto[clave]);
       });
     });
   } catch (e) {
@@ -1025,8 +1119,10 @@ function mostrar(o){
   body.innerHTML="";
 
   o.detalles.forEach(d=>{
+    const clave = construirClaveProducto(o.Orden, d);
+    const estadoActual = cargarHistorialProducto()[clave] || "";
     body.innerHTML+=`
-      <tr>
+      <tr class="fila-producto ${claseFilaProducto(estadoActual)}" data-clave-producto="${clave}" onclick="cicloEstadoProducto(event, '${clave}')" title="Click para marcar: Usado con Sticker → Para Devolver → Ninguno">
         <td>${d.Remito||""}</td>
         <td>${d.FechaR||""}</td>
         <td>${d.Producto||""}</td>

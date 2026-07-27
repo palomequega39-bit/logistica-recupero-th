@@ -558,6 +558,23 @@ th, td {
 
 th:nth-child(3) { width: 40%; }
 
+/* ESTADO POR PRODUCTO: Usado con Sticker (azul) / Para Devolver (verde) */
+.fila-producto {
+  cursor: pointer;
+}
+
+.fila-producto:hover {
+  filter: brightness(0.96);
+}
+
+.fila-producto-sticker td {
+  background: #dbeafe; /* azul suave */
+}
+
+.fila-producto-devolver td {
+  background: #dcfce7; /* verde suave */
+}
+
 /* BUSCADOR */
 .buscador {
   width: 50%;
