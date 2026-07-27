@@ -1017,6 +1017,7 @@ function mostrar(o){
     <div class="campo"><b>Médico:</b> ${o.Medico || ""}</div>
     <div class="campo"><b>Solicitante:</b> ${o.MedicoSolicitante || ""}</div>
     <div class="campo"><b>Expte:</b> ${o.Expediente || ""}</div>
+    <div class="campo campo-actividades"><b>Actividades:</b> ${o.Actividades || ""}</div>
   `;
 
   // 3. Detalle de productos

@@ -193,15 +193,28 @@ async function exportarDetallePDF(ordenes, seleccionados) {
             y += 2; 
         });
 
-        if (o.Actividades) {
-            y += 1;
-            doc.setFontSize(8);
-            doc.setFont("helvetica", "italic");
-            doc.setTextColor(100);
-            const textLines = doc.splitTextToSize(`Obs: ${o.Actividades}`, 175);
-            doc.text(textLines, margin + 2, y);
-            y += (textLines.length * 3) + 1;
-        }
+        // --- PRIORIDAD + ACTIVIDADES (izquierda) / SECRETARÍA (derecha) ---
+        y += 1;
+        doc.setFontSize(8);
+
+        const textoSecretaria = `Secretaría: ${o.Secretaria || "Sin asignar"}`;
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(70);
+        const anchoSecretaria = doc.getTextWidth(textoSecretaria);
+
+        doc.setFont("helvetica", "italic");
+        doc.setTextColor(100);
+        const textoIzquierda = `Prioridad: ${o.Prioridad || "-"} | Obs: ${o.Actividades || "-"}`;
+        const anchoDisponibleIzq = 175 - anchoSecretaria - 5; // dejamos aire antes de la Secretaría
+        const textLines = doc.splitTextToSize(textoIzquierda, anchoDisponibleIzq);
+        doc.text(textLines, margin + 2, y);
+
+        // Secretaría, en negrita, alineada al margen derecho de la hoja
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(70);
+        doc.text(textoSecretaria, 195, y, { align: "right" });
+
+        y += (textLines.length * 3) + 1;
 
         y += 1; // Espacio entre órdenes
         doc.setDrawColor(245, 245, 245);
@@ -288,8 +301,8 @@ async function exportarDetallePDFv2(ordenes, seleccionados) {
 
     const estimateOrderHeight = (o) => {
         const detalles = Math.max(1, (o.detalles || []).length);
-        const actividadesLines = doc.splitTextToSize(`${o.Prioridad || "-"} | ${o.Actividades || "-"}`, 185).length;
-        return 10 + 6 + (detalles * 5.2) + (actividadesLines * 3.1) + 6;
+        const actividadesLines = doc.splitTextToSize(`${o.Prioridad || "-"} | ${o.Actividades || "-"}`, 140).length;
+        return 10 + 6 + 4 + (detalles * 5.2) + (actividadesLines * 3.1) + 6;
     };
 
     drawPageHeader();
@@ -312,6 +325,7 @@ async function exportarDetallePDFv2(ordenes, seleccionados) {
         doc.autoTable({
             startY: y,
             theme: "grid",
+            head: [["N° Orden", "Paciente", "Dni", "Obra Social", "Expediente", "Fecha Cx", "Médico", "F", "C", "D"]],
             body: [[
                 ordenConEstrella,
                 `${o.Apellido || ""} ${o.Nombre || ""}`.trim(),
@@ -333,6 +347,7 @@ async function exportarDetallePDFv2(ordenes, seleccionados) {
                 lineWidth: 0.1,
                 textColor: 25
             },
+            headStyles: { fillColor: [241, 245, 249], textColor: 90, fontStyle: "bold", fontSize: 6 },
             bodyStyles: { fillColor: getHeaderColor(o) },
             columnStyles: {
                 0: { cellWidth: 20, fontStyle: "bold" },
@@ -383,8 +398,18 @@ async function exportarDetallePDFv2(ordenes, seleccionados) {
         doc.setFont("helvetica", "italic");
         doc.setFontSize(7);
         doc.setTextColor(90);
-        const pie = doc.splitTextToSize(`${o.Prioridad || "-"} | ${o.Actividades || "-"}`, 185);
+
+        const textoSecretariaV2 = `Secretaría: ${o.Secretaria || "Sin asignar"}`;
+        doc.setFont("helvetica", "bold");
+        const anchoSecretariaV2 = doc.getTextWidth(textoSecretariaV2);
+
+        doc.setFont("helvetica", "italic");
+        const pie = doc.splitTextToSize(`${o.Prioridad || "-"} | ${o.Actividades || "-"}`, 185 - anchoSecretariaV2 - 5);
         doc.text(pie, margin, y);
+
+        doc.setFont("helvetica", "bold");
+        doc.text(textoSecretariaV2, pageWidth - margin, y, { align: "right" });
+
         y += pie.length * 2.8 + 2;
 
         doc.setDrawColor(235);
