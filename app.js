@@ -1291,6 +1291,14 @@ function preProcesarExcel(rows) {
     const datosCrudos = rows.slice(1); 
     let resultadoIntermedio = [];
     let ref = {};
+    let filaProductoActual = null; // última fila de producto real, para pegarle las filas de "continuación"
+
+    // Une los tokens (separados por coma) de varias celdas en una sola lista plana.
+    const acumularTokens = (listaExistente, celda) => {
+        if (celda === undefined || celda === null || celda.toString().trim() === "") return listaExistente;
+        const tokens = celda.toString().split(",").map(t => t.trim()).filter(Boolean);
+        return listaExistente.concat(tokens);
+    };
 
     datosCrudos.forEach((r) => {
         if (r[0] && r[0].toString().trim() !== "") {
@@ -1316,6 +1324,20 @@ function preProcesarExcel(rows) {
             };
         }
 
+        const tieneProducto = r[8] && r[8].toString().trim() !== "";
+
+        // 🔴 FILA DE "CONTINUACIÓN": Odoo a veces agrega una fila aparte, sin
+        // Producto, solo para sumar más Lote/Serie/Vencimiento a la línea
+        // anterior (ej. la 2da unidad de un producto con 2 series distintas).
+        // Antes esto se perdía sin más (Q quedaba vacío y se filtraba). Ahora
+        // lo acumulamos en la fila de producto a la que pertenece.
+        if (!tieneProducto && filaProductoActual && (r[10] || r[11] || r[20])) {
+            filaProductoActual._loteTokens = acumularTokens(filaProductoActual._loteTokens, r[10]);
+            filaProductoActual._serieTokens = acumularTokens(filaProductoActual._serieTokens, r[11]);
+            filaProductoActual._vencTokens = acumularTokens(filaProductoActual._vencTokens, r[20]);
+            return;
+        }
+
         let fila = {
             Orden: (r[0] || ref.Orden || "").toString().trim(),
             Remito: r[1],
@@ -1323,13 +1345,10 @@ function preProcesarExcel(rows) {
             Apellido: r[3] || ref.Apellido,
             Nombre: r[4] || ref.Nombre,
             Dni: r[5] || ref.Dni,
-            //ObraSocial: r[6] || ref.ObraSocial,
             ObraSocial: normalizarOS_VBA(r[6] || ref.ObraSocial),
             FechaCX: formatFecha(r[7] || ref.FechaCX),
             Producto: r[8],
             Q: r[9], 
-            Lote: r[10],
-            Serie: r[11],
             Vendedor: r[12] || ref.Vendedor,
             Medico: r[13] || ref.Medico,
             MedicoSolicitante: r[14] || ref.MedicoSolicitante,
@@ -1341,11 +1360,15 @@ function preProcesarExcel(rows) {
             Actividades: r[17] || ref.Actividades,
             Institucion: r[18] || ref.Direccion,
             Ciudad: r[19] || ref.Ciudad,
-            Vencimiento: formatFecha(r[20]),
             Expediente: r[21] || ref.Expediente,
             Favorito: r[22] || ref.Favorito,
             Prioridad: r[24] || ref.Prioridad,
-            Column1: "" 
+            Column1: "",
+            // Tokens crudos (separados por coma) de esta fila, listos para
+            // sumarles los de eventuales filas de continuación de abajo.
+            _loteTokens: acumularTokens([], r[10]),
+            _serieTokens: acumularTokens([], r[11]),
+            _vencTokens: acumularTokens([], r[20])
         };
 
         // Lógica de cantidad Q
@@ -1356,11 +1379,70 @@ function preProcesarExcel(rows) {
         }
 
         resultadoIntermedio.push(fila);
+        if (tieneProducto) filaProductoActual = fila;
     });
 
-    // Agrupamiento por Orden
-    const grupos = {};
+    /**
+     * Interpreta un token de Serie/Lote según la regla confirmada:
+     * - Si trae un guión → producto serializado, formato "SERIE-LOTE".
+     * - Si no trae guión → producto no serializado, el valor ES el Lote.
+     */
+    const interpretarToken = (token) => {
+        if (!token) return { serie: "", lote: "" };
+        if (token.includes("-")) {
+            const partes = token.split("-");
+            return { serie: partes[0].trim(), lote: partes.slice(1).join("-").trim() };
+        }
+        return { serie: "", lote: token.trim() };
+    };
+
+    // 🔴 DESGLOSE POR UNIDAD: cada línea con Cantidad > 0 se separa en una
+    // fila por unidad física (Q=1 cada una), repartiendo los tokens de
+    // Serie/Lote/Vencimiento juntados arriba. Las líneas con Cantidad 0
+    // (filas de servicio/logística) se dejan como estaban, sin desglosar.
+    let resultadoDesglosado = [];
     resultadoIntermedio.forEach(f => {
+        const cantidad = Number(f.Q) || 0;
+        const serieTokens = f._serieTokens || [];
+        const loteTokens = f._loteTokens || [];
+        const vencTokens = f._vencTokens || [];
+        const tokensBase = serieTokens.length ? serieTokens : loteTokens;
+
+        const base = {
+            Orden: f.Orden, Remito: f.Remito, FechaR: f.FechaR, Apellido: f.Apellido,
+            Nombre: f.Nombre, Dni: f.Dni, ObraSocial: f.ObraSocial, FechaCX: f.FechaCX,
+            Producto: f.Producto, Vendedor: f.Vendedor, Medico: f.Medico,
+            MedicoSolicitante: f.MedicoSolicitante, Foja: f.Foja, CI: f.CI,
+            Devolucion: f.Devolucion, Actividades: f.Actividades, Institucion: f.Institucion,
+            Ciudad: f.Ciudad, Expediente: f.Expediente, Favorito: f.Favorito,
+            Prioridad: f.Prioridad, Column1: ""
+        };
+
+        if (cantidad <= 0) {
+            // Sin desglosar: se comporta igual que antes (una sola fila,
+            // Q tal cual venía, Lote/Serie del primer token si hay).
+            const { serie, lote } = interpretarToken(tokensBase[0]);
+            resultadoDesglosado.push({
+                ...base, Q: f.Q, Lote: lote, Serie: serie, Vencimiento: formatFecha(vencTokens[0])
+            });
+            return;
+        }
+
+        const unidades = Math.max(cantidad, tokensBase.length);
+        for (let i = 0; i < unidades; i++) {
+            const token = tokensBase.length ? (tokensBase[i] || tokensBase[tokensBase.length - 1]) : "";
+            const { serie, lote } = interpretarToken(token);
+            const vencToken = vencTokens.length ? (vencTokens[i] || vencTokens[vencTokens.length - 1]) : undefined;
+
+            resultadoDesglosado.push({
+                ...base, Q: 1, Lote: lote, Serie: serie, Vencimiento: formatFecha(vencToken)
+            });
+        }
+    });
+
+    // Agrupamiento por Orden (igual que antes, ahora sobre el resultado ya desglosado)
+    const grupos = {};
+    resultadoDesglosado.forEach(f => {
         if (!grupos[f.Orden]) grupos[f.Orden] = [];
         grupos[f.Orden].push(f);
     });
