@@ -397,14 +397,6 @@ body {
   background: #fed7aa;
 }
 
-.fila.recupero-sin_realizar {
-  background: #fee2e2;
-  box-shadow: inset 4px 0 0 0 #dc2626;
-}
-.fila.recupero-sin_realizar:hover {
-  background: #fecaca;
-}
-
 /* --- Estilos para la fila favorita (Colócalo después de .fila:hover) --- */
 
 .fila.favorito {
@@ -758,23 +750,21 @@ th:nth-child(3) { width: 40%; }
 ========================= */
 
 .btn-recupero {
+  display: block;
   width: 100%;
+  box-sizing: border-box;
   border: 1px solid #cbd5e1;
   border-radius: 5px;
   padding: 3px 4px;
   font-size: 10px;
   line-height: 1.2;
   font-weight: 700;
-  cursor: pointer;
+  cursor: default;
   text-align: center;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   transition: filter 0.15s ease;
-}
-
-.btn-recupero:hover {
-  filter: brightness(0.95);
 }
 
 .btn-recupero.estado-no_pedido {
@@ -795,12 +785,6 @@ th:nth-child(3) { width: 40%; }
   border-color: #f97316;
 }
 
-.btn-recupero.estado-sin_realizar {
-  background: #dc2626;
-  color: #ffffff;
-  border-color: #dc2626;
-}
-
 /* Chip de estado dentro del detalle de la orden */
 .chip-estado {
   display: inline-block;
@@ -814,7 +798,6 @@ th:nth-child(3) { width: 40%; }
 .chip-estado.estado-no_pedido { background: #ffffff; color: #64748b; }
 .chip-estado.estado-completo { background: #dcfce7; color: #166534; border-color: #86efac; }
 .chip-estado.estado-faltan { background: #ffedd5; color: #c2410c; border-color: #fdba74; }
-.chip-estado.estado-sin_realizar { background: #fee2e2; color: #991b1b; border-color: #fca5a5; }
 
 /* Contador de pedidas en la stats-bar */
 .stat-chip.stat-recupero b {

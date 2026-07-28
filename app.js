@@ -15,8 +15,7 @@ const ODOO_QUERY = "cids=1&menu_id=531&action=799&model=sale.order&view_type=for
 const ESTADOS_RECUPERO = [
   { key: "no_pedido",     label: "No Pedido"    },
   { key: "completo",      label: "Completo"     },
-  { key: "faltan",        label: "Faltan cosas" },
-  { key: "sin_realizar",  label: "Sin Realizar" }
+  { key: "faltan",        label: "Faltan cosas" }
 ];
 
 function labelEstadoRecupero(key){
@@ -275,6 +274,11 @@ function aplicarCambioProducto(clave, estado, { publicarRemoto = false } = {}){
   }
 
   if(publicarRemoto) publicarProductoEstadoRemoto(clave, estado);
+
+  // 🔴 El Estado de Recupero de la orden dueña de este producto se
+  // recalcula solo, según cómo quedó el coloreo de todos sus productos.
+  const ordenId = clave.split("__")[0];
+  recalcularEstadoOrden(ordenId);
 }
 
 /** Click en una fila de producto: cicla ninguno → sticker → devolver → ninguno. */
@@ -750,24 +754,14 @@ function procesar(data){
 
   ordenes = Object.values(map);
 
-  // 🔴 Restauramos el estado de recupero de cada orden desde el historial
-  // persistente local (si esa orden ya se había trabajado en un archivo anterior)
-  const historial = cargarHistorialEstados();
+  // 🔴 Estado de Recupero AUTOMÁTICO: ya no se asigna a mano. Se calcula
+  // según el coloreo de los productos de cada orden (ninguno pintado =
+  // No Pedido, todos pintados = Completo, mezcla = Faltan Cosas).
   ordenes.forEach(o=>{
-    if(historial[o.Orden]){
-      o.EstadoRecupero = historial[o.Orden];
-    }
+    o.EstadoRecupero = calcularEstadoRecuperoAutomatico(o.Orden, o.detalles);
   });
 
-  // 🔴 Si ya tenemos un snapshot de Firebase (llegó antes de cargar este
-  // archivo), tiene prioridad por ser la fuente compartida más actualizada.
-  ordenes.forEach(o=>{
-    if(estadosRemotosCache[o.Orden]){
-      o.EstadoRecupero = estadosRemotosCache[o.Orden].estado;
-    }
-  });
-
-  // 🔴 Igual que el Estado de Recupero: restauramos la Secretaría asignada
+  // 🔴 Igual que antes: restauramos la Secretaría asignada
   // (historial local primero, Firebase después si ya llegó, con prioridad).
   const historialSecretaria = cargarHistorialSecretaria();
   ordenes.forEach(o=>{
@@ -1005,7 +999,7 @@ function renderLista(){
       <span class="semaforo-celda" title="Foja Quirúrgica: ${o.Foja === 'VERDADERO' ? 'OK' : 'Falta'}"><span class="semaforo-dot ${o.Foja === 'VERDADERO' ? 'si' : 'no'}"></span></span>
       <span class="semaforo-celda" title="Devolución: ${o.Devolucion === 'VERDADERO' ? 'Pendiente' : 'OK'}"><span class="semaforo-dot ${o.Devolucion === 'VERDADERO' ? 'dev-pendiente' : 'dev-ok'}"></span></span>
       <select class="select-secretaria" data-id="${o.Orden}" onclick="event.stopPropagation()" onchange="manejarCambioSecretariaSelect(this, '${o.Orden}')">${opcionesSecretariaHTML(o.Secretaria)}</select>
-      <button class="btn-recupero estado-${o.EstadoRecupero}" onclick="cicloEstadoRecupero(event, '${o.Orden}')" title="Click para cambiar el estado de recupero">${labelEstadoRecupero(o.EstadoRecupero)}</button>
+      <span class="btn-recupero estado-${o.EstadoRecupero}" title="Se calcula solo según el coloreo del detalle de productos">${labelEstadoRecupero(o.EstadoRecupero)}</span>
       <button class="btn-odoo" onclick="abrirOrdenOdoo(event, '${o.Orden}')" title="Abrir en Odoo">🔗</button>
     `;
 
@@ -1037,18 +1031,39 @@ function abrirOrdenOdoo(event, orden) {
    RECUPERO - CICLO DE ESTADO
 ========================= */
 
-function cicloEstadoRecupero(event, ordenId){
-  event.stopPropagation();
+/**
+ * Calcula el Estado de Recupero de una orden según el coloreo de sus
+ * productos (ninguno pintado = "no_pedido", todos pintados = "completo",
+ * mezcla de pintados y en blanco = "faltan"). Ya no se asigna a mano.
+ */
+function calcularEstadoRecuperoAutomatico(ordenId, detalles){
+  if(!detalles || !detalles.length) return "no_pedido";
 
+  const historialProducto = cargarHistorialProducto();
+  let cantidadConColor = 0;
+
+  detalles.forEach(d => {
+    const clave = construirClaveProducto(ordenId, d);
+    if(historialProducto[clave]) cantidadConColor++;
+  });
+
+  if(cantidadConColor === 0) return "no_pedido";
+  if(cantidadConColor === detalles.length) return "completo";
+  return "faltan";
+}
+
+/**
+ * Recalcula y aplica el Estado de Recupero automático de una orden:
+ * actualiza la orden en memoria, la fila visible en la lista, el chip
+ * del detalle si está abierto, y lo sincroniza a Firebase.
+ */
+function recalcularEstadoOrden(ordenId){
   const orden = buscarOrdenPorId(ordenId);
   if(!orden) return;
 
-  const idxActual = ESTADOS_RECUPERO.findIndex(e => e.key === orden.EstadoRecupero);
-  const idxSiguiente = (idxActual + 1) % ESTADOS_RECUPERO.length;
-  const nuevoEstado = ESTADOS_RECUPERO[idxSiguiente].key;
+  const nuevoEstado = calcularEstadoRecuperoAutomatico(ordenId, orden.detalles);
+  if(nuevoEstado === orden.EstadoRecupero) return; // sin cambios, no hace falta tocar nada
 
-  // publicarRemoto:true → además de actualizar acá, lo empuja a Firebase
-  // para que el cambio se vea en vivo en los otros dispositivos.
   aplicarCambioEstado(ordenId, nuevoEstado, { publicarRemoto: true });
 }
 
