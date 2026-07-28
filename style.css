@@ -568,11 +568,11 @@ th:nth-child(3) { width: 40%; }
 }
 
 .fila-producto-sticker td {
-  background: #dbeafe; /* azul suave */
+  background: #0466e2; /* azul un poco más oscuro */
 }
 
 .fila-producto-devolver td {
-  background: #dcfce7; /* verde suave */
+  background: #17c353; /* verde un poco más oscuro */
 }
 
 /* BUSCADOR */

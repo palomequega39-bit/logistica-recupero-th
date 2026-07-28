@@ -214,6 +214,16 @@ function sanearClaveFirebase(str){
   return limpio || "x";
 }
 
+/** Escapa un valor para insertarlo de forma segura dentro de un atributo HTML (comillas, &, <, >). */
+function escapeHtmlAttr(str){
+  return (str || "").toString()
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
 function construirClaveProducto(ordenId, d){
   return [ordenId, d.Remito, d.Producto, d.Lote, d.Serie].map(sanearClaveFirebase).join("__");
 }
@@ -236,7 +246,10 @@ function publicarProductoEstadoRemoto(clave, estado){
   productoEstadoRef.child(clave).set({
     estado: estado,
     ts: firebase.database.ServerValue.TIMESTAMP
-  }).catch(e => console.warn("No se pudo sincronizar el estado del producto en la nube:", e));
+  }).catch(e => {
+    console.warn("No se pudo sincronizar el estado del producto en la nube:", e);
+    alert("No se pudo guardar este color en la nube (no se va a ver en los otros dispositivos). Revisá la consola (F12) o las reglas de Firebase.\n\nDetalle: " + (e && e.message ? e.message : e));
+  });
 }
 
 function claseFilaProducto(estado){
@@ -245,11 +258,16 @@ function claseFilaProducto(estado){
   return "";
 }
 
+/** Busca la fila de producto por su clave sin usar selectores CSS (más robusto: la descripción del producto puede traer caracteres que rompen un selector armado a mano). */
+function buscarFilaProductoPorClave(clave){
+  return Array.from(document.querySelectorAll(".fila-producto")).find(tr => tr.dataset.claveProducto === clave) || null;
+}
+
 /** Aplica un estado a una fila de producto (DOM + historial local), sin importar si vino de un click local o de otro dispositivo. */
 function aplicarCambioProducto(clave, estado, { publicarRemoto = false } = {}){
   actualizarHistorialProducto(clave, estado);
 
-  const fila = document.querySelector(`tr[data-clave-producto="${CSS.escape(clave)}"]`);
+  const fila = buscarFilaProductoPorClave(clave);
   if(fila){
     fila.classList.remove("fila-producto-sticker", "fila-producto-devolver");
     const clase = claseFilaProducto(estado);
@@ -1122,7 +1140,7 @@ function mostrar(o){
     const clave = construirClaveProducto(o.Orden, d);
     const estadoActual = cargarHistorialProducto()[clave] || "";
     body.innerHTML+=`
-      <tr class="fila-producto ${claseFilaProducto(estadoActual)}" data-clave-producto="${clave}" onclick="cicloEstadoProducto(event, '${clave}')" title="Click para marcar: Usado con Sticker → Para Devolver → Ninguno">
+      <tr class="fila-producto ${claseFilaProducto(estadoActual)}" data-clave-producto="${escapeHtmlAttr(clave)}" onclick="cicloEstadoProducto(event, this.dataset.claveProducto)" title="Click para marcar: Usado con Sticker → Para Devolver → Ninguno">
         <td>${d.Remito||""}</td>
         <td>${d.FechaR||""}</td>
         <td>${d.Producto||""}</td>
