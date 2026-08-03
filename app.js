@@ -1115,7 +1115,7 @@ function construirSubtituloFilaHTML(o){
     ${o.ObraSocial ? `<span class="fila-sep">·</span><span>${o.ObraSocial}</span>` : ""}
     ${o.Prioridad ? `<span class="fila-sep">·</span><span>${o.Prioridad}</span>` : ""}
     <span class="fila-sep">·</span><span class="fila-estado-texto estado-${o.EstadoRecupero}">${labelEstadoRecupero(o.EstadoRecupero)}</span>
-    ${o.Secretaria ? `<span class="fila-secretaria-chip" title="Secretaría">${o.Secretaria}</span>` : ""}
+    <span class="fila-secretaria-chip ${o.Secretaria ? '' : 'sin-asignar'}" title="Secretaría">${o.Secretaria || "Sin asignar"}</span>
   `;
 }
 
@@ -1195,6 +1195,15 @@ function renderLista(){
     cont.appendChild(fila);
   });
 }
+/** Acorta el N° de Remito sacando ceros a la izquierda y el prefijo de letras (ej. "R0008-00051619" -> "8-51619"), para que ocupe menos lugar en la tarjeta de producto. */
+function formatearRemitoCorto(remito){
+  if(!remito) return "-";
+  return remito.toString()
+    .split("-")
+    .map(seg => seg.replace(/^[A-Za-z]*0*/, "") || "0")
+    .join("-");
+}
+
 function abrirOrdenOdoo(event, orden) {
   event.stopPropagation();
 
@@ -1362,7 +1371,7 @@ function mostrar(o){
       <div class="producto-info">
         <div class="producto-nombre">${d.Producto || ""}</div>
         <div class="producto-campos">
-          <span class="producto-campo"><b>Remito</b><span>${d.Remito || "-"}</span></span>
+          <span class="producto-campo"><b>Remito</b><span>${formatearRemitoCorto(d.Remito)}</span></span>
           <span class="producto-campo"><b>Fecha Remito</b><span>${d.FechaR || "-"}</span></span>
           <span class="producto-campo"><b>Q</b><span>${d.Q || "-"}</span></span>
           <span class="producto-campo"><b>Lote</b><span>${d.Lote || "-"}</span></span>
