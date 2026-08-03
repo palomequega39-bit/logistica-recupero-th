@@ -147,6 +147,11 @@ function aplicarCambioSecretaria(ordenId, nombre, { publicarRemoto = false } = {
     orden.Secretaria = nombre || "";
     const sel = document.querySelector(`.select-secretaria[data-id="${CSS.escape(ordenId)}"]`);
     if(sel) sel.value = orden.Secretaria;
+
+    // La tarjeta de la lista también muestra la Secretaría (solo texto): refrescarla
+    const fila = document.querySelector(`.fila[data-orden="${CSS.escape(ordenId)}"]`);
+    const subt = fila ? fila.querySelector(".fila-subtitulo") : null;
+    if(subt) subt.innerHTML = construirSubtituloFilaHTML(orden);
   }
 
   if(publicarRemoto) publicarSecretariaRemota(ordenId, nombre);
@@ -698,6 +703,17 @@ document.getElementById("btnAbrirFiltros").onclick = abrirModalFiltros;
 document.getElementById("btnCerrarFiltros").onclick = cerrarModalFiltros;
 
 /* =========================
+   OCULTAR / MOSTRAR KPIs Y FILTROS
+========================= */
+document.getElementById("btnTogglePanel").onclick = () => {
+  const panel = document.getElementById("panelKpisFiltros");
+  const oculto = panel.classList.toggle("hidden");
+  document.getElementById("iconoOjoAbierto").classList.toggle("hidden", oculto);
+  document.getElementById("iconoOjoCerrado").classList.toggle("hidden", !oculto);
+  document.getElementById("textoTogglePanel").textContent = oculto ? "Mostrar KPIs y filtros" : "Ocultar KPIs y filtros";
+};
+
+/* =========================
    MENÚ (hamburguesa)
 ========================= */
 const menuLateral = document.getElementById("menuLateral");
@@ -1091,6 +1107,15 @@ const ICONS = {
   link: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`
 };
 
+function construirSubtituloFilaHTML(o){
+  return `
+    <span>DNI ${o.Dni || "-"}</span>
+    ${o.ObraSocial ? `<span class="fila-sep">·</span><span>${o.ObraSocial}</span>` : ""}
+    ${o.Prioridad ? `<span class="fila-sep">·</span><span>${o.Prioridad}</span>` : ""}
+    ${o.Secretaria ? `<span class="fila-sep">·</span><span>${o.Secretaria}</span>` : ""}
+  `;
+}
+
 function renderLista(){
 
   const cont=document.getElementById("ordenesList");
@@ -1145,11 +1170,7 @@ function renderLista(){
         <span class="fila-paciente-inline">${o.Apellido} ${o.Nombre}</span>
         ${esFav ? `<span class="fila-estrella" title="Favorita">${ICONS.estrella}</span>` : ""}
       </div>
-      <div class="fila-subtitulo">
-        <span>DNI ${o.Dni || "-"}</span>
-        ${o.ObraSocial ? `<span class="fila-sep">·</span><span>${o.ObraSocial}</span>` : ""}
-        ${o.Prioridad ? `<span class="fila-sep">·</span><span>${o.Prioridad}</span>` : ""}
-      </div>
+      <div class="fila-subtitulo">${construirSubtituloFilaHTML(o)}</div>
       <div class="fila-bottom-row">
         <div class="fila-semaforo-row">
           <span class="sf-item">CI <span class="semaforo-dot ${o.CI === 'VERDADERO' ? 'si' : 'no'}"></span></span>
@@ -1283,7 +1304,7 @@ function mostrar(o){
     <button class="btn-odoo-link" onclick="abrirOrdenOdoo(event, '${o.Orden}')" title="Abrir en Odoo">${ICONS.link}</button>
   `;
 
-  // 2. Subtítulo: Dni, Expte, Fecha CX, Médico (misma línea)
+  // 2. Subtítulo: Dni, Expte, Fecha CX, Médico, Solicitante (misma línea)
   document.getElementById("cabeceraSubtitulo").innerHTML = `
     <span>DNI ${o.Dni || "-"}</span>
     <span class="detalle-sub-sep">·</span>
@@ -1292,19 +1313,18 @@ function mostrar(o){
     <span>${o.FechaCX || "-"}</span>
     <span class="detalle-sub-sep">·</span>
     <span>${o.Medico || "-"}</span>
+    <span class="detalle-sub-sep">·</span>
+    <span>${o.MedicoSolicitante || "-"}</span>
   `;
 
-  // 3. Datos extra: Hospital, Médico, Solicitante (misma línea)
+  // 3. Datos extra: solo Hospital, en su propia línea
   const campo = (icon, label, valor) => `
     <div class="campo">
       <span class="campo-icon">${icon}</span>
       <span class="campo-texto"><b>${label}</b><span>${valor || "-"}</span></span>
     </div>`;
 
-  document.getElementById("cabecera").innerHTML =
-    campo(ICONS.institucion, "Hospital", o.Institucion) +
-    campo(ICONS.medico, "Médico", o.Medico) +
-    campo(ICONS.medico, "Solicitante", o.MedicoSolicitante);
+  document.getElementById("cabecera").innerHTML = campo(ICONS.institucion, "Hospital", o.Institucion);
 
   // Actividades, aparte
   document.getElementById("cabeceraActividades").innerHTML = `
