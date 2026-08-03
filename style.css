@@ -437,6 +437,17 @@ svg { width: 100%; height: 100%; }
 .fila-estado-texto.estado-faltan { color: var(--naranja); }
 .fila-estado-texto.estado-no_pedido { color: var(--texto-sec); }
 
+.fila-secretaria-chip {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--teal-light);
+  color: var(--teal-dark);
+  font-size: 10.5px;
+  font-weight: 700;
+}
+
 .fila-bottom-row {
   display: flex;
   align-items: center;
@@ -600,22 +611,29 @@ svg { width: 100%; height: 100%; }
 
 /* =========================
    RESPONSIVE
+   Solo colapsamos a una sola columna en celulares angostos de verdad.
+   En tablets (incluso en vertical) se mantienen la lista y el detalle
+   juntos, como en la computadora — solo se angosta un poco la lista.
 ========================= */
-@media (max-width: 900px) {
+@media (max-width: 640px) {
   .split { grid-template-columns: 1fr; }
   .stat-cards { grid-template-columns: repeat(2, 1fr); }
   .topbar-search { order: 5; flex-basis: 100%; }
 
-  /* En mobile: mostrar SOLO la lista o SOLO el detalle, nunca los dos */
+  /* Solo en celulares: mostrar la lista O el detalle, nunca los dos */
   .split.detalle-abierto .panel-lista { display: none; }
   .split:not(.detalle-abierto) .panel-detalle { display: none; }
 }
-@media (min-width: 901px) {
+@media (min-width: 641px) {
   .btn-volver { display: none; }
 }
 
-@media (max-width: 520px) {
+@media (min-width: 641px) and (max-width: 1024px) {
+  /* Tablets (incluidas en vertical): dos columnas juntas, lista más angosta */
+  .split { grid-template-columns: minmax(260px, 34%) 1fr; }
   .stat-cards { grid-template-columns: repeat(2, 1fr); }
-  .cabecera { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 480px) {
   .detalle-secretaria-recupero { grid-template-columns: 1fr; }
 }

@@ -969,7 +969,7 @@ function cargarFiltros() {
 
     // Escuchar cambios en todos los select y inputs de filtros
     // (tanto los del modal de Filtros como los rápidos de la barra de contadores)
-    const controles = document.querySelectorAll('.filters select, .filters input, .quick-filters select');
+    const controles = document.querySelectorAll('.filters select, .filters input, .filtros-rapidos select');
     controles.forEach(el => {
         el.addEventListener('change', aplicarFiltros);
         if(el.tagName === "INPUT") el.addEventListener('keyup', aplicarFiltros);
@@ -1115,7 +1115,7 @@ function construirSubtituloFilaHTML(o){
     ${o.ObraSocial ? `<span class="fila-sep">·</span><span>${o.ObraSocial}</span>` : ""}
     ${o.Prioridad ? `<span class="fila-sep">·</span><span>${o.Prioridad}</span>` : ""}
     <span class="fila-sep">·</span><span class="fila-estado-texto estado-${o.EstadoRecupero}">${labelEstadoRecupero(o.EstadoRecupero)}</span>
-    ${o.Secretaria ? `<span class="fila-sep">·</span><span>${o.Secretaria}</span>` : ""}
+    ${o.Secretaria ? `<span class="fila-secretaria-chip" title="Secretaría">${o.Secretaria}</span>` : ""}
   `;
 }
 
@@ -1816,7 +1816,7 @@ function borrarFiltros() {
     document.getElementById("filtroInstitucion").value = "";
     
     // 2. Limpiar todos los select al valor por defecto ("")
-    const selects = document.querySelectorAll('.filters select, .quick-filters select');
+    const selects = document.querySelectorAll('.filters select, .filtros-rapidos select');
     selects.forEach(sel => sel.value = "");
 
     // 3. Resetear variables de ordenamiento si lo deseas
