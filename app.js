@@ -148,10 +148,13 @@ function aplicarCambioSecretaria(ordenId, nombre, { publicarRemoto = false } = {
     const sel = document.querySelector(`.select-secretaria[data-id="${CSS.escape(ordenId)}"]`);
     if(sel) sel.value = orden.Secretaria;
 
-    // La tarjeta de la lista también muestra la Secretaría (solo texto): refrescarla
+    // La Secretaría ahora vive en la cabecera de color de la tarjeta: refrescarla ahí
     const fila = document.querySelector(`.fila[data-orden="${CSS.escape(ordenId)}"]`);
-    const subt = fila ? fila.querySelector(".fila-subtitulo") : null;
-    if(subt) subt.innerHTML = construirSubtituloFilaHTML(orden);
+    const chip = fila ? fila.querySelector(".fila-cabecera .fila-secretaria-chip") : null;
+    if(chip){
+      chip.textContent = orden.Secretaria || "Sin asignar";
+      chip.classList.toggle("sin-asignar", !orden.Secretaria);
+    }
   }
 
   if(publicarRemoto) publicarSecretariaRemota(ordenId, nombre);
@@ -540,10 +543,10 @@ function aplicarCambioEstado(ordenId, estadoKey, { publicarRemoto = false } = {}
     const checkbox = document.querySelector(`.check-orden[data-id="${CSS.escape(ordenId)}"]`);
     const fila = checkbox ? checkbox.closest(".fila") : null;
     if (fila) {
-      const esFav = fila.classList.contains("favorito");
-      fila.className = `fila ${esFav ? 'favorito' : ''} recupero-${estadoKey}`;
-      const subt = fila.querySelector(".fila-subtitulo");
-      if (subt) subt.innerHTML = construirSubtituloFilaHTML(orden);
+      const cabeceraFila = fila.querySelector(".fila-cabecera");
+      if (cabeceraFila) {
+        cabeceraFila.className = `fila-cabecera estado-bg-${estadoKey}`;
+      }
     }
 
     // Si el detalle de esta orden está abierto, mostrar() ya refresca el chip de Recupero ahí
@@ -1114,8 +1117,6 @@ function construirSubtituloFilaHTML(o){
     <span>DNI ${o.Dni || "-"}</span>
     ${o.ObraSocial ? `<span class="fila-sep">·</span><span>${o.ObraSocial}</span>` : ""}
     ${o.Prioridad ? `<span class="fila-sep">·</span><span>${o.Prioridad}</span>` : ""}
-    <span class="fila-sep">·</span><span class="fila-estado-texto estado-${o.EstadoRecupero}">${labelEstadoRecupero(o.EstadoRecupero)}</span>
-    <span class="fila-secretaria-chip ${o.Secretaria ? '' : 'sin-asignar'}" title="Secretaría">${o.Secretaria || "Sin asignar"}</span>
   `;
 }
 
@@ -1159,28 +1160,32 @@ function renderLista(){
   filtradas.forEach((o, i) => {
     const fila = document.createElement("div");
     const esFav = esOrdenFavorita(o);
-    fila.className = `fila ${esFav ? 'favorito' : ''} recupero-${o.EstadoRecupero}`;
+    fila.className = `fila ${esFav ? 'favorito' : ''}`;
     fila.dataset.orden = o.Orden;
 
     const estaChequeado = seleccionados.has(o.Orden) ? "checked" : "";
 
     fila.innerHTML = `
-      <div class="fila-top">
+      <div class="fila-cabecera estado-bg-${o.EstadoRecupero}">
         <input type="checkbox" class="check-orden" data-id="${o.Orden}" ${estaChequeado}
                onclick="handleCheck(event, '${o.Orden}')">
-        <span class="fila-orden-num">${o.Orden}</span>
-        <span class="fila-titulo-sep">·</span>
-        <span class="fila-paciente-inline">${o.Apellido} ${o.Nombre}</span>
-        ${esFav ? `<span class="fila-estrella" title="Favorita">${ICONS.estrella}</span>` : ""}
+        <span class="fila-orden-num-centrado">${o.Orden}</span>
+        <span class="fila-secretaria-chip ${o.Secretaria ? '' : 'sin-asignar'}" title="Secretaría">${o.Secretaria || "Sin asignar"}</span>
       </div>
-      <div class="fila-subtitulo">${construirSubtituloFilaHTML(o)}</div>
-      <div class="fila-bottom-row">
-        <div class="fila-semaforo-row">
-          <span class="sf-item">CI <span class="semaforo-dot ${o.CI === 'VERDADERO' ? 'si' : 'no'}"></span></span>
-          <span class="sf-item">FOJA <span class="semaforo-dot ${o.Foja === 'VERDADERO' ? 'si' : 'no'}"></span></span>
-          <span class="sf-item">DEV <span class="semaforo-dot ${o.Devolucion === 'VERDADERO' ? 'dev-pendiente' : 'dev-ok'}"></span></span>
+      <div class="fila-cuerpo">
+        <div class="fila-paciente-linea">
+          <span class="fila-paciente-inline">${o.Apellido} ${o.Nombre}</span>
+          ${esFav ? `<span class="fila-estrella" title="Favorita">${ICONS.estrella}</span>` : ""}
         </div>
-        <span class="fila-fecha">${o.FechaCX || ""}</span>
+        <div class="fila-subtitulo">${construirSubtituloFilaHTML(o)}</div>
+        <div class="fila-bottom-row">
+          <div class="fila-semaforo-row">
+            <span class="sf-item">CI <span class="semaforo-dot ${o.CI === 'VERDADERO' ? 'si' : 'no'}"></span></span>
+            <span class="sf-item">FOJA <span class="semaforo-dot ${o.Foja === 'VERDADERO' ? 'si' : 'no'}"></span></span>
+            <span class="sf-item">DEV <span class="semaforo-dot ${o.Devolucion === 'VERDADERO' ? 'dev-pendiente' : 'dev-ok'}"></span></span>
+          </div>
+          <span class="fila-fecha">${o.FechaCX || ""}</span>
+        </div>
       </div>
     `;
 
@@ -1195,6 +1200,11 @@ function renderLista(){
     cont.appendChild(fila);
   });
 }
+/** Saca lo que está entre corchetes del nombre del producto (ej. "[H749...] Synergy Shield" -> "Synergy Shield"). */
+function quitarCorchetes(texto){
+  return (texto || "").replace(/\[[^\]]*\]/g, "").trim();
+}
+
 /** Acorta el N° de Remito sacando ceros a la izquierda y el prefijo de letras (ej. "R0008-00051619" -> "8-51619"), para que ocupe menos lugar en la tarjeta de producto. */
 function formatearRemitoCorto(remito){
   if(!remito) return "-";
@@ -1369,7 +1379,7 @@ function mostrar(o){
     div.innerHTML = `
       <span class="producto-icon">${ICONS.producto}</span>
       <div class="producto-info">
-        <div class="producto-nombre">${d.Producto || ""}</div>
+        <div class="producto-nombre">${quitarCorchetes(d.Producto)}</div>
         <div class="producto-campos">
           <span class="producto-campo"><b>Remito</b><span>${formatearRemitoCorto(d.Remito)}</span></span>
           <span class="producto-campo"><b>Fecha Remito</b><span>${d.FechaR || "-"}</span></span>

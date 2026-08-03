@@ -394,33 +394,69 @@ svg { width: 100%; height: 100%; }
 /* CARD DE ORDEN */
 .fila {
   border: 1px solid var(--borde);
-  border-left: 4px solid transparent;
   border-radius: 12px;
-  padding: 12px 14px;
   cursor: pointer;
   background: white;
-  transition: background 0.15s;
+  overflow: hidden; /* para que la cabecera de color respete el radio de la tarjeta */
+  transition: box-shadow 0.15s;
 }
-.fila:hover { background: #f8fafc; }
+.fila:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
 .fila.active {
-  border-left-color: var(--verde);
-  background: #f0fdf4;
+  box-shadow: 0 0 0 2px var(--teal);
 }
 
-.fila.recupero-completo { border-left-color: var(--verde); }
-.fila.recupero-faltan { border-left-color: var(--naranja); background: #fffaf3; }
-.fila.recupero-no_pedido { border-left-color: #cbd5e1; }
-
-.fila-top {
+/* Cabecera de color de la tarjeta: checkbox — N° Orden (centrado) — Secretaría */
+.fila-cabecera {
   display: flex;
-  align-items: flex-start;
-  gap: 6px;
-  margin-bottom: 5px;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
 }
-.check-orden { width: 18px; height: 18px; accent-color: var(--verde); cursor: pointer; flex: 0 0 auto; margin-top: 2px; }
-.fila-orden-num { font-weight: 800; font-size: 14px; color: var(--teal-dark); white-space: nowrap; }
-.fila-titulo-sep { color: #cbd5e1; font-weight: 400; }
-.fila-paciente-inline { font-weight: 700; font-size: 13px; overflow-wrap: break-word; }
+.fila-cabecera.estado-bg-completo { background: var(--verde); }
+.fila-cabecera.estado-bg-faltan { background: var(--naranja); }
+.fila-cabecera.estado-bg-no_pedido { background: #e2e8f0; }
+
+.fila-cabecera.estado-bg-completo .fila-orden-num-centrado,
+.fila-cabecera.estado-bg-faltan .fila-orden-num-centrado { color: white; }
+.fila-cabecera.estado-bg-no_pedido .fila-orden-num-centrado { color: var(--texto); }
+
+.check-orden { width: 17px; height: 17px; accent-color: var(--verde); cursor: pointer; flex: 0 0 auto; }
+.fila-orden-num-centrado { flex: 1; text-align: center; font-weight: 800; font-size: 14px; }
+
+.fila-cabecera .fila-secretaria-chip {
+  flex: 0 0 auto;
+  max-width: 40%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.fila-cabecera.estado-bg-completo .fila-secretaria-chip,
+.fila-cabecera.estado-bg-faltan .fila-secretaria-chip {
+  background: rgba(255,255,255,0.28);
+  color: white;
+}
+.fila-cabecera.estado-bg-completo .fila-secretaria-chip.sin-asignar,
+.fila-cabecera.estado-bg-faltan .fila-secretaria-chip.sin-asignar {
+  background: rgba(255,255,255,0.2);
+  color: rgba(255,255,255,0.85);
+}
+
+.fila-cuerpo { padding: 10px 14px 12px; }
+
+.fila-paciente-linea {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+.fila-paciente-inline {
+  font-weight: 700;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
 .fila-estrella { width: 14px; height: 14px; color: #f59e0b; flex: 0 0 auto; margin-left: auto; }
 
 .fila-subtitulo {
@@ -432,14 +468,9 @@ svg { width: 100%; height: 100%; }
   margin-bottom: 8px;
 }
 .fila-sep { color: #cbd5e1; }
-.fila-estado-texto { font-weight: 700; }
-.fila-estado-texto.estado-completo { color: var(--verde); }
-.fila-estado-texto.estado-faltan { color: var(--naranja); }
-.fila-estado-texto.estado-no_pedido { color: var(--texto-sec); }
 
 .fila-secretaria-chip {
   display: inline-block;
-  margin-left: 6px;
   padding: 1px 8px;
   border-radius: 999px;
   background: var(--teal-light);
