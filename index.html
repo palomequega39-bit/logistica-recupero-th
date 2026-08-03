@@ -241,20 +241,19 @@
           </button>
 
           <div class="detalle-header">
-            <div>
-              <div id="cabeceraOrdenNum" class="detalle-orden-num"></div>
-              <div id="cabeceraPaciente" class="detalle-paciente"></div>
-              <div id="cabeceraDni" class="detalle-dni"></div>
+            <div class="detalle-titulo-linea">
+              <span id="cabeceraOrdenNum" class="detalle-orden-num"></span>
+              <span class="detalle-sep">-</span>
+              <span id="cabeceraPaciente" class="detalle-paciente-inline"></span>
             </div>
             <div id="cabeceraBadges" class="detalle-badges"></div>
           </div>
 
+          <div id="cabeceraSubtitulo" class="detalle-subtitulo"></div>
+
           <div id="cabecera" class="cabecera"></div>
 
-          <div class="detalle-estado-box">
-            <label>Estado</label>
-            <div id="cabeceraEstadoDots" class="estado-dots"></div>
-          </div>
+          <div id="cabeceraActividades" class="detalle-actividades"></div>
 
           <div class="detalle-secretaria-recupero">
             <div class="campo-filtro">
@@ -269,11 +268,6 @@
 
           <div class="detalle-productos-titulo">DETALLE DE PRODUCTOS (<span id="cantidadProductosDetalle">0</span>)</div>
           <div id="detalleProductos" class="detalle-productos"></div>
-
-          <button id="btnMarcarFavorito" class="btn-favorito">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-            <span id="btnMarcarFavoritoTexto">Marcar como favorito</span>
-          </button>
         </div>
       </section>
     </div>

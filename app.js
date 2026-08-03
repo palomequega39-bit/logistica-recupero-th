@@ -292,6 +292,25 @@ function construirClaveProducto(ordenId, d){
   return [ordenId, d.Remito, d.Producto, d.Lote, d.Serie].map(sanearClaveFirebase).join("__");
 }
 
+/**
+ * 🔴 FIX: cuando 2 o más productos de la MISMA orden no tienen datos que
+ * los distingan (mismo Remito+Producto+Lote+Serie — pasa con el desglose
+ * por unidad cuando Odoo no trae series distintas para cada unidad),
+ * construirClaveProducto() les daba la MISMA clave. Como el color de cada
+ * producto se guarda por clave, tocar uno pintaba a todos los que
+ * compartían esa clave. Acá desambiguamos agregando un sufijo a partir
+ * de la 2da repetición (la 1ra queda igual que antes, para no romper
+ * los colores ya guardados).
+ */
+function construirClavesProductosOrden(ordenId, detalles){
+  const contador = {};
+  return (detalles || []).map(d => {
+    const base = construirClaveProducto(ordenId, d);
+    contador[base] = (contador[base] || 0) + 1;
+    return contador[base] === 1 ? base : `${base}__dup${contador[base]}`;
+  });
+}
+
 function cargarHistorialProducto(){
   try{ return JSON.parse(localStorage.getItem(HISTORIAL_KEY_PRODUCTO)) || {}; }
   catch(e){ console.warn("Historial de estado por producto corrupto, se descarta:", e); return {}; }
@@ -518,11 +537,6 @@ function aplicarCambioEstado(ordenId, estadoKey, { publicarRemoto = false } = {}
     if (fila) {
       const esFav = fila.classList.contains("favorito");
       fila.className = `fila ${esFav ? 'favorito' : ''} recupero-${estadoKey}`;
-      const badge = fila.querySelector(".badge-estado");
-      if (badge) {
-        badge.className = `badge-estado estado-${estadoKey}`;
-        badge.textContent = labelEstadoRecupero(estadoKey);
-      }
     }
 
     // Si el detalle de esta orden está abierto, mostrar() ya refresca el chip de Recupero ahí
@@ -1127,20 +1141,22 @@ function renderLista(){
         <input type="checkbox" class="check-orden" data-id="${o.Orden}" ${estaChequeado}
                onclick="handleCheck(event, '${o.Orden}')">
         <span class="fila-orden-num">${o.Orden}</span>
+        <span class="fila-titulo-sep">·</span>
+        <span class="fila-paciente-inline">${o.Apellido} ${o.Nombre}</span>
         ${esFav ? `<span class="fila-estrella" title="Favorita">${ICONS.estrella}</span>` : ""}
-        <span class="badge-estado estado-${o.EstadoRecupero}">${labelEstadoRecupero(o.EstadoRecupero)}</span>
       </div>
-      <div class="fila-paciente">${o.Apellido} ${o.Nombre}</div>
-      <div class="fila-dni">DNI ${o.Dni || "-"}</div>
-      <div class="fila-info-row">
-        <span class="info-item">${ICONS.apross}<span>${o.ObraSocial || ""}</span></span>
-        <span class="info-item">${ICONS.calendar}<span>${o.FechaCX || ""}</span></span>
+      <div class="fila-subtitulo">
+        <span>DNI ${o.Dni || "-"}</span>
+        ${o.ObraSocial ? `<span class="fila-sep">·</span><span>${o.ObraSocial}</span>` : ""}
+        ${o.Prioridad ? `<span class="fila-sep">·</span><span>${o.Prioridad}</span>` : ""}
       </div>
-      ${o.Prioridad ? `<div class="fila-urgencia">${ICONS.warning}<span>${o.Prioridad}</span></div>` : ""}
-      <div class="fila-semaforo-row">
-        <span class="sf-item">CI <span class="semaforo-dot ${o.CI === 'VERDADERO' ? 'si' : 'no'}"></span></span>
-        <span class="sf-item">FOJA <span class="semaforo-dot ${o.Foja === 'VERDADERO' ? 'si' : 'no'}"></span></span>
-        <span class="sf-item">DEV <span class="semaforo-dot ${o.Devolucion === 'VERDADERO' ? 'dev-pendiente' : 'dev-ok'}"></span></span>
+      <div class="fila-bottom-row">
+        <div class="fila-semaforo-row">
+          <span class="sf-item">CI <span class="semaforo-dot ${o.CI === 'VERDADERO' ? 'si' : 'no'}"></span></span>
+          <span class="sf-item">FOJA <span class="semaforo-dot ${o.Foja === 'VERDADERO' ? 'si' : 'no'}"></span></span>
+          <span class="sf-item">DEV <span class="semaforo-dot ${o.Devolucion === 'VERDADERO' ? 'dev-pendiente' : 'dev-ok'}"></span></span>
+        </div>
+        <span class="fila-fecha">${o.FechaCX || ""}</span>
       </div>
     `;
 
@@ -1183,8 +1199,8 @@ function calcularEstadoRecuperoAutomatico(ordenId, detalles){
   const historialProducto = cargarHistorialProducto();
   let cantidadConColor = 0;
 
-  detalles.forEach(d => {
-    const clave = construirClaveProducto(ordenId, d);
+  const claves = construirClavesProductosOrden(ordenId, detalles);
+  claves.forEach(clave => {
     if(historialProducto[clave]) cantidadConColor++;
   });
 
@@ -1256,10 +1272,9 @@ function mostrar(o){
   document.getElementById("detalleVacio").classList.add("hidden");
   document.getElementById("detalleContenido").classList.remove("hidden");
 
-  // 1. Header: N° Orden, Paciente, DNI + badges C/F/D + link a Odoo
+  // 1. Header: N° Orden - Paciente (misma línea) + badges C/F/D + link a Odoo
   document.getElementById("cabeceraOrdenNum").textContent = o.Orden;
   document.getElementById("cabeceraPaciente").textContent = `${o.Apellido} ${o.Nombre}`;
-  document.getElementById("cabeceraDni").textContent = `DNI ${o.Dni || "-"}`;
 
   document.getElementById("cabeceraBadges").innerHTML = `
     <span class="badge-semaforo ${o.CI === 'VERDADERO' ? 'si' : 'no'}" title="Certificado de Implante: ${o.CI === 'VERDADERO' ? 'OK' : 'Falta'}">C</span>
@@ -1268,7 +1283,18 @@ function mostrar(o){
     <button class="btn-odoo-link" onclick="abrirOrdenOdoo(event, '${o.Orden}')" title="Abrir en Odoo">${ICONS.link}</button>
   `;
 
-  // 2. Grilla de datos: Fecha CX / Médico / Institución / Expte / Solicitante / Actividades
+  // 2. Subtítulo: Dni, Expte, Fecha CX, Médico (misma línea)
+  document.getElementById("cabeceraSubtitulo").innerHTML = `
+    <span>DNI ${o.Dni || "-"}</span>
+    <span class="detalle-sub-sep">·</span>
+    <span>Expte ${o.Expediente || "-"}</span>
+    <span class="detalle-sub-sep">·</span>
+    <span>${o.FechaCX || "-"}</span>
+    <span class="detalle-sub-sep">·</span>
+    <span>${o.Medico || "-"}</span>
+  `;
+
+  // 3. Datos extra: Hospital, Médico, Solicitante (misma línea)
   const campo = (icon, label, valor) => `
     <div class="campo">
       <span class="campo-icon">${icon}</span>
@@ -1276,18 +1302,14 @@ function mostrar(o){
     </div>`;
 
   document.getElementById("cabecera").innerHTML =
-    campo(ICONS.calendar, "Fecha CX", o.FechaCX) +
+    campo(ICONS.institucion, "Hospital", o.Institucion) +
     campo(ICONS.medico, "Médico", o.Medico) +
-    campo(ICONS.institucion, "Institución", o.Institucion) +
-    campo(ICONS.expediente, "Expte", o.Expediente) +
-    campo(ICONS.medico, "Solicitante", o.MedicoSolicitante) +
-    `<div class="campo campo-actividades"><span class="campo-icon">${ICONS.actividades}</span><span class="campo-texto"><b>Actividades</b><span>${o.Actividades || "-"}</span></span></div>`;
+    campo(ICONS.medico, "Solicitante", o.MedicoSolicitante);
 
-  // 3. Sección Estado (CI / FOJA / DEV con punto de color)
-  document.getElementById("cabeceraEstadoDots").innerHTML = `
-    <span class="estado-dot-item">CI <span class="semaforo-dot ${o.CI === 'VERDADERO' ? 'si' : 'no'}"></span></span>
-    <span class="estado-dot-item">FOJA <span class="semaforo-dot ${o.Foja === 'VERDADERO' ? 'si' : 'no'}"></span></span>
-    <span class="estado-dot-item">DEV <span class="semaforo-dot ${o.Devolucion === 'VERDADERO' ? 'dev-pendiente' : 'dev-ok'}"></span></span>
+  // Actividades, aparte
+  document.getElementById("cabeceraActividades").innerHTML = `
+    <span class="campo-icon">${ICONS.actividades}</span>
+    <span class="campo-texto"><b>Actividades</b><span>${o.Actividades || "-"}</span></span>
   `;
 
   // 4. Secretaría (editable) + Recupero (automático, solo lectura)
@@ -1307,9 +1329,12 @@ function mostrar(o){
   const cont = document.getElementById("detalleProductos");
   cont.innerHTML = "";
 
-  o.detalles.forEach(d=>{
-    const clave = construirClaveProducto(o.Orden, d);
-    const estadoActual = cargarHistorialProducto()[clave] || "";
+  const historialProducto = cargarHistorialProducto();
+  const clavesProductos = construirClavesProductosOrden(o.Orden, o.detalles);
+
+  o.detalles.forEach((d, i)=>{
+    const clave = clavesProductos[i];
+    const estadoActual = historialProducto[clave] || "";
     const div = document.createElement("div");
     div.className = `fila-producto ${claseFilaProducto(estadoActual)}`;
     div.dataset.claveProducto = clave;
@@ -1321,7 +1346,7 @@ function mostrar(o){
         <div class="producto-nombre">${d.Producto || ""}</div>
         <div class="producto-campos">
           <span class="producto-campo"><b>Remito</b><span>${d.Remito || "-"}</span></span>
-          <span class="producto-campo"><b>Cantidad</b><span>${d.Q || "-"}</span></span>
+          <span class="producto-campo"><b>Q</b><span>${d.Q || "-"}</span></span>
           <span class="producto-campo"><b>Lote</b><span>${d.Lote || "-"}</span></span>
           <span class="producto-campo"><b>Serie</b><span>${d.Serie || "-"}</span></span>
           <span class="producto-campo"><b>Vence</b><span>${d.Vencimiento || "-"}</span></span>
@@ -1330,13 +1355,6 @@ function mostrar(o){
     `;
     cont.appendChild(div);
   });
-
-  // 6. Botón de favorito
-  const esFav = esOrdenFavorita(o);
-  const btnFav = document.getElementById("btnMarcarFavorito");
-  btnFav.classList.toggle("es-favorito", esFav);
-  document.getElementById("btnMarcarFavoritoTexto").textContent = esFav ? "Quitar de favoritos" : "Marcar como favorito";
-  btnFav.onclick = () => toggleFavorito(o.Orden);
 }
 
 /* =========================

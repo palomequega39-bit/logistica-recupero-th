@@ -397,56 +397,35 @@ svg { width: 100%; height: 100%; }
 .fila-top {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 4px;
+  gap: 6px;
+  margin-bottom: 5px;
 }
 .check-orden { width: 18px; height: 18px; accent-color: var(--verde); cursor: pointer; flex: 0 0 auto; }
-.fila-orden-num { font-weight: 800; font-size: 15px; color: var(--teal-dark); }
-.fila-estrella { width: 15px; height: 15px; color: #f59e0b; flex: 0 0 auto; }
+.fila-orden-num { font-weight: 800; font-size: 14px; color: var(--teal-dark); white-space: nowrap; }
+.fila-titulo-sep { color: #cbd5e1; font-weight: 400; }
+.fila-paciente-inline { font-weight: 700; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fila-estrella { width: 14px; height: 14px; color: #f59e0b; flex: 0 0 auto; margin-left: auto; }
 
-.badge-estado {
-  margin-left: auto;
-  font-size: 11px;
-  font-weight: 700;
-  padding: 3px 10px;
-  border-radius: 999px;
-  white-space: nowrap;
-}
-.badge-estado.estado-completo { background: var(--verde); color: white; }
-.badge-estado.estado-faltan { background: var(--naranja); color: white; }
-.badge-estado.estado-no_pedido { background: #e2e8f0; color: #475569; }
-
-.fila-paciente { font-weight: 700; font-size: 14px; margin-left: 26px; }
-.fila-dni { font-size: 12px; color: var(--texto-sec); margin-left: 26px; margin-bottom: 6px; }
-
-.fila-info-row {
+.fila-subtitulo {
   display: flex;
-  gap: 14px;
   flex-wrap: wrap;
-  margin-left: 26px;
+  gap: 5px;
   font-size: 12px;
-  color: #334155;
-  margin-bottom: 4px;
-}
-.info-item { display: flex; align-items: center; gap: 5px; }
-.info-item svg { width: 13px; height: 13px; color: var(--verde); flex: 0 0 auto; }
-
-.fila-urgencia {
-  display: flex; align-items: center; gap: 5px;
-  margin-left: 26px;
-  font-size: 12px;
-  color: #b45309;
+  color: var(--texto-sec);
   margin-bottom: 8px;
 }
-.fila-urgencia svg { width: 13px; height: 13px; flex: 0 0 auto; }
+.fila-sep { color: #cbd5e1; }
 
-.fila-semaforo-row {
+.fila-bottom-row {
   display: flex;
-  gap: 18px;
-  margin-left: 26px;
+  align-items: center;
+  justify-content: space-between;
   padding-top: 8px;
   border-top: 1px solid #f1f5f9;
 }
+.fila-fecha { font-size: 11px; font-weight: 700; color: var(--texto-sec); }
+
+.fila-semaforo-row { display: flex; gap: 16px; }
 .sf-item { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: var(--texto-sec); }
 
 .semaforo-dot {
@@ -478,11 +457,22 @@ svg { width: 100%; height: 100%; }
 }
 .btn-volver svg { width: 15px; height: 15px; }
 
-.detalle-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
-.detalle-orden-num { font-size: 22px; font-weight: 800; color: var(--teal-dark); }
-.detalle-paciente { font-size: 15px; font-weight: 700; margin-top: 2px; }
-.detalle-dni { font-size: 12px; color: var(--texto-sec); }
-.detalle-badges { display: flex; gap: 6px; align-items: center; }
+.detalle-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.detalle-titulo-linea { display: flex; align-items: baseline; gap: 8px; overflow: hidden; }
+.detalle-orden-num { font-size: 21px; font-weight: 800; color: var(--teal-dark); white-space: nowrap; }
+.detalle-sep { color: #cbd5e1; font-size: 18px; }
+.detalle-paciente-inline { font-size: 16px; font-weight: 700; color: var(--texto); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.detalle-badges { display: flex; gap: 6px; align-items: center; flex: 0 0 auto; }
+
+.detalle-subtitulo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--texto-sec);
+  margin-bottom: 14px;
+}
+.detalle-sub-sep { color: #cbd5e1; }
 
 .badge-semaforo {
   display: inline-flex; align-items: center; justify-content: center;
@@ -500,32 +490,33 @@ svg { width: 100%; height: 100%; }
   padding: 6px; cursor: pointer; flex: 0 0 auto;
 }
 
-/* Grilla de datos (Fecha CX / Médico / Institución / Expte / Solicitante / Actividades) */
+/* Datos extra: Hospital / Médico / Solicitante, en una sola línea */
 .cabecera {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
   background: #f8fafc;
   border-radius: 12px;
   padding: 14px;
-  margin-bottom: 14px;
+  margin-bottom: 10px;
 }
+.cabecera .campo { flex: 1 1 160px; }
 .campo { display: flex; align-items: flex-start; gap: 8px; font-size: 13px; overflow: hidden; }
 .campo-icon { width: 15px; height: 15px; color: var(--teal); flex: 0 0 auto; margin-top: 2px; }
 .campo-texto { display: flex; flex-direction: column; overflow: hidden; }
 .campo-texto b { font-size: 10px; text-transform: uppercase; color: var(--texto-sec); font-weight: 700; letter-spacing: 0.3px; }
 .campo-texto span { font-size: 13px; color: var(--texto); overflow-wrap: break-word; }
-.campo-actividades { grid-column: 1 / -1; }
 
-.detalle-estado-box {
+.detalle-actividades {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
   background: #f8fafc;
   border-radius: 12px;
-  padding: 12px 14px;
+  padding: 14px;
   margin-bottom: 14px;
 }
-.detalle-estado-box > label { font-size: 11px; font-weight: 800; color: var(--texto-sec); text-transform: uppercase; letter-spacing: 0.3px; }
-.estado-dots { display: flex; gap: 24px; margin-top: 8px; }
-.estado-dot-item { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: var(--texto); }
 
 .detalle-secretaria-recupero {
   display: grid;
@@ -581,27 +572,10 @@ svg { width: 100%; height: 100%; }
 
 .producto-info { flex: 1; min-width: 0; }
 .producto-nombre { font-weight: 700; font-size: 13px; margin-bottom: 6px; overflow-wrap: break-word; }
-.producto-campos { display: flex; flex-wrap: wrap; gap: 12px; }
+.producto-campos { display: flex; flex-wrap: wrap; gap: 22px; }
 .producto-campo { display: flex; flex-direction: column; font-size: 11px; }
 .producto-campo b { color: var(--texto-sec); font-weight: 700; text-transform: uppercase; font-size: 9px; }
 .producto-campo span { font-size: 12px; }
-
-.btn-favorito {
-  width: 100%;
-  display: flex; align-items: center; justify-content: center; gap: 8px;
-  border: 1.5px solid var(--azul);
-  color: var(--azul);
-  background: white;
-  border-radius: 10px;
-  padding: 11px;
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-}
-.btn-favorito svg { width: 16px; height: 16px; }
-.btn-favorito:hover { background: var(--azul-bg); }
-.btn-favorito.es-favorito { background: var(--azul); color: white; }
-.btn-favorito.es-favorito svg { fill: white; }
 
 /* =========================
    RESPONSIVE
