@@ -191,6 +191,71 @@ function actualizarSelectsSecretaria(){
 }
 
 /* =========================
+   FAVORITO (toggle manual)
+   Antes venía solo del Excel (de solo lectura). Ahora se puede marcar/
+   desmarcar a mano desde el detalle de la orden, con el mismo patrón de
+   historial local + sincronización en vivo que el resto.
+========================= */
+const HISTORIAL_KEY_FAVORITO = "recuperoTH_historialFavorito_v1";
+let favoritoRef = null;
+let favoritoRemotoCache = {};
+
+function cargarHistorialFavorito(){
+  try{ return JSON.parse(localStorage.getItem(HISTORIAL_KEY_FAVORITO)) || {}; }
+  catch(e){ console.warn("Historial de favoritos corrupto, se descarta:", e); return {}; }
+}
+
+function actualizarHistorialFavorito(ordenId, esFav){
+  try{
+    const historial = cargarHistorialFavorito();
+    historial[ordenId] = !!esFav;
+    localStorage.setItem(HISTORIAL_KEY_FAVORITO, JSON.stringify(historial));
+  }catch(e){ console.warn("No se pudo guardar el historial de favoritos:", e); }
+}
+
+function publicarFavoritoRemoto(ordenId, esFav){
+  if(!firebaseListo || !favoritoRef) return;
+  favoritoRef.child(ordenId).set({
+    favorito: !!esFav,
+    ts: firebase.database.ServerValue.TIMESTAMP
+  }).catch(e => console.warn("No se pudo sincronizar el favorito en la nube:", e));
+}
+
+function esOrdenFavorita(o){
+  return o.Favorito === "FAVORITO" || o.Favorito === "SI" || o.Favorito === true;
+}
+
+/** Aplica el estado de favorito a una orden (memoria + DOM + historial local). */
+function aplicarCambioFavorito(ordenId, esFav, { publicarRemoto = false } = {}){
+  actualizarHistorialFavorito(ordenId, esFav);
+
+  const orden = buscarOrdenPorId(ordenId);
+  if(orden){
+    orden.Favorito = esFav ? "FAVORITO" : "";
+
+    // Repintar la card de la lista si está visible
+    const fila = document.querySelector(`.fila[data-orden="${CSS.escape(ordenId)}"]`);
+    if(fila) fila.classList.toggle("favorito", esFav);
+
+    // Refrescar el detalle si es la orden abierta
+    if(indiceSeleccionado >= 0 && filtradas[indiceSeleccionado] && filtradas[indiceSeleccionado].Orden === ordenId){
+      mostrar(orden);
+    }
+    actualizarLabelsInformativos();
+  }
+
+  if(publicarRemoto) publicarFavoritoRemoto(ordenId, esFav);
+}
+
+/** Click en "Marcar/Quitar como favorito" en el detalle de la orden. */
+function toggleFavorito(ordenId){
+  const orden = buscarOrdenPorId(ordenId);
+  if(!orden) return;
+  const nuevoValor = !esOrdenFavorita(orden);
+  aplicarCambioFavorito(ordenId, nuevoValor, { publicarRemoto: true });
+}
+
+/* =========================
    ESTADO POR PRODUCTO (detalle de cada orden)
    Click en la fila de un producto para marcarlo como "Usado con Sticker"
    (azul), "Para Devolver" (verde), o volver a blanco (ninguno aplica /
@@ -385,6 +450,23 @@ function inicializarSyncRemoto(){
       });
     });
 
+    // --- Favorito ---
+    favoritoRef = firebase.database().ref("favoritoOrden");
+    favoritoRef.on("value", snapshot => {
+      const remoto = snapshot.val() || {};
+      favoritoRemotoCache = remoto;
+      Object.keys(remoto).forEach(ordenId => {
+        aplicarCambioFavorito(ordenId, !!(remoto[ordenId] && remoto[ordenId].favorito), { publicarRemoto: false });
+      });
+
+      // Subimos automáticamente lo que ya teníamos guardado localmente
+      // y todavía no está en la nube (mismo mecanismo que el resto).
+      const historialLocalFavorito = cargarHistorialFavorito();
+      Object.keys(historialLocalFavorito).forEach(ordenId => {
+        if(!remoto[ordenId]) publicarFavoritoRemoto(ordenId, historialLocalFavorito[ordenId]);
+      });
+    });
+
     // --- Estado por producto (Usado con Sticker / Para Devolver) ---
     productoEstadoRef = firebase.database().ref("productoEstado");
     productoEstadoRef.on("value", snapshot => {
@@ -436,13 +518,14 @@ function aplicarCambioEstado(ordenId, estadoKey, { publicarRemoto = false } = {}
     if (fila) {
       const esFav = fila.classList.contains("favorito");
       fila.className = `fila ${esFav ? 'favorito' : ''} recupero-${estadoKey}`;
-      const btn = fila.querySelector(".btn-recupero");
-      if (btn) {
-        btn.className = `btn-recupero estado-${estadoKey}`;
-        btn.textContent = labelEstadoRecupero(estadoKey);
+      const badge = fila.querySelector(".badge-estado");
+      if (badge) {
+        badge.className = `badge-estado estado-${estadoKey}`;
+        badge.textContent = labelEstadoRecupero(estadoKey);
       }
     }
 
+    // Si el detalle de esta orden está abierto, mostrar() ya refresca el chip de Recupero ahí
     if (indiceSeleccionado >= 0 && filtradas[indiceSeleccionado] && filtradas[indiceSeleccionado].Orden === ordenId) {
       mostrar(orden);
     }
@@ -599,6 +682,33 @@ function cerrarModalFiltros(){
 
 document.getElementById("btnAbrirFiltros").onclick = abrirModalFiltros;
 document.getElementById("btnCerrarFiltros").onclick = cerrarModalFiltros;
+
+/* =========================
+   MENÚ (hamburguesa)
+========================= */
+const menuLateral = document.getElementById("menuLateral");
+
+function abrirMenu(){ menuLateral.classList.remove("hidden"); }
+function cerrarMenu(){ menuLateral.classList.add("hidden"); }
+
+document.getElementById("btnMenu").onclick = abrirMenu;
+document.getElementById("btnCerrarMenu").onclick = cerrarMenu;
+menuLateral.addEventListener("click", e => { if(e.target === menuLateral) cerrarMenu(); });
+
+/* =========================
+   VOLVER AL LISTADO (mobile: la lista y el detalle no se ven juntos)
+========================= */
+document.getElementById("btnVolverListado").onclick = () => {
+  document.getElementById("split").classList.remove("detalle-abierto");
+};
+
+/* Ícono de calendario junto a los filtros rápidos: enfoca el filtro de Fecha CX */
+document.getElementById("btnFechaIcono").onclick = () => {
+  document.getElementById("filtroFecha").focus();
+};
+
+/* El botón de "Borrar Historial" existe en dos lugares (menú y modal de filtros) */
+document.getElementById("btnBorrarHistorial2").onclick = borrarHistorialEstados;
 
 /* =========================
    PANTALLA COMPLETA
@@ -773,6 +883,21 @@ function procesar(data){
     }
   });
 
+  // 🔴 Favorito: igual patrón. El historial local/remoto tiene prioridad
+  // sobre lo que haya venido en el Excel, porque puede haberse cambiado
+  // a mano después de exportar.
+  const historialFavorito = cargarHistorialFavorito();
+  ordenes.forEach(o=>{
+    if(Object.prototype.hasOwnProperty.call(historialFavorito, o.Orden)){
+      o.Favorito = historialFavorito[o.Orden] ? "FAVORITO" : "";
+    }
+  });
+  ordenes.forEach(o=>{
+    if(favoritoRemotoCache[o.Orden]){
+      o.Favorito = favoritoRemotoCache[o.Orden].favorito ? "FAVORITO" : "";
+    }
+  });
+
   seleccionados.clear();
   document.getElementById("selectAll").checked = false;
   limpiarDetalleOrden();
@@ -939,6 +1064,19 @@ function aplicarFiltros(){
    LISTA
 ========================= */
 
+const ICONS = {
+  apross: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><line x1="12" y1="8" x2="12" y2="14"/><line x1="9" y1="11" x2="15" y2="11"/></svg>`,
+  calendar: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`,
+  warning: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`,
+  medico: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
+  institucion: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="21" x2="21" y2="21"/><path d="M5 21V7l7-4 7 4v14"/><line x1="9" y1="9" x2="9" y2="9.01"/><line x1="15" y1="9" x2="15" y2="9.01"/><line x1="9" y1="13" x2="9" y2="13.01"/><line x1="15" y1="13" x2="15" y2="13.01"/><line x1="9" y1="17" x2="9" y2="17.01"/><line x1="15" y1="17" x2="15" y2="17.01"/></svg>`,
+  expediente: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>`,
+  actividades: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>`,
+  producto: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>`,
+  estrella: `<svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,
+  link: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`
+};
+
 function renderLista(){
 
   const cont=document.getElementById("ordenesList");
@@ -972,42 +1110,45 @@ function renderLista(){
       if(valA > valB) return ordenAsc ? 1 : -1;
       return 0;
     });
-
-     
   }
+
+  document.getElementById("labelCantidadOrdenesTitulo").textContent = filtradas.length;
 
   filtradas.forEach((o, i) => {
     const fila = document.createElement("div");
-    const esFav = o.Favorito === "FAVORITO" || o.Favorito === "SI";
+    const esFav = esOrdenFavorita(o);
     fila.className = `fila ${esFav ? 'favorito' : ''} recupero-${o.EstadoRecupero}`;
+    fila.dataset.orden = o.Orden;
 
-    // Verificamos si esta orden ya estaba seleccionada
     const estaChequeado = seleccionados.has(o.Orden) ? "checked" : "";
 
-    // IMPORTANTE: El input tipo checkbox DEBE ser el primer elemento 
     fila.innerHTML = `
-      <input type="checkbox" class="check-orden" data-id="${o.Orden}" ${estaChequeado} 
-             onclick="handleCheck(event, '${o.Orden}')">
-      <span>${o.Orden}</span>
-      <span title="${o.Apellido} ${o.Nombre}">${o.Apellido} ${o.Nombre}</span>
-      <span>${o.Dni}</span>
-      <span>${o.ObraSocial}</span>
-      <span>${o.FechaCX || ""}</span>
-      <span title="${o.Institucion}">${o.Institucion}</span>
-      <span>${o.Prioridad}</span>
-      <span class="semaforo-celda" title="Certificado de Implante: ${o.CI === 'VERDADERO' ? 'OK' : 'Falta'}"><span class="semaforo-dot ${o.CI === 'VERDADERO' ? 'si' : 'no'}"></span></span>
-      <span class="semaforo-celda" title="Foja Quirúrgica: ${o.Foja === 'VERDADERO' ? 'OK' : 'Falta'}"><span class="semaforo-dot ${o.Foja === 'VERDADERO' ? 'si' : 'no'}"></span></span>
-      <span class="semaforo-celda" title="Devolución: ${o.Devolucion === 'VERDADERO' ? 'Pendiente' : 'OK'}"><span class="semaforo-dot ${o.Devolucion === 'VERDADERO' ? 'dev-pendiente' : 'dev-ok'}"></span></span>
-      <select class="select-secretaria" data-id="${o.Orden}" onclick="event.stopPropagation()" onchange="manejarCambioSecretariaSelect(this, '${o.Orden}')">${opcionesSecretariaHTML(o.Secretaria)}</select>
-      <span class="btn-recupero estado-${o.EstadoRecupero}" title="Se calcula solo según el coloreo del detalle de productos">${labelEstadoRecupero(o.EstadoRecupero)}</span>
-      <button class="btn-odoo" onclick="abrirOrdenOdoo(event, '${o.Orden}')" title="Abrir en Odoo">🔗</button>
+      <div class="fila-top">
+        <input type="checkbox" class="check-orden" data-id="${o.Orden}" ${estaChequeado}
+               onclick="handleCheck(event, '${o.Orden}')">
+        <span class="fila-orden-num">${o.Orden}</span>
+        ${esFav ? `<span class="fila-estrella" title="Favorita">${ICONS.estrella}</span>` : ""}
+        <span class="badge-estado estado-${o.EstadoRecupero}">${labelEstadoRecupero(o.EstadoRecupero)}</span>
+      </div>
+      <div class="fila-paciente">${o.Apellido} ${o.Nombre}</div>
+      <div class="fila-dni">DNI ${o.Dni || "-"}</div>
+      <div class="fila-info-row">
+        <span class="info-item">${ICONS.apross}<span>${o.ObraSocial || ""}</span></span>
+        <span class="info-item">${ICONS.calendar}<span>${o.FechaCX || ""}</span></span>
+      </div>
+      ${o.Prioridad ? `<div class="fila-urgencia">${ICONS.warning}<span>${o.Prioridad}</span></div>` : ""}
+      <div class="fila-semaforo-row">
+        <span class="sf-item">CI <span class="semaforo-dot ${o.CI === 'VERDADERO' ? 'si' : 'no'}"></span></span>
+        <span class="sf-item">FOJA <span class="semaforo-dot ${o.Foja === 'VERDADERO' ? 'si' : 'no'}"></span></span>
+        <span class="sf-item">DEV <span class="semaforo-dot ${o.Devolucion === 'VERDADERO' ? 'dev-pendiente' : 'dev-ok'}"></span></span>
+      </div>
     `;
 
     fila.onclick = (e) => {
-      // Evitamos que se dispare si se hizo click directamente en el checkbox 
       if (e.target.type !== 'checkbox') {
         indiceSeleccionado = i;
         actualizarSeleccion();
+        document.getElementById("split").classList.add("detalle-abierto");
       }
     };
 
@@ -1112,60 +1253,90 @@ function actualizarSeleccion() {
 ========================= */
 
 function mostrar(o){
-  // Verificamos si es favorito para la estrella
-  const esFav = (o.Favorito === "FAVORITO" || o.Favorito === "SI");
-  const estrellaHtml = esFav ? `<span class="estrella">★</span>` : "";
+  document.getElementById("detalleVacio").classList.add("hidden");
+  document.getElementById("detalleContenido").classList.remove("hidden");
 
-  // 1. Línea principal: estrella - N° Orden - Paciente - DNI - Obra Social - semáforo C/F/D
-  const cabTitulo = document.getElementById("cabeceraTitulo");
-  if (cabTitulo) {
-    cabTitulo.innerHTML = `
-      ${estrellaHtml}
-      <span class="ch-orden">${o.Orden}</span>
-      <span class="ch-sep">·</span>
-      <span class="ch-nombre">${o.Apellido} ${o.Nombre}</span>
-      <span class="ch-sep">·</span>
-      <span class="ch-dni">DNI ${o.Dni || "-"}</span>
-      <span class="ch-sep">·</span>
-      <span class="ch-os">${o.ObraSocial || ""}</span>
-      <span class="ch-badges">
-        <span class="badge-semaforo ${o.CI === 'VERDADERO' ? 'si' : 'no'}" title="Certificado de Implante: ${o.CI === 'VERDADERO' ? 'OK' : 'Falta'}">C</span>
-        <span class="badge-semaforo ${o.Foja === 'VERDADERO' ? 'si' : 'no'}" title="Foja Quirúrgica: ${o.Foja === 'VERDADERO' ? 'OK' : 'Falta'}">F</span>
-        <span class="badge-semaforo ${o.Devolucion === 'VERDADERO' ? 'dev-pendiente' : 'dev-ok'}" title="Devolución: ${o.Devolucion === 'VERDADERO' ? 'Pendiente' : 'OK'}">D</span>
-      </span>
-    `;
-  }
+  // 1. Header: N° Orden, Paciente, DNI + badges C/F/D + link a Odoo
+  document.getElementById("cabeceraOrdenNum").textContent = o.Orden;
+  document.getElementById("cabeceraPaciente").textContent = `${o.Apellido} ${o.Nombre}`;
+  document.getElementById("cabeceraDni").textContent = `DNI ${o.Dni || "-"}`;
 
-  const cab = document.getElementById("cabecera");
-
-  // 2. Línea de datos extra, solo lo pedido: Fecha CX - Médico - Solicitante - Expediente
-  cab.innerHTML = `
-    <div class="campo"><b>Fecha CX:</b> ${o.FechaCX || ""}</div>
-    <div class="campo"><b>Médico:</b> ${o.Medico || ""}</div>
-    <div class="campo"><b>Solicitante:</b> ${o.MedicoSolicitante || ""}</div>
-    <div class="campo"><b>Expte:</b> ${o.Expediente || ""}</div>
-    <div class="campo campo-actividades"><b>Actividades:</b> ${o.Actividades || ""}</div>
+  document.getElementById("cabeceraBadges").innerHTML = `
+    <span class="badge-semaforo ${o.CI === 'VERDADERO' ? 'si' : 'no'}" title="Certificado de Implante: ${o.CI === 'VERDADERO' ? 'OK' : 'Falta'}">C</span>
+    <span class="badge-semaforo ${o.Foja === 'VERDADERO' ? 'si' : 'no'}" title="Foja Quirúrgica: ${o.Foja === 'VERDADERO' ? 'OK' : 'Falta'}">F</span>
+    <span class="badge-semaforo ${o.Devolucion === 'VERDADERO' ? 'dev-pendiente' : 'dev-ok'}" title="Devolución: ${o.Devolucion === 'VERDADERO' ? 'Pendiente' : 'OK'}">D</span>
+    <button class="btn-odoo-link" onclick="abrirOrdenOdoo(event, '${o.Orden}')" title="Abrir en Odoo">${ICONS.link}</button>
   `;
 
-  // 3. Detalle de productos
-  const body=document.getElementById("detalleBody");
-  body.innerHTML="";
+  // 2. Grilla de datos: Fecha CX / Médico / Institución / Expte / Solicitante / Actividades
+  const campo = (icon, label, valor) => `
+    <div class="campo">
+      <span class="campo-icon">${icon}</span>
+      <span class="campo-texto"><b>${label}</b><span>${valor || "-"}</span></span>
+    </div>`;
+
+  document.getElementById("cabecera").innerHTML =
+    campo(ICONS.calendar, "Fecha CX", o.FechaCX) +
+    campo(ICONS.medico, "Médico", o.Medico) +
+    campo(ICONS.institucion, "Institución", o.Institucion) +
+    campo(ICONS.expediente, "Expte", o.Expediente) +
+    campo(ICONS.medico, "Solicitante", o.MedicoSolicitante) +
+    `<div class="campo campo-actividades"><span class="campo-icon">${ICONS.actividades}</span><span class="campo-texto"><b>Actividades</b><span>${o.Actividades || "-"}</span></span></div>`;
+
+  // 3. Sección Estado (CI / FOJA / DEV con punto de color)
+  document.getElementById("cabeceraEstadoDots").innerHTML = `
+    <span class="estado-dot-item">CI <span class="semaforo-dot ${o.CI === 'VERDADERO' ? 'si' : 'no'}"></span></span>
+    <span class="estado-dot-item">FOJA <span class="semaforo-dot ${o.Foja === 'VERDADERO' ? 'si' : 'no'}"></span></span>
+    <span class="estado-dot-item">DEV <span class="semaforo-dot ${o.Devolucion === 'VERDADERO' ? 'dev-pendiente' : 'dev-ok'}"></span></span>
+  `;
+
+  // 4. Secretaría (editable) + Recupero (automático, solo lectura)
+  const selSecretaria = document.getElementById("selectSecretariaDetalle");
+  selSecretaria.className = "select-secretaria select-quick";
+  selSecretaria.dataset.id = o.Orden;
+  selSecretaria.innerHTML = opcionesSecretariaHTML(o.Secretaria);
+  selSecretaria.onchange = function(){ manejarCambioSecretariaSelect(this, o.Orden); };
+
+  const chipRecupero = document.getElementById("chipRecuperoDetalle");
+  chipRecupero.className = `chip-recupero-detalle estado-${o.EstadoRecupero}`;
+  chipRecupero.textContent = labelEstadoRecupero(o.EstadoRecupero);
+  chipRecupero.title = "Se calcula solo según el coloreo del detalle de productos";
+
+  // 5. Detalle de productos (tarjetas, clickeables para Sticker/Devolver)
+  document.getElementById("cantidadProductosDetalle").textContent = o.detalles.length;
+  const cont = document.getElementById("detalleProductos");
+  cont.innerHTML = "";
 
   o.detalles.forEach(d=>{
     const clave = construirClaveProducto(o.Orden, d);
     const estadoActual = cargarHistorialProducto()[clave] || "";
-    body.innerHTML+=`
-      <tr class="fila-producto ${claseFilaProducto(estadoActual)}" data-clave-producto="${escapeHtmlAttr(clave)}" onclick="cicloEstadoProducto(event, this.dataset.claveProducto)" title="Click para marcar: Usado con Sticker → Para Devolver → Ninguno">
-        <td>${d.Remito||""}</td>
-        <td>${d.FechaR||""}</td>
-        <td>${d.Producto||""}</td>
-        <td>${d.Q||""}</td>
-        <td>${d.Lote||""}</td>
-        <td>${d.Serie||""}</td>
-        <td>${d.Vencimiento||""}</td>
-      </tr>
+    const div = document.createElement("div");
+    div.className = `fila-producto ${claseFilaProducto(estadoActual)}`;
+    div.dataset.claveProducto = clave;
+    div.title = "Click para marcar: Usado con Sticker → Para Devolver → Ninguno";
+    div.onclick = (e) => cicloEstadoProducto(e, clave);
+    div.innerHTML = `
+      <span class="producto-icon">${ICONS.producto}</span>
+      <div class="producto-info">
+        <div class="producto-nombre">${d.Producto || ""}</div>
+        <div class="producto-campos">
+          <span class="producto-campo"><b>Remito</b><span>${d.Remito || "-"}</span></span>
+          <span class="producto-campo"><b>Cantidad</b><span>${d.Q || "-"}</span></span>
+          <span class="producto-campo"><b>Lote</b><span>${d.Lote || "-"}</span></span>
+          <span class="producto-campo"><b>Serie</b><span>${d.Serie || "-"}</span></span>
+          <span class="producto-campo"><b>Vence</b><span>${d.Vencimiento || "-"}</span></span>
+        </div>
+      </div>
     `;
+    cont.appendChild(div);
   });
+
+  // 6. Botón de favorito
+  const esFav = esOrdenFavorita(o);
+  const btnFav = document.getElementById("btnMarcarFavorito");
+  btnFav.classList.toggle("es-favorito", esFav);
+  document.getElementById("btnMarcarFavoritoTexto").textContent = esFav ? "Quitar de favoritos" : "Marcar como favorito";
+  btnFav.onclick = () => toggleFavorito(o.Orden);
 }
 
 /* =========================
@@ -1620,24 +1791,28 @@ function borrarFiltros() {
 }
 
 function limpiarDetalleOrden() {
-    const cabTitulo = document.getElementById("cabeceraTitulo");
-    if (cabTitulo) cabTitulo.textContent = "Seleccioná una orden de la lista para ver el detalle";
+    const vacio = document.getElementById("detalleVacio");
+    const contenido = document.getElementById("detalleContenido");
+    if(vacio) vacio.classList.remove("hidden");
+    if(contenido) contenido.classList.add("hidden");
 
-    document.getElementById("cabecera").innerHTML = "";
-    document.getElementById("detalleBody").innerHTML = "";
+    const split = document.getElementById("split");
+    if(split) split.classList.remove("detalle-abierto");
 }
 
 function actualizarLabelsInformativos() {
     const cantidadOrdenes = filtradas.length;
     const cantidadProductos = filtradas.reduce((acc, o) => acc + (o.detalles?.length || 0), 0);
-    const cantidadFavoritas = filtradas.filter(o => o.Favorito === "FAVORITO" || o.Favorito === "SI").length;
-    const cantidadPedidas = filtradas.filter(o => o.EstadoRecupero && o.EstadoRecupero !== "no_pedido").length;
+    const cantidadFavoritas = filtradas.filter(o => esOrdenFavorita(o)).length;
+    const cantidadCompletas = filtradas.filter(o => o.EstadoRecupero === "completo").length;
     const cantidadSeleccionadas = seleccionados.size;
     document.getElementById("labelCantidadOrdenes").textContent = cantidadOrdenes;
     document.getElementById("labelCantidadProductos").textContent = cantidadProductos;
     document.getElementById("labelCantidadFavoritas").textContent = cantidadFavoritas;
-    document.getElementById("labelCantidadPedidas").textContent = `${cantidadPedidas}/${cantidadOrdenes}`;
+    document.getElementById("labelCantidadPedidas").textContent = `${cantidadCompletas}/${cantidadOrdenes}`;
     document.getElementById("labelCantidadSeleccionadas").textContent = cantidadSeleccionadas;
+    document.getElementById("labelCantidadSeleccionadasSub").textContent = cantidadSeleccionadas;
+    document.getElementById("labelCantidadOrdenesSub").textContent = cantidadOrdenes;
 }
 
 function toggleSeleccionarTodos(event) {

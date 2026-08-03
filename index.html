@@ -9,77 +9,100 @@
      para que abra sin la barra del navegador -->
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
-<meta name="theme-color" content="#020617">
+<meta name="theme-color" content="#0d9488">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Recupero TH">
 
-  
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 
-<!-- Firebase (solo Realtime Database) para sincronizar el estado de recupero en vivo entre dispositivos -->
+<!-- Firebase (solo Realtime Database) para sincronizar en vivo entre dispositivos -->
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
 <script src="firebase-config.js"></script>
 
-
-<link rel="stylesheet" href="style.css?v=3.0.0">
+<link rel="stylesheet" href="style.css?v=4.0.0">
 
 </head>
 <body>
 
 <!-- =========================
      TOPBAR
-     Reemplaza al sidebar fijo: título, carga de archivo, botones de
-     export y acceso a Filtros (que ahora se abren en un modal flotante).
 ========================= -->
 <header class="topbar">
+  <button id="btnMenu" class="btn-icon-topbar" title="Menú">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+  </button>
 
-  <div class="topbar-title">
-    Logística de Recupero <span class="topbar-title-sub">TH</span>
-  </div>
-
-  <!-- Aviso de sesión sin exportar (antes era un banner de ancho completo) -->
-  <div id="backupBanner" class="backup-inline hidden">
-    <span id="backupBannerInfo"></span>
-    <div class="backup-banner-botones">
-      <button onclick="restaurarBackup()" class="btn-restaurar">Restaurar sesión</button>
-      <button onclick="descartarBackup()" class="btn-descartar">Descartar</button>
+  <div class="topbar-logo">
+    <span class="logo-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+    </span>
+    <div class="topbar-title">
+      <span class="tt-line1">LOGÍSTICA</span>
+      <span class="tt-line2">DE RECUPERO TH</span>
     </div>
   </div>
 
-  <!-- DROPZONE compacta -->
-  <div id="dropzone" class="dropzone-compact">
-    <div class="dz-content">
-      <span class="icon">⬆</span>
-      <span class="dz-title">Cargar CSV / Excel</span>
-    </div>
-    <div id="fileStatus" class="file-status hidden">
-      <span id="fileName"></span>
-      <span class="check">✔</span>
-    </div>
-    <input type="file" id="fileInput">
+  <div class="topbar-search">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input id="buscadorGlobal" placeholder="Buscar orden, paciente, DNI, institución...">
   </div>
 
-  <div class="topbar-actions">
-    <span id="syncStatus" class="sync-status" title="Estado de la sincronización en vivo">⚪ Iniciando...</span>
-    <button id="btnPantallaCompleta" class="btn-topbar" title="Ver a pantalla completa (oculta la barra del navegador)">⛶ Pantalla completa</button>
-    <button id="btnAbrirFiltros" class="btn-topbar">☰ Filtros</button>
-    <button id="btnExportarWhatsApp" class="btn-exportar-whatsapp" title="Generar mensaje para WhatsApp">🟢 WhatsApp</button>
-    <button id="btnExportarPDF" class="btn-exportar-verde">Exportar PDF</button>
-    <button id="btnExportarPDFv2" class="btn-exportar-verde btn-exportar-v2">Exportar PDF v2.0</button>
-  </div>
+  <span id="syncStatus" class="sync-pill" title="Estado de la sincronización en vivo">⚪ Iniciando...</span>
 
+  <button id="btnExportarWhatsApp" class="btn-topbar-outline" title="Generar mensaje para WhatsApp">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.6 6.3A8.9 8.9 0 0 0 12 4a8.96 8.96 0 0 0-7.7 13.5L3 21l3.6-1.3A8.96 8.96 0 1 0 17.6 6.3zM12 19.3a7.3 7.3 0 0 1-3.7-1l-.3-.2-2.5.8.8-2.4-.2-.3A7.3 7.3 0 1 1 19.3 12 7.3 7.3 0 0 1 12 19.3zm4-5.5c-.2-.1-1.3-.6-1.5-.7s-.4-.1-.5.1-.6.7-.7.9-.3.2-.5.1a6 6 0 0 1-1.8-1.1 6.7 6.7 0 0 1-1.2-1.5c-.1-.2 0-.4.1-.5l.4-.4a1 1 0 0 0 .1-.5c0-.2-.5-1.2-.7-1.6s-.4-.4-.5-.4h-.4a.9.9 0 0 0-.6.3 2.7 2.7 0 0 0-.8 2 4.7 4.7 0 0 0 1 2.5 10.6 10.6 0 0 0 4.2 3.7c.6.2 1 .4 1.4.5a3.3 3.3 0 0 0 1.5.1 2.5 2.5 0 0 0 1.6-1.1 1.9 1.9 0 0 0 .1-1.1c-.1-.1-.2-.2-.4-.3z"/></svg>
+    WhatsApp
+  </button>
+  <button id="btnExportarPDF" class="btn-topbar-solid">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+    Exportar PDF
+  </button>
 </header>
 
 <!-- =========================
-     MODAL DE FILTROS
-     Antes vivían fijos en el sidebar; ahora flotan sobre la pantalla
-     y se abren/cierran con el botón "Filtros" de la topbar.
+     MENÚ (hamburguesa): todo lo que no entra en la topbar compacta
+========================= -->
+<div id="menuLateral" class="modal-overlay hidden">
+  <div class="panel-menu">
+    <div class="modal-filtros-header">
+      <h2>Menú</h2>
+      <button id="btnCerrarMenu" class="btn-cerrar-modal" title="Cerrar">✕</button>
+    </div>
+
+    <div id="backupBanner" class="backup-inline hidden">
+      <span id="backupBannerInfo"></span>
+      <div class="backup-banner-botones">
+        <button onclick="restaurarBackup()" class="btn-restaurar">Restaurar sesión</button>
+        <button onclick="descartarBackup()" class="btn-descartar">Descartar</button>
+      </div>
+    </div>
+
+    <div id="dropzone" class="dropzone-menu">
+      <div class="dz-content">
+        <span class="icon">⬆</span>
+        <span class="dz-title">Cargar CSV / Excel</span>
+      </div>
+      <div id="fileStatus" class="file-status hidden">
+        <span id="fileName"></span>
+        <span class="check">✔</span>
+      </div>
+      <input type="file" id="fileInput">
+    </div>
+
+    <button id="btnExportarPDFv2" class="btn-menu-item">Exportar PDF v2.0</button>
+    <button id="btnPantallaCompleta" class="btn-menu-item">⛶ Pantalla completa</button>
+    <button id="btnBorrarHistorial" class="btn-menu-item" title="Borra el historial de estados de recupero guardado en este navegador">Borrar Historial de Estados</button>
+  </div>
+</div>
+
+<!-- =========================
+     MODAL DE FILTROS (secundarios)
 ========================= -->
 <div id="modalFiltros" class="modal-overlay hidden">
   <div class="modal-filtros">
@@ -110,89 +133,155 @@
 
       <label>Vendedor</label>
       <select id="filtroVendedor"></select>
-      
+
       <label>Médico</label>
       <select id="filtroMedico"></select>
-      
+
       <label>Favoritos</label>
       <select id="filtroFavorito"></select>
 
       <button id="btnLimpiar" class="btn-secundario">Borrar Filtros</button>
-      <button id="btnBorrarHistorial" class="btn-secundario" title="Borra el historial de estados de recupero guardado en este navegador">Borrar Historial de Estados</button>
+      <button id="btnBorrarHistorial2" class="btn-secundario" title="Borra el historial de estados de recupero guardado en este navegador">Borrar Historial de Estados</button>
     </div>
   </div>
 </div>
 
 <div class="layout">
-
   <main class="contenido">
 
-    <section class="panel">
-      <div class="titulo header-flex">
-        <span>Órdenes</span>
-        <div class="stats-bar">
-          <span class="stat-chip">Órdenes: <b id="labelCantidadOrdenes">0</b></span>
-          <span class="stat-chip">Productos: <b id="labelCantidadProductos">0</b></span>
-          <span class="stat-chip">Favoritas: <b id="labelCantidadFavoritas">0</b></span>
-          <span class="stat-chip stat-recupero">Pedidas: <b id="labelCantidadPedidas">0</b></span>
-          <span class="stat-chip">Seleccionadas: <b id="labelCantidadSeleccionadas">0</b></span>
-        </div>
-        <div class="quick-filters">
-          <select id="filtroEstadoRecupero" class="select-quick"></select>
-          <select id="filtroSecretaria" class="select-quick"></select>
-          <select id="filtroFecha" class="select-quick"></select>
+    <!-- STAT CARDS -->
+    <div class="stat-cards">
+      <div class="stat-card">
+        <span class="stat-card-icon icon-blue">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        </span>
+        <div>
+          <div class="stat-card-num" id="labelCantidadOrdenes">0</div>
+          <div class="stat-card-label">Órdenes</div>
+          <div class="stat-card-sub">seleccionadas: <b id="labelCantidadSeleccionadasSub">0</b></div>
         </div>
       </div>
-       
-      <div class="tabla-header">
-        <input type="checkbox" id="selectAll" onclick="toggleSeleccionarTodos(event)">
-        <span onclick="sortBy('Orden')">Orden</span>
-        <span onclick="sortBy('Paciente')">Paciente</span>
-        <span onclick="sortBy('Dni')">DNI</span>
-        <span onclick="sortBy('ObraSocial')">Obra Social</span>
-        <span onclick="sortBy('FechaCX')">Fecha CX</span>
-        <span onclick="sortBy('Institucion')">Institución</span>
-        <span onclick="sortBy('Prioridad')">Prioridad</span>
-        <span class="col-semaforo" title="Certificado de Implante">CI</span>
-        <span class="col-semaforo" title="Foja Quirúrgica">FOJA</span>
-        <span class="col-semaforo" title="Devolución Pendiente">DEV</span>
-        <span onclick="sortBy('Secretaria')" title="Ordenar por Secretaría">Secretaría ⇅</span>
-        <span onclick="sortBy('EstadoRecupero')" title="Ordenar por Estado de Recupero">Recupero ⇅</span>
-        <span>Odoo</span>
+      <div class="stat-card">
+        <span class="stat-card-icon icon-green">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+        </span>
+        <div>
+          <div class="stat-card-num" id="labelCantidadProductos">0</div>
+          <div class="stat-card-label">Productos</div>
+          <div class="stat-card-sub">favoritos: <b id="labelCantidadFavoritas">0</b></div>
+        </div>
       </div>
+      <div class="stat-card">
+        <span class="stat-card-icon icon-purple">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        </span>
+        <div>
+          <div class="stat-card-num" id="labelCantidadPedidas">0/0</div>
+          <div class="stat-card-label">Pedidos</div>
+          <div class="stat-card-sub">completos</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-card-icon icon-amber">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        </span>
+        <div>
+          <div class="stat-card-num" id="labelCantidadSeleccionadas">0</div>
+          <div class="stat-card-label">Seleccionadas</div>
+          <div class="stat-card-sub">de <b id="labelCantidadOrdenesSub">0</b></div>
+        </div>
+      </div>
+    </div>
 
-      <div id="ordenesList"></div>
-    </section>
+    <!-- FILTROS RÁPIDOS -->
+    <div class="filtros-rapidos">
+      <div class="campo-filtro">
+        <label>Estado</label>
+        <select id="filtroEstadoRecupero"></select>
+      </div>
+      <div class="campo-filtro">
+        <label>Secretaría</label>
+        <select id="filtroSecretaria"></select>
+      </div>
+      <div class="campo-filtro">
+        <label>Fecha CX</label>
+        <select id="filtroFecha"></select>
+      </div>
+      <button id="btnFechaIcono" class="btn-icon-square" title="Filtrar por Fecha CX">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      </button>
+      <button id="btnAbrirFiltros" class="btn-filtros">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+        Filtros
+      </button>
+    </div>
 
-   <input id="buscadorGlobal" class="buscador" placeholder="Buscar por...">
+    <!-- LISTADO + DETALLE -->
+    <div class="split" id="split">
+      <section class="panel-lista" id="panelLista">
+        <div class="panel-lista-titulo">
+          <label class="check-todas">
+            <input type="checkbox" id="selectAll" onclick="toggleSeleccionarTodos(event)">
+            ÓRDENES (<span id="labelCantidadOrdenesTitulo">0</span>)
+          </label>
+        </div>
+        <div id="ordenesList" class="ordenes-list"></div>
+      </section>
 
-    <section class="panel panel-orden">
-      <div id="cabeceraTitulo" class="cabecera-titulo">Seleccioná una orden de la lista para ver el detalle</div>
-      <div id="cabecera" class="cabecera"></div>
-    </section>
+      <section class="panel-detalle" id="panelDetalle">
+        <div id="detalleVacio" class="detalle-vacio">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          <p>Seleccioná una orden de la lista para ver el detalle</p>
+        </div>
 
-    <section class="panel">
-      <div class="titulo">Detalle de productos</div>
+        <div id="detalleContenido" class="detalle-contenido hidden">
+          <button id="btnVolverListado" class="btn-volver">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+            Volver al listado
+          </button>
 
-      <table>
-        <thead>
-          <tr>
-            <th>Remito</th>
-            <th>Fecha R</th>
-            <th>Producto</th>
-            <th>Cant</th>
-            <th>Lote</th>
-            <th>Serie</th>
-            <th>Venc</th>
-          </tr>
-        </thead>
-        <tbody id="detalleBody"></tbody>
-      </table>
-    </section>
+          <div class="detalle-header">
+            <div>
+              <div id="cabeceraOrdenNum" class="detalle-orden-num"></div>
+              <div id="cabeceraPaciente" class="detalle-paciente"></div>
+              <div id="cabeceraDni" class="detalle-dni"></div>
+            </div>
+            <div id="cabeceraBadges" class="detalle-badges"></div>
+          </div>
+
+          <div id="cabecera" class="cabecera"></div>
+
+          <div class="detalle-estado-box">
+            <label>Estado</label>
+            <div id="cabeceraEstadoDots" class="estado-dots"></div>
+          </div>
+
+          <div class="detalle-secretaria-recupero">
+            <div class="campo-filtro">
+              <label>Secretaría</label>
+              <select id="selectSecretariaDetalle" class="select-quick"></select>
+            </div>
+            <div class="campo-filtro">
+              <label>Recupero</label>
+              <div id="chipRecuperoDetalle" class="chip-recupero-detalle"></div>
+            </div>
+          </div>
+
+          <div class="detalle-productos-titulo">DETALLE DE PRODUCTOS (<span id="cantidadProductosDetalle">0</span>)</div>
+          <div id="detalleProductos" class="detalle-productos"></div>
+
+          <button id="btnMarcarFavorito" class="btn-favorito">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <span id="btnMarcarFavoritoTexto">Marcar como favorito</span>
+          </button>
+        </div>
+      </section>
+    </div>
 
   </main>
-
 </div>
-  <script src="export.js"></script> <script src="app.js?v=3.1.0"></script>
+
+<script src="export.js"></script>
+<script src="app.js?v=4.0.0"></script>
 </body>
 </html>
