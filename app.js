@@ -542,6 +542,8 @@ function aplicarCambioEstado(ordenId, estadoKey, { publicarRemoto = false } = {}
     if (fila) {
       const esFav = fila.classList.contains("favorito");
       fila.className = `fila ${esFav ? 'favorito' : ''} recupero-${estadoKey}`;
+      const subt = fila.querySelector(".fila-subtitulo");
+      if (subt) subt.innerHTML = construirSubtituloFilaHTML(orden);
     }
 
     // Si el detalle de esta orden está abierto, mostrar() ya refresca el chip de Recupero ahí
@@ -1112,6 +1114,7 @@ function construirSubtituloFilaHTML(o){
     <span>DNI ${o.Dni || "-"}</span>
     ${o.ObraSocial ? `<span class="fila-sep">·</span><span>${o.ObraSocial}</span>` : ""}
     ${o.Prioridad ? `<span class="fila-sep">·</span><span>${o.Prioridad}</span>` : ""}
+    <span class="fila-sep">·</span><span class="fila-estado-texto estado-${o.EstadoRecupero}">${labelEstadoRecupero(o.EstadoRecupero)}</span>
     ${o.Secretaria ? `<span class="fila-sep">·</span><span>${o.Secretaria}</span>` : ""}
   `;
 }
@@ -1304,7 +1307,7 @@ function mostrar(o){
     <button class="btn-odoo-link" onclick="abrirOrdenOdoo(event, '${o.Orden}')" title="Abrir en Odoo">${ICONS.link}</button>
   `;
 
-  // 2. Subtítulo: Dni, Expte, Fecha CX, Médico, Solicitante (misma línea)
+  // 2. Subtítulo: Dni, Expte, Fecha CX, Médico, Solicitante, Hospital (misma línea)
   document.getElementById("cabeceraSubtitulo").innerHTML = `
     <span>DNI ${o.Dni || "-"}</span>
     <span class="detalle-sub-sep">·</span>
@@ -1315,16 +1318,10 @@ function mostrar(o){
     <span>${o.Medico || "-"}</span>
     <span class="detalle-sub-sep">·</span>
     <span>${o.MedicoSolicitante || "-"}</span>
+    <span class="detalle-sub-sep">·</span>
+    <span>${o.Institucion || "-"}</span>
   `;
 
-  // 3. Datos extra: solo Hospital, en su propia línea
-  const campo = (icon, label, valor) => `
-    <div class="campo">
-      <span class="campo-icon">${icon}</span>
-      <span class="campo-texto"><b>${label}</b><span>${valor || "-"}</span></span>
-    </div>`;
-
-  document.getElementById("cabecera").innerHTML = campo(ICONS.institucion, "Hospital", o.Institucion);
 
   // Actividades, aparte
   document.getElementById("cabeceraActividades").innerHTML = `
@@ -1366,6 +1363,7 @@ function mostrar(o){
         <div class="producto-nombre">${d.Producto || ""}</div>
         <div class="producto-campos">
           <span class="producto-campo"><b>Remito</b><span>${d.Remito || "-"}</span></span>
+          <span class="producto-campo"><b>Fecha Remito</b><span>${d.FechaR || "-"}</span></span>
           <span class="producto-campo"><b>Q</b><span>${d.Q || "-"}</span></span>
           <span class="producto-campo"><b>Lote</b><span>${d.Lote || "-"}</span></span>
           <span class="producto-campo"><b>Serie</b><span>${d.Serie || "-"}</span></span>

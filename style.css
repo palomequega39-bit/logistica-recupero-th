@@ -432,6 +432,10 @@ svg { width: 100%; height: 100%; }
   margin-bottom: 8px;
 }
 .fila-sep { color: #cbd5e1; }
+.fila-estado-texto { font-weight: 700; }
+.fila-estado-texto.estado-completo { color: var(--verde); }
+.fila-estado-texto.estado-faltan { color: var(--naranja); }
+.fila-estado-texto.estado-no_pedido { color: var(--texto-sec); }
 
 .fila-bottom-row {
   display: flex;
