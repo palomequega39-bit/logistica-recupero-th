@@ -1448,10 +1448,11 @@ function mostrar(o){
   `;
 
 
-  // Actividades, aparte
+  // Actividades, en una sola línea para ahorrar alto
   document.getElementById("cabeceraActividades").innerHTML = `
     <span class="campo-icon">${ICONS.actividades}</span>
-    <span class="campo-texto"><b>Actividades</b><span>${o.Actividades || "-"}</span></span>
+    <b>Actividades:</b>
+    <span class="actividades-valor">${o.Actividades || "-"}</span>
   `;
 
   // 4. Secretaría (editable) + Recupero (automático, solo lectura)
@@ -1936,17 +1937,16 @@ function exportarCSV(data, nombre="debug_preprocesado.csv"){
 
 document.addEventListener("keydown", e => {
    if (["INPUT", "TEXTAREA", "SELECT"].includes(e.target.tagName)) return;
+
     if (e.key === "ArrowDown") {
         e.preventDefault(); // Evita que la ventana se mueva
         indiceSeleccionado++;
         actualizarSeleccion();
-    }
-    if (e.key === "ArrowUp") {
+    } else if (e.key === "ArrowUp") {
         e.preventDefault(); // Evita que la ventana se mueva
         indiceSeleccionado--;
-    }
         actualizarSeleccion();
-        if (e.key === " " || e.code === "Space") {
+    } else if (e.key === " " || e.code === "Space") {
         e.preventDefault();
         toggleCheckOrdenSeleccionada();
     }
