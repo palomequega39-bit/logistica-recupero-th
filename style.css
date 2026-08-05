@@ -261,14 +261,10 @@ svg { width: 100%; height: 100%; }
 ========================= */
 /* =========================
    SEPARACIÓN DE VISTAS: mobile/tablet (tarjetas) vs desktop (tabla clásica)
-   Desde 1024px se considera "vista de ordenador".
+   Desde 1024px se considera "vista de ordenador". La regla real de
+   mostrar/ocultar está al FINAL del archivo (ver nota ahí) para evitar
+   que cualquier otra regla con la misma especificidad se la coma.
 ========================= */
-.solo-desktop { display: none; }
-
-@media (min-width: 1024px) {
-  .solo-mobile { display: none; }
-  .solo-desktop { display: block; }
-}
 
 .contenido { max-width: 1400px; margin: 0 auto; padding: 16px; display: flex; flex-direction: column; gap: 14px; }
 
@@ -795,7 +791,7 @@ svg { width: 100%; height: 100%; }
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.2px;
-  padding: 9px 10px;
+  padding: 7px 10px;
   border-bottom: 1px solid var(--borde);
   cursor: pointer;
   white-space: nowrap;
@@ -810,7 +806,7 @@ svg { width: 100%; height: 100%; }
 .tabla-desktop-ordenes thead th.th-dot:hover { background: #f8fafc; }
 
 .tabla-desktop-ordenes tbody td {
-  padding: 7px 10px;
+  padding: 3.5px 10px;
   border-bottom: 1px solid #f1f5f9;
   white-space: nowrap;
   overflow: hidden;
@@ -872,6 +868,21 @@ svg { width: 100%; height: 100%; }
 @media (min-width: 1024px) {
   .split { display: block; }
   .panel-detalle { margin-top: 14px; }
+}
+
+/* =========================================================
+   MOSTRAR/OCULTAR MOBILE vs DESKTOP — con !important a propósito.
+   Esto YA nos mordió dos veces (con .split y con .detalle-productos):
+   cualquier otra regla en el archivo que use una sola clase como
+   selector tiene la MISMA especificidad que .solo-mobile/.solo-desktop,
+   y si aparece más abajo en el archivo le gana en la cascada aunque
+   esté "obviamente" mal. El !important corta el problema de raíz para
+   siempre, en vez de perseguir cada caso nuevo que aparezca.
+========================================================= */
+.solo-desktop { display: none !important; }
+@media (min-width: 1024px) {
+  .solo-mobile { display: none !important; }
+  .solo-desktop { display: block !important; }
 }
 
 /* =========================================================
@@ -945,3 +956,16 @@ svg { width: 100%; height: 100%; }
 
 /* El encabezado del detalle de la orden también a todo el ancho */
 .tabla-desktop-wrapper, .panel-detalle, .detalle-contenido { width: 100%; box-sizing: border-box; }
+
+/* Select de Secretaría dentro de la celda de la tabla desktop */
+.select-secretaria-tabla {
+  width: 100%;
+  padding: 0px 3px;
+  border: 1px solid var(--borde);
+  border-radius: 6px;
+  font-size: 10.5px;
+  line-height: 1.2;
+  background: white;
+  color: var(--texto);
+  max-width: 100%;
+}

@@ -145,22 +145,19 @@ function aplicarCambioSecretaria(ordenId, nombre, { publicarRemoto = false } = {
 
   if(orden){
     orden.Secretaria = nombre || "";
-    const sel = document.querySelector(`.select-secretaria[data-id="${CSS.escape(ordenId)}"]`);
-    if(sel) sel.value = orden.Secretaria;
 
-    // La Secretaría ahora vive en la cabecera de color de la tarjeta: refrescarla ahí
+    // Puede haber más de un select de Secretaría en pantalla para esta
+    // orden (la fila de la tabla desktop, y el del detalle si está abierto)
+    document.querySelectorAll(`.select-secretaria[data-id="${CSS.escape(ordenId)}"]`).forEach(sel => {
+      sel.value = orden.Secretaria;
+    });
+
+    // La Secretaría también vive en la cabecera de color de la tarjeta mobile: refrescarla ahí
     const fila = document.querySelector(`.fila[data-orden="${CSS.escape(ordenId)}"]`);
     const chip = fila ? fila.querySelector(".fila-cabecera .fila-secretaria-chip") : null;
     if(chip){
       chip.textContent = orden.Secretaria || "Sin asignar";
       chip.classList.toggle("sin-asignar", !orden.Secretaria);
-    }
-
-    // Fila de tabla desktop: la columna Secretaría es la anteúltima
-    const filaTabla = document.querySelector(`tr[data-orden-tabla="${CSS.escape(ordenId)}"]`);
-    if(filaTabla){
-      const celdas = filaTabla.querySelectorAll("td");
-      if(celdas.length >= 2) celdas[celdas.length - 2].textContent = orden.Secretaria || "Sin asignar";
     }
   }
 
@@ -1294,7 +1291,7 @@ function renderLista(){
       <td class="celda-dot"><span class="semaforo-dot ${o.Foja === 'VERDADERO' ? 'si' : 'no'}"></span></td>
       <td class="celda-dot"><span class="semaforo-dot ${o.Devolucion === 'VERDADERO' ? 'dev-pendiente' : 'dev-ok'}"></span></td>
       <td>${o.Prioridad || ""}</td>
-      <td>${o.Secretaria || "Sin asignar"}</td>
+      <td onclick="event.stopPropagation()"><select class="select-secretaria select-secretaria-tabla" data-id="${o.Orden}" onchange="manejarCambioSecretariaSelect(this, this.dataset.id)">${opcionesSecretariaHTML(o.Secretaria)}</select></td>
       <td class="celda-estado estado-${o.EstadoRecupero}">${labelEstadoRecupero(o.EstadoRecupero)}</td>
     `;
 
