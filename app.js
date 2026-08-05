@@ -755,6 +755,7 @@ document.getElementById("btnTogglePanelDesktop").onclick = () => {
   const oculto = panel.classList.toggle("hidden");
   document.getElementById("iconoOjoAbiertoDesktop").classList.toggle("hidden", oculto);
   document.getElementById("iconoOjoCerradoDesktop").classList.toggle("hidden", !oculto);
+  document.querySelector(".barra-desktop-ordenes").classList.toggle("compacta", oculto);
 };
 
 /* Los filtros rápidos (Estado/Secretaría/Fecha) existen dos veces —
