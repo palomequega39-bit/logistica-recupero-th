@@ -155,6 +155,13 @@ function aplicarCambioSecretaria(ordenId, nombre, { publicarRemoto = false } = {
       chip.textContent = orden.Secretaria || "Sin asignar";
       chip.classList.toggle("sin-asignar", !orden.Secretaria);
     }
+
+    // Fila de tabla desktop: la columna Secretaría es la anteúltima
+    const filaTabla = document.querySelector(`tr[data-orden-tabla="${CSS.escape(ordenId)}"]`);
+    if(filaTabla){
+      const celdas = filaTabla.querySelectorAll("td");
+      if(celdas.length >= 2) celdas[celdas.length - 2].textContent = orden.Secretaria || "Sin asignar";
+    }
   }
 
   if(publicarRemoto) publicarSecretariaRemota(ordenId, nombre);
@@ -244,6 +251,10 @@ function aplicarCambioFavorito(ordenId, esFav, { publicarRemoto = false } = {}){
     // Repintar la card de la lista si está visible
     const fila = document.querySelector(`.fila[data-orden="${CSS.escape(ordenId)}"]`);
     if(fila) fila.classList.toggle("favorito", esFav);
+
+    // Repintar el borde dorado de la fila de tabla desktop
+    const filaTabla = document.querySelector(`tr[data-orden-tabla="${CSS.escape(ordenId)}"]`);
+    if(filaTabla) filaTabla.classList.toggle("favorito", esFav);
 
     // Refrescar el detalle si es la orden abierta
     if(indiceSeleccionado >= 0 && filtradas[indiceSeleccionado] && filtradas[indiceSeleccionado].Orden === ordenId){
@@ -354,15 +365,26 @@ function buscarFilaProductoPorClave(clave){
   return Array.from(document.querySelectorAll(".fila-producto")).find(tr => tr.dataset.claveProducto === clave) || null;
 }
 
+function buscarFilaTablaProductoPorClave(clave){
+  return Array.from(document.querySelectorAll("#detalleProductosTablaDesktop tr")).find(tr => tr.dataset.claveProductoTabla === clave) || null;
+}
+
 /** Aplica un estado a una fila de producto (DOM + historial local), sin importar si vino de un click local o de otro dispositivo. */
 function aplicarCambioProducto(clave, estado, { publicarRemoto = false } = {}){
   actualizarHistorialProducto(clave, estado);
 
+  const clase = claseFilaProducto(estado);
+
   const fila = buscarFilaProductoPorClave(clave);
   if(fila){
     fila.classList.remove("fila-producto-sticker", "fila-producto-devolver");
-    const clase = claseFilaProducto(estado);
     if(clase) fila.classList.add(clase);
+  }
+
+  const filaTabla = buscarFilaTablaProductoPorClave(clave);
+  if(filaTabla){
+    filaTabla.classList.remove("fila-producto-sticker", "fila-producto-devolver");
+    if(clase) filaTabla.classList.add(clase);
   }
 
   if(publicarRemoto) publicarProductoEstadoRemoto(clave, estado);
@@ -540,12 +562,24 @@ function aplicarCambioEstado(ordenId, estadoKey, { publicarRemoto = false } = {}
   if (orden) {
     orden.EstadoRecupero = estadoKey;
 
-    const checkbox = document.querySelector(`.check-orden[data-id="${CSS.escape(ordenId)}"]`);
-    const fila = checkbox ? checkbox.closest(".fila") : null;
+    // Tarjeta mobile: repintar la cabecera de color
+    const fila = document.querySelector(`.fila[data-orden="${CSS.escape(ordenId)}"]`);
     if (fila) {
       const cabeceraFila = fila.querySelector(".fila-cabecera");
       if (cabeceraFila) {
         cabeceraFila.className = `fila-cabecera estado-bg-${estadoKey}`;
+      }
+    }
+
+    // Fila de tabla desktop: repintar clase + celda de Estado
+    const filaTabla = document.querySelector(`tr[data-orden-tabla="${CSS.escape(ordenId)}"]`);
+    if (filaTabla) {
+      const esFavTabla = filaTabla.classList.contains("favorito");
+      filaTabla.className = `recupero-${estadoKey} ${esFavTabla ? 'favorito' : ''}`;
+      const celdaEstado = filaTabla.querySelector(".celda-estado");
+      if (celdaEstado) {
+        celdaEstado.className = `celda-estado estado-${estadoKey}`;
+        celdaEstado.textContent = labelEstadoRecupero(estadoKey);
       }
     }
 
@@ -706,6 +740,7 @@ function cerrarModalFiltros(){
 
 document.getElementById("btnAbrirFiltros").onclick = abrirModalFiltros;
 document.getElementById("btnCerrarFiltros").onclick = cerrarModalFiltros;
+document.getElementById("btnAbrirFiltrosDesktop").onclick = abrirModalFiltros;
 
 /* =========================
    OCULTAR / MOSTRAR KPIs Y FILTROS
@@ -717,6 +752,27 @@ document.getElementById("btnTogglePanel").onclick = () => {
   document.getElementById("iconoOjoCerrado").classList.toggle("hidden", !oculto);
   document.getElementById("textoTogglePanel").textContent = oculto ? "Mostrar KPIs y filtros" : "Ocultar KPIs y filtros";
 };
+
+document.getElementById("btnTogglePanelDesktop").onclick = () => {
+  const panel = document.getElementById("panelKpisFiltrosDesktop");
+  const oculto = panel.classList.toggle("hidden");
+  document.getElementById("iconoOjoAbiertoDesktop").classList.toggle("hidden", oculto);
+  document.getElementById("iconoOjoCerradoDesktop").classList.toggle("hidden", !oculto);
+};
+
+/* Los filtros rápidos (Estado/Secretaría/Fecha) existen dos veces —
+   versión mobile y versión desktop — y tienen que mantenerse iguales
+   sea cual sea la que se use. */
+function sincronizarParFiltro(idMobile, idDesktop){
+  const elMobile = document.getElementById(idMobile);
+  const elDesktop = document.getElementById(idDesktop);
+  if(!elMobile || !elDesktop) return;
+  elMobile.addEventListener("change", () => { elDesktop.value = elMobile.value; aplicarFiltros(); });
+  elDesktop.addEventListener("change", () => { elMobile.value = elDesktop.value; aplicarFiltros(); });
+}
+sincronizarParFiltro("filtroEstadoRecupero", "filtroEstadoRecuperoDesktop");
+sincronizarParFiltro("filtroSecretaria", "filtroSecretariaDesktop");
+sincronizarParFiltro("filtroFecha", "filtroFechaDesktop");
 
 /* =========================
    MENÚ (hamburguesa)
@@ -991,19 +1047,28 @@ function fill(id,campo){
 }
 
 function fillEstadoRecupero(){
-  const sel = document.getElementById("filtroEstadoRecupero");
-  sel.innerHTML = `<option value="">Estado: Todos</option>` +
+  const html = `<option value="">Estado: Todos</option>` +
     ESTADOS_RECUPERO.map(e => `<option value="${e.key}">${e.label}</option>`).join("");
+  const sel = document.getElementById("filtroEstadoRecupero");
+  sel.innerHTML = html;
+  const selD = document.getElementById("filtroEstadoRecuperoDesktop");
+  if(selD) selD.innerHTML = html;
 }
 
 function fillSecretariaFiltro(){
   const sel = document.getElementById("filtroSecretaria");
+  const selD = document.getElementById("filtroSecretariaDesktop");
   if(!sel) return;
-  const actual = sel.value;
-  sel.innerHTML = `<option value="">Secretaría: Todas</option>` +
+  const actual = sel.value || (selD ? selD.value : "");
+  const html = `<option value="">Secretaría: Todas</option>` +
     `<option value="__sin_asignar__">Sin Asignar</option>` +
     listaSecretarias.map(s => `<option value="${s}">${s}</option>`).join("");
-  if(actual === "__sin_asignar__" || listaSecretarias.includes(actual)) sel.value = actual;
+  sel.innerHTML = html;
+  if(selD) selD.innerHTML = html;
+  if(actual === "__sin_asignar__" || listaSecretarias.includes(actual)){
+    sel.value = actual;
+    if(selD) selD.value = actual;
+  }
 }
 
 function fillBool(id){
@@ -1015,12 +1080,15 @@ function fillBool(id){
 }
 
 function fillFecha(){
-  document.getElementById("filtroFecha").innerHTML=`
+  const html = `
     <option value="">Fecha CX: Todas</option>
     <option value="realizadas">Realizadas</option>
     <option value="hoy">Hoy</option>
     <option value="pendientes">Sin realizar</option>
   `;
+  document.getElementById("filtroFecha").innerHTML = html;
+  const selD = document.getElementById("filtroFechaDesktop");
+  if(selD) selD.innerHTML = html;
 }
 
 /* =========================
@@ -1198,6 +1266,46 @@ function renderLista(){
     };
 
     cont.appendChild(fila);
+  });
+
+  // --- Tabla desktop (misma data, formato clásico) ---
+  const contTabla = document.getElementById("ordenesTablaDesktop");
+  contTabla.innerHTML = "";
+
+  filtradas.forEach((o, i) => {
+    const esFav = esOrdenFavorita(o);
+    const tr = document.createElement("tr");
+    tr.className = `recupero-${o.EstadoRecupero} ${esFav ? 'favorito' : ''}`;
+    tr.dataset.ordenTabla = o.Orden;
+
+    const estaChequeado = seleccionados.has(o.Orden) ? "checked" : "";
+
+    tr.innerHTML = `
+      <td class="celda-check"><input type="checkbox" class="check-orden" data-id="${o.Orden}" ${estaChequeado} onclick="handleCheck(event, '${o.Orden}')"></td>
+      <td>${o.Orden}</td>
+      <td>${o.Apellido || ""}</td>
+      <td>${o.Nombre || ""}</td>
+      <td>${o.Dni || "-"}</td>
+      <td>${o.ObraSocial || ""}</td>
+      <td>${o.Expediente || "-"}</td>
+      <td>${o.FechaCX || ""}</td>
+      <td>${o.Institucion || ""}</td>
+      <td class="celda-dot"><span class="semaforo-dot ${o.CI === 'VERDADERO' ? 'si' : 'no'}"></span></td>
+      <td class="celda-dot"><span class="semaforo-dot ${o.Foja === 'VERDADERO' ? 'si' : 'no'}"></span></td>
+      <td class="celda-dot"><span class="semaforo-dot ${o.Devolucion === 'VERDADERO' ? 'dev-pendiente' : 'dev-ok'}"></span></td>
+      <td>${o.Prioridad || ""}</td>
+      <td>${o.Secretaria || "Sin asignar"}</td>
+      <td class="celda-estado estado-${o.EstadoRecupero}">${labelEstadoRecupero(o.EstadoRecupero)}</td>
+    `;
+
+    tr.onclick = (e) => {
+      if (e.target.type !== 'checkbox') {
+        indiceSeleccionado = i;
+        actualizarSeleccion();
+      }
+    };
+
+    contTabla.appendChild(tr);
   });
 }
 /** Saca lo que está entre corchetes del nombre del producto (ej. "[H749...] Synergy Shield" -> "Synergy Shield"). */
@@ -1392,6 +1500,30 @@ function mostrar(o){
     `;
     cont.appendChild(div);
   });
+
+  // --- Tabla desktop de productos (misma data, formato clásico) ---
+  const contTabla = document.getElementById("detalleProductosTablaDesktop");
+  contTabla.innerHTML = "";
+
+  o.detalles.forEach((d, i)=>{
+    const clave = clavesProductos[i];
+    const estadoActual = historialProducto[clave] || "";
+    const tr = document.createElement("tr");
+    tr.className = claseFilaProducto(estadoActual);
+    tr.dataset.claveProductoTabla = clave;
+    tr.title = "Click para marcar: Usado con Sticker → Para Devolver → Ninguno";
+    tr.onclick = (e) => cicloEstadoProducto(e, clave);
+    tr.innerHTML = `
+      <td>${formatearRemitoCorto(d.Remito)}</td>
+      <td>${d.FechaR || "-"}</td>
+      <td>${quitarCorchetes(d.Producto)}</td>
+      <td>${d.Q || "-"}</td>
+      <td>${d.Lote || "-"}</td>
+      <td>${d.Serie || "-"}</td>
+      <td>${d.Vencimiento || "-"}</td>
+    `;
+    contTabla.appendChild(tr);
+  });
 }
 
 /* =========================
@@ -1472,19 +1604,24 @@ function sortBy(field){
     ordenAsc = true;
   }
 
-  document.querySelectorAll(".tabla-header span").forEach(s=>{
+  document.querySelectorAll(".tabla-desktop-ordenes thead th").forEach(s=>{
     s.classList.remove("active","asc","desc");
   });
 
-  document.querySelectorAll(".tabla-header span").forEach(h=>{
+  document.querySelectorAll(".tabla-desktop-ordenes thead th").forEach(h=>{
     const onclick = h.getAttribute("onclick") || "";
-    if(onclick.includes(field)){
+    if(onclick.includes(`'${field}'`)){
       h.classList.add("active");
       h.classList.add(ordenAsc ? "asc" : "desc");
     }
   });
 
   renderLista();
+}
+
+/** La tabla desktop usa el mismo estado de orden que la lista de tarjetas. */
+function sortByDesktop(field){
+  sortBy(field);
 }
 
 /* =========================
@@ -1868,18 +2005,32 @@ function actualizarLabelsInformativos() {
     document.getElementById("labelCantidadSeleccionadas").textContent = cantidadSeleccionadas;
     document.getElementById("labelCantidadSeleccionadasSub").textContent = cantidadSeleccionadas;
     document.getElementById("labelCantidadOrdenesSub").textContent = cantidadOrdenes;
+
+    // Barra desktop
+    document.getElementById("labelCantidadOrdenesTituloDesktop").textContent = cantidadOrdenes;
+    document.getElementById("kpiOrdenesDesktop").textContent = cantidadOrdenes;
+    document.getElementById("kpiProductosDesktop").textContent = cantidadProductos;
+    document.getElementById("kpiPedidosDesktop").textContent = `${cantidadCompletas}/${cantidadOrdenes}`;
+    document.getElementById("kpiSeleccionadasDesktop").textContent = cantidadSeleccionadas;
 }
 
 function toggleSeleccionarTodos(event) {
     const isChecked = event.target.checked;
     const checkboxes = document.querySelectorAll(".check-orden");
-    
+
     seleccionados.clear();
     checkboxes.forEach(cb => {
         cb.checked = isChecked;
         const ordenId = cb.getAttribute("data-id");
         if (isChecked) seleccionados.add(ordenId);
     });
+
+    // Los dos checkboxes maestros (mobile y desktop) tienen que quedar iguales
+    const selAll = document.getElementById("selectAll");
+    const selAllDesktop = document.getElementById("selectAllDesktop");
+    if (selAll) selAll.checked = isChecked;
+    if (selAllDesktop) selAllDesktop.checked = isChecked;
+
    actualizarLabelsInformativos();
 }
 
@@ -1889,7 +2040,10 @@ function handleCheck(event, ordenId) {
         seleccionados.add(ordenId);
     } else {
         seleccionados.delete(ordenId);
-        document.getElementById("selectAll").checked = false;
+        const selAll = document.getElementById("selectAll");
+        const selAllDesktop = document.getElementById("selectAllDesktop");
+        if (selAll) selAll.checked = false;
+        if (selAllDesktop) selAllDesktop.checked = false;
     }
    actualizarLabelsInformativos();
 }

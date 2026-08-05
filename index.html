@@ -25,7 +25,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
 <script src="firebase-config.js"></script>
 
-<link rel="stylesheet" href="style.css?v=4.0.6">
+<link rel="stylesheet" href="style.css?v=4.1.0">
 
 </head>
 <body>
@@ -149,87 +149,155 @@
 <div class="layout">
   <main class="contenido">
 
-    <!-- Botón para ocultar/mostrar KPIs y filtros -->
-    <div class="toggle-panel-bar">
-      <button id="btnTogglePanel" class="btn-toggle-panel" title="Mostrar/ocultar KPIs y filtros">
-        <svg id="iconoOjoAbierto" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-        <svg id="iconoOjoCerrado" class="hidden" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-        <span id="textoTogglePanel">Ocultar KPIs y filtros</span>
-      </button>
+    <!-- =========================
+         VISTA MOBILE/TABLET (tarjetas) — visible hasta 1024px
+    ========================== -->
+    <div class="solo-mobile">
+      <!-- Botón para ocultar/mostrar KPIs y filtros -->
+      <div class="toggle-panel-bar">
+        <button id="btnTogglePanel" class="btn-toggle-panel" title="Mostrar/ocultar KPIs y filtros">
+          <svg id="iconoOjoAbierto" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          <svg id="iconoOjoCerrado" class="hidden" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+          <span id="textoTogglePanel">Ocultar KPIs y filtros</span>
+        </button>
+      </div>
+
+      <div id="panelKpisFiltros">
+        <!-- STAT CARDS -->
+        <div class="stat-cards">
+        <div class="stat-card">
+          <span class="stat-card-icon icon-blue">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          </span>
+          <div>
+            <div class="stat-card-num" id="labelCantidadOrdenes">0</div>
+            <div class="stat-card-label">Órdenes</div>
+            <div class="stat-card-sub">seleccionadas: <b id="labelCantidadSeleccionadasSub">0</b></div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <span class="stat-card-icon icon-green">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+          </span>
+          <div>
+            <div class="stat-card-num" id="labelCantidadProductos">0</div>
+            <div class="stat-card-label">Productos</div>
+            <div class="stat-card-sub">favoritos: <b id="labelCantidadFavoritas">0</b></div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <span class="stat-card-icon icon-purple">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          </span>
+          <div>
+            <div class="stat-card-num" id="labelCantidadPedidas">0/0</div>
+            <div class="stat-card-label">Pedidos</div>
+            <div class="stat-card-sub">completos</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <span class="stat-card-icon icon-amber">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          </span>
+          <div>
+            <div class="stat-card-num" id="labelCantidadSeleccionadas">0</div>
+            <div class="stat-card-label">Seleccionadas</div>
+            <div class="stat-card-sub">de <b id="labelCantidadOrdenesSub">0</b></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- FILTROS RÁPIDOS -->
+      <div class="filtros-rapidos">
+        <div class="campo-filtro">
+          <label>Estado</label>
+          <select id="filtroEstadoRecupero"></select>
+        </div>
+        <div class="campo-filtro">
+          <label>Secretaría</label>
+          <select id="filtroSecretaria"></select>
+        </div>
+        <div class="campo-filtro">
+          <label>Fecha CX</label>
+          <select id="filtroFecha"></select>
+        </div>
+        <button id="btnFechaIcono" class="btn-icon-square" title="Filtrar por Fecha CX">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        </button>
+        <button id="btnAbrirFiltros" class="btn-filtros">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+          Filtros
+        </button>
+      </div>
+      </div>
     </div>
 
-    <div id="panelKpisFiltros">
-      <!-- STAT CARDS -->
-      <div class="stat-cards">
-      <div class="stat-card">
-        <span class="stat-card-icon icon-blue">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-        </span>
-        <div>
-          <div class="stat-card-num" id="labelCantidadOrdenes">0</div>
-          <div class="stat-card-label">Órdenes</div>
-          <div class="stat-card-sub">seleccionadas: <b id="labelCantidadSeleccionadasSub">0</b></div>
+    <!-- =========================
+         VISTA DESKTOP (tabla clásica) — visible desde 1024px
+    ========================== -->
+    <div class="solo-desktop">
+      <div class="barra-desktop-ordenes">
+        <span class="barra-desktop-titulo">Órdenes (<span id="labelCantidadOrdenesTituloDesktop">0</span>)</span>
+
+        <div id="panelKpisFiltrosDesktop" class="barra-desktop-kpis-filtros">
+          <div class="barra-desktop-kpis">
+            <span class="kpi-mini" title="Órdenes / seleccionadas">📄 <b id="kpiOrdenesDesktop">0</b> <span>Órdenes</span></span>
+            <span class="kpi-mini" title="Productos / favoritos">📦 <b id="kpiProductosDesktop">0</b> <span>Productos</span></span>
+            <span class="kpi-mini" title="Pedidos completos">✅ <b id="kpiPedidosDesktop">0/0</b> <span>Completos</span></span>
+            <span class="kpi-mini" title="Seleccionadas">⭐ <b id="kpiSeleccionadasDesktop">0</b> <span>Seleccionadas</span></span>
+          </div>
+
+          <div class="barra-desktop-filtros">
+            <select id="filtroEstadoRecuperoDesktop" class="select-mini"></select>
+            <select id="filtroSecretariaDesktop" class="select-mini"></select>
+            <select id="filtroFechaDesktop" class="select-mini"></select>
+            <button id="btnAbrirFiltrosDesktop" class="btn-filtros-mini">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+              Filtros
+            </button>
+          </div>
         </div>
+
+        <button id="btnTogglePanelDesktop" class="btn-icon-square" title="Mostrar/ocultar KPIs y filtros">
+          <svg id="iconoOjoAbiertoDesktop" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          <svg id="iconoOjoCerradoDesktop" class="hidden" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+        </button>
       </div>
-      <div class="stat-card">
-        <span class="stat-card-icon icon-green">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
-        </span>
-        <div>
-          <div class="stat-card-num" id="labelCantidadProductos">0</div>
-          <div class="stat-card-label">Productos</div>
-          <div class="stat-card-sub">favoritos: <b id="labelCantidadFavoritas">0</b></div>
-        </div>
-      </div>
-      <div class="stat-card">
-        <span class="stat-card-icon icon-purple">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-        </span>
-        <div>
-          <div class="stat-card-num" id="labelCantidadPedidas">0/0</div>
-          <div class="stat-card-label">Pedidos</div>
-          <div class="stat-card-sub">completos</div>
-        </div>
-      </div>
-      <div class="stat-card">
-        <span class="stat-card-icon icon-amber">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-        </span>
-        <div>
-          <div class="stat-card-num" id="labelCantidadSeleccionadas">0</div>
-          <div class="stat-card-label">Seleccionadas</div>
-          <div class="stat-card-sub">de <b id="labelCantidadOrdenesSub">0</b></div>
-        </div>
+
+      <div id="panelTablaDesktop" class="tabla-desktop-wrapper">
+        <table class="tabla-desktop-ordenes">
+          <thead>
+            <tr>
+              <th class="th-check"><input type="checkbox" id="selectAllDesktop" onclick="toggleSeleccionarTodos(event)"></th>
+              <th onclick="sortByDesktop('Orden')">N° Orden</th>
+              <th onclick="sortByDesktop('Apellido')">Apellidos</th>
+              <th onclick="sortByDesktop('Nombre')">Nombres</th>
+              <th onclick="sortByDesktop('Dni')">DNI</th>
+              <th onclick="sortByDesktop('ObraSocial')">Obra Social</th>
+              <th onclick="sortByDesktop('Expediente')">Expte</th>
+              <th onclick="sortByDesktop('FechaCX')">Fecha CX</th>
+              <th onclick="sortByDesktop('Institucion')">Institución</th>
+              <th class="th-dot">C</th>
+              <th class="th-dot">F</th>
+              <th class="th-dot">D</th>
+              <th onclick="sortByDesktop('Prioridad')">Prioridad</th>
+              <th onclick="sortByDesktop('Secretaria')">Secretaría</th>
+              <th onclick="sortByDesktop('EstadoRecupero')">Estado Recupero</th>
+            </tr>
+          </thead>
+          <tbody id="ordenesTablaDesktop"></tbody>
+        </table>
       </div>
     </div>
 
-    <!-- FILTROS RÁPIDOS -->
-    <div class="filtros-rapidos">
-      <div class="campo-filtro">
-        <label>Estado</label>
-        <select id="filtroEstadoRecupero"></select>
-      </div>
-      <div class="campo-filtro">
-        <label>Secretaría</label>
-        <select id="filtroSecretaria"></select>
-      </div>
-      <div class="campo-filtro">
-        <label>Fecha CX</label>
-        <select id="filtroFecha"></select>
-      </div>
-      <button id="btnFechaIcono" class="btn-icon-square" title="Filtrar por Fecha CX">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-      </button>
-      <button id="btnAbrirFiltros" class="btn-filtros">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-        Filtros
-      </button>
-    </div>
-    </div>
-
-    <!-- LISTADO + DETALLE -->
+    <!-- LISTADO + DETALLE
+         La tabla desktop y la lista de tarjetas mobile son alternativas
+         (una de las dos siempre oculta según el ancho de pantalla) dentro
+         del mismo grid. Así en desktop todo queda apilado verticalmente
+         (tabla arriba, detalle abajo) y en mobile/tablet lista+detalle
+         quedan lado a lado como ya funcionaba. -->
     <div class="split" id="split">
-      <section class="panel-lista" id="panelLista">
+      <section class="panel-lista solo-mobile" id="panelLista">
         <div class="panel-lista-titulo">
           <label class="check-todas">
             <input type="checkbox" id="selectAll" onclick="toggleSeleccionarTodos(event)">
@@ -276,7 +344,24 @@
           </div>
 
           <div class="detalle-productos-titulo">DETALLE DE PRODUCTOS (<span id="cantidadProductosDetalle">0</span>)</div>
-          <div id="detalleProductos" class="detalle-productos"></div>
+          <div id="detalleProductos" class="detalle-productos solo-mobile"></div>
+
+          <div class="solo-desktop tabla-desktop-wrapper tabla-desktop-productos-wrapper">
+            <table class="tabla-desktop-productos">
+              <thead>
+                <tr>
+                  <th>Remito</th>
+                  <th>Fecha Remito</th>
+                  <th>Producto</th>
+                  <th>Q</th>
+                  <th>Lote</th>
+                  <th>Serie</th>
+                  <th>Vto</th>
+                </tr>
+              </thead>
+              <tbody id="detalleProductosTablaDesktop"></tbody>
+            </table>
+          </div>
         </div>
       </section>
     </div>
@@ -285,6 +370,6 @@
 </div>
 
 <script src="export.js"></script>
-<script src="app.js?v=4.0.6"></script>
+<script src="app.js?v=4.1.0"></script>
 </body>
 </html>

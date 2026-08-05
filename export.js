@@ -39,7 +39,7 @@ async function exportarDetallePDF(ordenes, seleccionados) {
     const { jsPDF } = window.jspdf;
     
     if (seleccionados.size === 0) {
-        Swal.fire("Atención", "Por favor, selecciona al menos una orden.", "warning");
+        alert("Atención: por favor, selecciona al menos una orden.");
         return;
     }
 
@@ -245,7 +245,7 @@ async function exportarDetallePDFv2(ordenes, seleccionados) {
     const { jsPDF } = window.jspdf;
 
     if (seleccionados.size === 0) {
-        Swal.fire("Atención", "Por favor, selecciona al menos una orden.", "warning");
+        alert("Atención: por favor, selecciona al menos una orden.");
         return;
     }
 
@@ -436,7 +436,7 @@ async function exportarDetallePDFv2(ordenes, seleccionados) {
 
 function exportarMensajeWhatsApp(ordenes, seleccionados) {
     if (seleccionados.size === 0) {
-        Swal.fire("Atención", "Por favor, selecciona al menos una orden.", "warning");
+        alert("Atención: por favor, selecciona al menos una orden.");
         return;
     }
 
@@ -474,7 +474,7 @@ function exportarMensajeWhatsApp(ordenes, seleccionados) {
 
     if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(mensaje)
-            .then(() => Swal.fire("Listo", "Mensaje de WhatsApp copiado al portapapeles.", "success"))
+            .then(() => alert("Listo: mensaje de WhatsApp copiado al portapapeles."))
             .catch(() => mostrarPromptWhatsApp(mensaje));
     } else {
         mostrarPromptWhatsApp(mensaje);
