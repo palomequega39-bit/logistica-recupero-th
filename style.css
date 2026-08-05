@@ -268,11 +268,6 @@ svg { width: 100%; height: 100%; }
 @media (min-width: 1024px) {
   .solo-mobile { display: none; }
   .solo-desktop { display: block; }
-
-  /* En desktop .split deja de ser una grilla de 2 columnas: todo se apila
-     verticalmente en el orden del HTML (tabla arriba, detalle abajo) */
-  .split { display: block; }
-  .panel-detalle { margin-top: 14px; }
 }
 
 .contenido { max-width: 1400px; margin: 0 auto; padding: 16px; display: flex; flex-direction: column; gap: 14px; }
@@ -867,3 +862,86 @@ svg { width: 100%; height: 100%; }
 .tabla-desktop-productos tbody tr:hover td { filter: brightness(0.97); }
 .tabla-desktop-productos tr.fila-producto-sticker td { background: var(--sticker); color: white; }
 .tabla-desktop-productos tr.fila-producto-devolver td { background: var(--devolver); }
+
+/* =========================================================
+   FIX DE ORDEN DE CASCADA: esta regla tiene que ir DESPUÉS de la
+   definición base de .split (que está mucho más arriba en el archivo)
+   para poder ganarle en desktop. Si quedara antes, la regla base
+   (misma especificidad, declarada después) se la comía entera.
+========================================================= */
+@media (min-width: 1024px) {
+  .split { display: block; }
+  .panel-detalle { margin-top: 14px; }
+}
+
+/* =========================================================
+   ANCHOS FIJOS — tabla de órdenes y tabla de productos (desktop)
+   Prioridad: usar todo el ancho de pantalla disponible, aunque
+   sobre lugar en alguna columna (mejor eso que scroll horizontal).
+========================================================= */
+.tabla-desktop-ordenes {
+  table-layout: fixed;
+  width: 100%;
+}
+.tabla-desktop-ordenes tbody td {
+  max-width: none; /* el ancho ya lo define la columna fija de abajo */
+}
+.tabla-desktop-ordenes th:nth-child(1),
+.tabla-desktop-ordenes td:nth-child(1)  { width: 3%; }
+.tabla-desktop-ordenes th:nth-child(2),
+.tabla-desktop-ordenes td:nth-child(2)  { width: 6%; }
+.tabla-desktop-ordenes th:nth-child(3),
+.tabla-desktop-ordenes td:nth-child(3)  { width: 9%; }
+.tabla-desktop-ordenes th:nth-child(4),
+.tabla-desktop-ordenes td:nth-child(4)  { width: 9%; }
+.tabla-desktop-ordenes th:nth-child(5),
+.tabla-desktop-ordenes td:nth-child(5)  { width: 6%; }
+.tabla-desktop-ordenes th:nth-child(6),
+.tabla-desktop-ordenes td:nth-child(6)  { width: 9%; }
+.tabla-desktop-ordenes th:nth-child(7),
+.tabla-desktop-ordenes td:nth-child(7)  { width: 6%; }
+.tabla-desktop-ordenes th:nth-child(8),
+.tabla-desktop-ordenes td:nth-child(8)  { width: 6%; }
+.tabla-desktop-ordenes th:nth-child(9),
+.tabla-desktop-ordenes td:nth-child(9)  { width: 12%; }
+.tabla-desktop-ordenes th:nth-child(10),
+.tabla-desktop-ordenes td:nth-child(10) { width: 3%; }
+.tabla-desktop-ordenes th:nth-child(11),
+.tabla-desktop-ordenes td:nth-child(11) { width: 3%; }
+.tabla-desktop-ordenes th:nth-child(12),
+.tabla-desktop-ordenes td:nth-child(12) { width: 3%; }
+.tabla-desktop-ordenes th:nth-child(13),
+.tabla-desktop-ordenes td:nth-child(13) { width: 9%; }
+.tabla-desktop-ordenes th:nth-child(14),
+.tabla-desktop-ordenes td:nth-child(14) { width: 8%; }
+.tabla-desktop-ordenes th:nth-child(15),
+.tabla-desktop-ordenes td:nth-child(15) { width: 8%; }
+
+/* Tabla de productos: también ancho fijo, a todo el ancho del panel */
+.tabla-desktop-productos-wrapper { width: 100%; }
+.tabla-desktop-productos {
+  table-layout: fixed;
+  width: 100%;
+}
+.tabla-desktop-productos th:nth-child(1),
+.tabla-desktop-productos td:nth-child(1) { width: 12%; }
+.tabla-desktop-productos th:nth-child(2),
+.tabla-desktop-productos td:nth-child(2) { width: 12%; }
+.tabla-desktop-productos th:nth-child(3),
+.tabla-desktop-productos td:nth-child(3) { width: 32%; }
+.tabla-desktop-productos th:nth-child(4),
+.tabla-desktop-productos td:nth-child(4) { width: 6%; }
+.tabla-desktop-productos th:nth-child(5),
+.tabla-desktop-productos td:nth-child(5) { width: 12%; }
+.tabla-desktop-productos th:nth-child(6),
+.tabla-desktop-productos td:nth-child(6) { width: 14%; }
+.tabla-desktop-productos th:nth-child(7),
+.tabla-desktop-productos td:nth-child(7) { width: 12%; }
+.tabla-desktop-productos td {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* El encabezado del detalle de la orden también a todo el ancho */
+.tabla-desktop-wrapper, .panel-detalle, .detalle-contenido { width: 100%; box-sizing: border-box; }
