@@ -25,7 +25,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
 <script src="firebase-config.js"></script>
 
-<link rel="stylesheet" href="style.css?v=4.1.6">
+<link rel="stylesheet" href="style.css?v=4.1.7">
 
 </head>
 <body>
@@ -139,6 +139,12 @@
 
       <label>Favoritos</label>
       <select id="filtroFavorito"></select>
+
+      <label>Vencimiento de productos (desde)</label>
+      <input type="date" id="filtroVencimientoDesde" class="inputFiltro">
+
+      <label>Vencimiento de productos (hasta)</label>
+      <input type="date" id="filtroVencimientoHasta" class="inputFiltro">
 
       <button id="btnLimpiar" class="btn-secundario">Borrar Filtros</button>
       <button id="btnBorrarHistorial2" class="btn-secundario" title="Borra el historial de estados de recupero guardado en este navegador">Borrar Historial de Estados</button>
@@ -282,7 +288,7 @@
               <th class="th-dot">D</th>
               <th onclick="sortByDesktop('Prioridad')">Prioridad</th>
               <th onclick="sortByDesktop('Secretaria')">Secretaría</th>
-              <th onclick="sortByDesktop('EstadoRecupero')">Estado Recupero</th>
+              <th onclick="sortByDesktop('Total')">Total</th>
             </tr>
           </thead>
           <tbody id="ordenesTablaDesktop"></tbody>
@@ -371,6 +377,6 @@
 </div>
 
 <script src="export.js"></script>
-<script src="app.js?v=4.1.6"></script>
+<script src="app.js?v=4.1.7"></script>
 </body>
 </html>

@@ -568,16 +568,11 @@ function aplicarCambioEstado(ordenId, estadoKey, { publicarRemoto = false } = {}
       }
     }
 
-    // Fila de tabla desktop: repintar clase + celda de Estado
+    // Fila de tabla desktop: repintar la clase de color (ya no hay celda de texto de Estado)
     const filaTabla = document.querySelector(`tr[data-orden-tabla="${CSS.escape(ordenId)}"]`);
     if (filaTabla) {
       const esFavTabla = filaTabla.classList.contains("favorito");
       filaTabla.className = `recupero-${estadoKey} ${esFavTabla ? 'favorito' : ''}`;
-      const celdaEstado = filaTabla.querySelector(".celda-estado");
-      if (celdaEstado) {
-        celdaEstado.className = `celda-estado estado-${estadoKey}`;
-        celdaEstado.textContent = labelEstadoRecupero(estadoKey);
-      }
     }
 
     // Si el detalle de esta orden está abierto, mostrar() ya refresca el chip de Recupero ahí
@@ -1143,6 +1138,24 @@ function aplicarFiltros(){
       if(f("filtroFecha") === "pendientes" && fechaCX < hoy) return false;
     }
 
+    // Filtro de Fecha de Vencimiento de productos (desde/hasta): la orden
+    // pasa si TIENE ALGÚN producto cuyo vencimiento cae en el rango pedido.
+    const vencDesdeVal = f("filtroVencimientoDesde");
+    const vencHastaVal = f("filtroVencimientoHasta");
+    if(vencDesdeVal || vencHastaVal){
+      const desdeDate = vencDesdeVal ? new Date(vencDesdeVal + "T00:00:00") : null;
+      const hastaDate = vencHastaVal ? new Date(vencHastaVal + "T23:59:59") : null;
+
+      const tieneProductoEnRango = (o.detalles || []).some(d => {
+        const fechaVenc = parsearFechaDDMMYYYY(d.Vencimiento);
+        if(!fechaVenc) return false;
+        if(desdeDate && fechaVenc < desdeDate) return false;
+        if(hastaDate && fechaVenc > hastaDate) return false;
+        return true;
+      });
+      if(!tieneProductoEnRango) return false;
+    }
+
     // Buscador Global
     if(texto){
       const detalleTexto = (o.detalles || []).map(d => `${d.Serie || ""} ${d.Lote || ""} ${d.Producto || ""} ${d.Remito || ""}`).join(" " );
@@ -1209,6 +1222,10 @@ function renderLista(){
       else if(sortField === "EstadoRecupero"){
         valA = ESTADOS_RECUPERO.findIndex(e => e.key === a.EstadoRecupero);
         valB = ESTADOS_RECUPERO.findIndex(e => e.key === b.EstadoRecupero);
+      }
+      else if(sortField === "Total"){
+        valA = calcularTotalOrden(a);
+        valB = calcularTotalOrden(b);
       }
       else{
         valA = (a[sortField] || "").toString().toLowerCase();
@@ -1293,7 +1310,7 @@ function renderLista(){
       <td class="celda-dot"><span class="semaforo-dot ${o.Devolucion === 'VERDADERO' ? 'dev-pendiente' : 'dev-ok'}"></span></td>
       <td>${o.Prioridad || ""}</td>
       <td onclick="event.stopPropagation()"><select class="select-secretaria select-secretaria-tabla" data-id="${o.Orden}" onchange="manejarCambioSecretariaSelect(this, this.dataset.id)">${opcionesSecretariaHTML(o.Secretaria)}</select></td>
-      <td class="celda-estado estado-${o.EstadoRecupero}">${labelEstadoRecupero(o.EstadoRecupero)}</td>
+      <td>${formatearTotal(calcularTotalOrden(o))}</td>
     `;
 
     tr.onclick = (e) => {
@@ -1306,6 +1323,21 @@ function renderLista(){
     contTabla.appendChild(tr);
   });
 }
+/** Convierte una fecha en formato DD/MM/YYYY (como vienen los vencimientos) a un objeto Date. */
+function parsearFechaDDMMYYYY(str){
+  if(!str) return null;
+  const partes = str.toString().split("/");
+  if(partes.length !== 3) return null;
+  const [d, m, y] = partes.map(Number);
+  if(!d || !m || !y) return null;
+  return new Date(y, m - 1, d);
+}
+
+/** Suma el Total de todos los productos de una orden. */
+function calcularTotalOrden(o){
+  return (o.detalles || []).reduce((acc, d) => acc + (parseFloat(d.Total) || 0), 0);
+}
+
 /** Formatea el Total (columna nueva de Odoo) como moneda argentina. */
 function formatearTotal(valor){
   if(valor === undefined || valor === null || valor === "") return "-";
@@ -1983,6 +2015,8 @@ function borrarFiltros() {
     // 1. Limpiar inputs de texto
     document.getElementById("buscadorGlobal").value = "";
     document.getElementById("filtroInstitucion").value = "";
+    document.getElementById("filtroVencimientoDesde").value = "";
+    document.getElementById("filtroVencimientoHasta").value = "";
     
     // 2. Limpiar todos los select al valor por defecto ("")
     const selects = document.querySelectorAll('.filters select, .filtros-rapidos select');
