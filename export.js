@@ -183,7 +183,8 @@ async function exportarDetallePDF(ordenes, seleccionados) {
                     { content: `${item.Q} x ${cleanProduct(item.Producto)}`, styles: { fontStyle: 'bold' } },
                     `Lt: ${item.Lote || "-"}`,
                     `Sn: ${item.Serie || "-"}`,
-                    `Vto: ${item.Vencimiento || "-"}`
+                    `Vto: ${item.Vencimiento || "-"}`,
+                    item.Total ? `$${Number(item.Total).toLocaleString("es-AR", {minimumFractionDigits:2, maximumFractionDigits:2})}` : "-"
                 ]),
                 theme: 'striped',
                 styles: { fontSize: 8, cellPadding: 0.5, verticalAlign: 'middle' }, 
@@ -368,7 +369,7 @@ async function exportarDetallePDFv2(ordenes, seleccionados) {
         doc.autoTable({
             startY: y,
             theme: "grid",
-            head: [["Remito", "Fecha R", "Q", "Producto", "Lote", "Serie", "Vencimiento"]],
+            head: [["Remito", "Fecha R", "Q", "Producto", "Lote", "Serie", "Vencimiento", "Total"]],
             body: (o.detalles || []).map(d => [
                 cleanRemito(d.Remito || ""),
                 d.FechaR || "",
@@ -376,7 +377,8 @@ async function exportarDetallePDFv2(ordenes, seleccionados) {
                 `${cleanProduct(d.Producto || "")}`,
                 d.Lote || "",
                 d.Serie || "",
-                d.Vencimiento || ""
+                d.Vencimiento || "",
+                d.Total ? `$${Number(d.Total).toLocaleString("es-AR", {minimumFractionDigits:2, maximumFractionDigits:2})}` : ""
             ]),
             margin: { left: margin, right: margin },
             styles: {

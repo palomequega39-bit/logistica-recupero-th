@@ -1306,6 +1306,14 @@ function renderLista(){
     contTabla.appendChild(tr);
   });
 }
+/** Formatea el Total (columna nueva de Odoo) como moneda argentina. */
+function formatearTotal(valor){
+  if(valor === undefined || valor === null || valor === "") return "-";
+  const num = Number(valor);
+  if(isNaN(num)) return valor;
+  return "$" + num.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
 /** Saca lo que está entre corchetes del nombre del producto (ej. "[H749...] Synergy Shield" -> "Synergy Shield"). */
 function quitarCorchetes(texto){
   return (texto || "").replace(/\[[^\]]*\]/g, "").trim();
@@ -1494,6 +1502,7 @@ function mostrar(o){
           <span class="producto-campo"><b>Lote</b><span>${d.Lote || "-"}</span></span>
           <span class="producto-campo"><b>Serie</b><span>${d.Serie || "-"}</span></span>
           <span class="producto-campo"><b>Vence</b><span>${d.Vencimiento || "-"}</span></span>
+          <span class="producto-campo"><b>Total</b><span>${formatearTotal(d.Total)}</span></span>
         </div>
       </div>
     `;
@@ -1520,6 +1529,7 @@ function mostrar(o){
       <td>${d.Lote || "-"}</td>
       <td>${d.Serie || "-"}</td>
       <td>${d.Vencimiento || "-"}</td>
+      <td>${formatearTotal(d.Total)}</td>
     `;
     contTabla.appendChild(tr);
   });
@@ -1758,6 +1768,7 @@ function preProcesarExcel(rows) {
             Expediente: r[21] || ref.Expediente,
             Favorito: r[22] || ref.Favorito,
             Prioridad: r[24] || ref.Prioridad,
+            Total: r[25],
             Column1: "",
             // Tokens crudos (separados por coma) de esta fila, listos para
             // sumarles los de eventuales filas de continuación de abajo.
@@ -1810,7 +1821,7 @@ function preProcesarExcel(rows) {
             MedicoSolicitante: f.MedicoSolicitante, Foja: f.Foja, CI: f.CI,
             Devolucion: f.Devolucion, Actividades: f.Actividades, Institucion: f.Institucion,
             Ciudad: f.Ciudad, Expediente: f.Expediente, Favorito: f.Favorito,
-            Prioridad: f.Prioridad, Column1: ""
+            Prioridad: f.Prioridad, Total: f.Total, Column1: ""
         };
 
         if (cantidad <= 0) {
@@ -1829,8 +1840,12 @@ function preProcesarExcel(rows) {
             const { serie, lote } = interpretarToken(token);
             const vencToken = vencTokens.length ? (vencTokens[i] || vencTokens[vencTokens.length - 1]) : undefined;
 
+            const totalUnidad = (f.Total !== undefined && f.Total !== null && f.Total !== "")
+                ? Math.round((Number(f.Total) / unidades) * 100) / 100
+                : f.Total;
+
             resultadoDesglosado.push({
-                ...base, Q: 1, Lote: lote, Serie: serie, Vencimiento: formatFecha(vencToken)
+                ...base, Q: 1, Lote: lote, Serie: serie, Vencimiento: formatFecha(vencToken), Total: totalUnidad
             });
         }
     });
