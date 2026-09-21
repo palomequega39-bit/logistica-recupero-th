@@ -4,9 +4,8 @@ let indiceSeleccionado = -1;
 let sortField = null;
 let ordenAsc = true;
 let seleccionados = new Set(); // Para guardar los IDs de las órdenes seleccionadas
-const ODOO_BASE_URL = "https://technohealth.odoo.com/web";
+const ODOO_BASE_URL = "https://technohealth.odoo.com/odoo/orders";
 const ODOO_ID_OFFSET = 3;
-const ODOO_QUERY = "cids=1&menu_id=531&action=799&model=sale.order&view_type=form"
 
 /* =========================
    RECUPERO - ESTADOS
@@ -1408,7 +1407,7 @@ function abrirOrdenOdoo(event, orden) {
   const odooId = numeroOrden - ODOO_ID_OFFSET;
   if (odooId <= 0) return;
 
-  const url = `${ODOO_BASE_URL}#id=${odooId}&${ODOO_QUERY}`;
+  const url = `${ODOO_BASE_URL}/${odooId}`;
   window.open(url, "_blank", "noopener,noreferrer");
 }
 
