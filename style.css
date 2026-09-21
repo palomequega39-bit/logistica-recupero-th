@@ -995,3 +995,81 @@ svg { width: 100%; height: 100%; }
   padding: 6px 16px;
   margin-bottom: -8px;
 }
+
+/* =========================================================
+   VISTA ESTADÍSTICAS
+========================================================= */
+.stats-header-bar {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  background: white;
+  border-radius: 12px;
+  padding: 14px 18px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  margin-bottom: 14px;
+}
+.stats-header-titulo { font-size: 16px; font-weight: 800; color: var(--texto); }
+.stats-header-sub { font-size: 12.5px; color: var(--texto-sec); }
+.stats-header-sub b { color: var(--teal-dark); }
+
+.grid-graficos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: 16px;
+}
+
+.chart-card {
+  background: white;
+  border-radius: 12px;
+  padding: 14px 16px 10px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  display: flex;
+  flex-direction: column;
+}
+.chart-card-titulo {
+  font-size: 12.5px;
+  font-weight: 800;
+  color: var(--texto-sec);
+  text-transform: uppercase;
+  letter-spacing: 0.2px;
+  margin-bottom: 8px;
+}
+.chart-card-canvas-wrap {
+  position: relative;
+  height: 240px;
+}
+.chart-card-hint {
+  font-size: 10.5px;
+  color: #94a3b8;
+  margin-top: 6px;
+  text-align: center;
+}
+
+/* Banner de filtro activo que llegó desde un click en un gráfico */
+.banner-filtro-grafico {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: var(--teal-light);
+  border: 1px solid var(--teal);
+  color: var(--teal-dark);
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.banner-filtro-grafico button {
+  background: white;
+  border: 1px solid var(--teal);
+  color: var(--teal-dark);
+  border-radius: 7px;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.banner-filtro-grafico button:hover { background: var(--teal-light); }

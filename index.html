@@ -19,13 +19,14 @@
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 
 <!-- Firebase (solo Realtime Database) para sincronizar en vivo entre dispositivos -->
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
 <script src="firebase-config.js"></script>
 
-<link rel="stylesheet" href="style.css?v=4.1.7">
+<link rel="stylesheet" href="style.css?v=4.2.0">
 
 </head>
 <body>
@@ -55,6 +56,10 @@
 
   <span id="syncStatus" class="sync-pill" title="Estado de la sincronización en vivo">⚪ Iniciando...</span>
 
+  <button id="btnEstadisticas" class="btn-topbar-outline" title="Ver estadísticas">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+    Estadísticas
+  </button>
   <button id="btnExportarPDFv2" class="btn-topbar-outline" title="Exportar PDF v2.0">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
     PDF v2
@@ -154,6 +159,12 @@
 
 <div class="layout">
   <main class="contenido">
+
+  <div id="vistaOrdenes">
+    <div id="bannerFiltroGrafico" class="banner-filtro-grafico hidden">
+      <span id="bannerFiltroGraficoTexto"></span>
+      <button id="btnQuitarFiltroGrafico">✕ Quitar filtro</button>
+    </div>
 
     <!-- =========================
          VISTA MOBILE/TABLET (tarjetas) — visible hasta 1024px
@@ -373,10 +384,23 @@
       </section>
     </div>
 
+  </div>
+
+  <!-- =========================
+       VISTA ESTADÍSTICAS
+  ========================== -->
+  <div id="vistaEstadisticas" class="hidden">
+    <div class="stats-header-bar">
+      <span class="stats-header-titulo">📊 Estadísticas</span>
+      <span class="stats-header-sub">Calculadas sobre las <b id="statsCantidadOrdenes">0</b> órdenes cargadas</span>
+    </div>
+    <div id="graficosGrid" class="grid-graficos"></div>
+  </div>
+
   </main>
 </div>
 
 <script src="export.js"></script>
-<script src="app.js?v=4.1.7"></script>
+<script src="app.js?v=4.2.0"></script>
 </body>
 </html>

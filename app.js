@@ -1088,6 +1088,43 @@ function fillFecha(){
    FILTRAR
 ========================= */
 
+/* =========================
+   FILTRO EXTRA (desde gráficos de Estadísticas)
+   Los gráficos filtran por dimensiones que no siempre tienen su propio
+   select en el modal de Filtros (Obra Social, rango de Total, mes de
+   Fecha CX, etc). En vez de armar un control dedicado para cada una,
+   usamos este único filtro genérico: se activa al hacer click en un
+   gráfico y se puede quitar con el botón del banner.
+========================= */
+let filtroExtra = null; // { tipo, valor, etiqueta } | null
+
+function aplicarFiltroDesdeGrafico(tipo, valor, etiqueta){
+  filtroExtra = { tipo, valor, etiqueta };
+  mostrarVistaOrdenes();
+  document.getElementById("bannerFiltroGraficoTexto").textContent = `Filtro desde gráfico: ${etiqueta}`;
+  document.getElementById("bannerFiltroGrafico").classList.remove("hidden");
+  aplicarFiltros();
+}
+
+/** Evalúa si una orden pasa el filtroExtra activo (true si no hay ninguno activo). */
+function pasaFiltroExtra(o){
+  if(!filtroExtra) return true;
+  const { tipo, valor } = filtroExtra;
+
+  if(tipo === "Institucion") return (o.Institucion || "Sin dato") === valor;
+  if(tipo === "ObraSocial") return (o.ObraSocial || "Sin dato") === valor;
+  if(tipo === "Secretaria") return (o.Secretaria || "Sin Asignar") === valor;
+  if(tipo === "Prioridad") return (o.Prioridad || "Sin dato") === valor;
+  if(tipo === "EstadoRecupero") return labelEstadoRecupero(o.EstadoRecupero) === valor;
+  if(tipo === "OrdenExacta") return o.Orden === valor;
+  if(tipo === "MesFechaCX") return obtenerMesAnoLabel(o.FechaCX) === valor;
+  if(tipo === "RangoTotal"){
+    const total = calcularTotalOrden(o);
+    return total >= valor.min && total < valor.max;
+  }
+  return true;
+}
+
 function aplicarFiltros(){
   const f = id => document.getElementById(id).value;
   const texto = document.getElementById("buscadorGlobal").value.toLowerCase();
@@ -1096,6 +1133,8 @@ function aplicarFiltros(){
   hoy.setHours(0,0,0,0);
 
   filtradas = ordenes.filter(o => {
+    if(!pasaFiltroExtra(o)) return false;
+
     // Filtros de Selección Simple
     if(f("filtroEstadoRecupero") && o.EstadoRecupero !== f("filtroEstadoRecupero")) return false;
 
@@ -2117,3 +2156,372 @@ function toggleCheckOrdenSeleccionada() {
    RECUPERO - CHEQUEO DE RESPALDO AL INICIAR
 ========================= */
 intentarRestaurarBackup();
+
+/* =========================================================
+   MÓDULO DE ESTADÍSTICAS
+   20 gráficos interactivos (Chart.js) sobre las órdenes cargadas.
+   Se calculan sobre TODAS las órdenes cargadas (no sobre lo filtrado
+   en la lista), para dar el panorama completo del archivo.
+   Click en cualquier dato -> vuelve a la vista Órdenes ya filtrada.
+========================================================= */
+
+let instanciasGraficos = []; // para destruir y volver a crear al recargar un archivo
+
+function mostrarVistaEstadisticas(){
+  document.getElementById("vistaOrdenes").classList.add("hidden");
+  document.getElementById("vistaEstadisticas").classList.remove("hidden");
+  document.getElementById("statsCantidadOrdenes").textContent = ordenes.length;
+  renderEstadisticas();
+}
+
+function mostrarVistaOrdenes(){
+  document.getElementById("vistaEstadisticas").classList.add("hidden");
+  document.getElementById("vistaOrdenes").classList.remove("hidden");
+}
+
+document.getElementById("btnEstadisticas").onclick = mostrarVistaEstadisticas;
+
+function quitarFiltroGrafico(){
+  filtroExtra = null;
+  document.getElementById("filtroVencimientoDesde").value = "";
+  document.getElementById("filtroVencimientoHasta").value = "";
+  document.getElementById("bannerFiltroGrafico").classList.add("hidden");
+  aplicarFiltros();
+}
+document.getElementById("btnQuitarFiltroGrafico").onclick = quitarFiltroGrafico;
+
+function irAOrdenesConFiltroFecha(etiqueta, desde, hasta){
+  const fmt = (d) => d ? d.toISOString().slice(0,10) : "";
+  document.getElementById("filtroVencimientoDesde").value = fmt(desde);
+  document.getElementById("filtroVencimientoHasta").value = fmt(hasta);
+  mostrarVistaOrdenes();
+  document.getElementById("bannerFiltroGraficoTexto").textContent = `Filtro desde gráfico: ${etiqueta}`;
+  document.getElementById("bannerFiltroGrafico").classList.remove("hidden");
+  aplicarFiltros();
+}
+
+/* --- Helpers de agregación --- */
+
+function calcularTodosLosProductos(){
+  return ordenes.flatMap(o => (o.detalles || []));
+}
+
+function agregarCantidadPorCampo(campoFn){
+  const map = {};
+  ordenes.forEach(o => {
+    const clave = campoFn(o) || "Sin dato";
+    map[clave] = (map[clave] || 0) + 1;
+  });
+  return map;
+}
+
+function agregarTotalPorCampo(campoFn){
+  const map = {};
+  ordenes.forEach(o => {
+    const clave = campoFn(o) || "Sin dato";
+    map[clave] = (map[clave] || 0) + calcularTotalOrden(o);
+  });
+  return map;
+}
+
+function topNDeObjeto(map, n){
+  const entradas = Object.entries(map).sort((a,b) => b[1]-a[1]);
+  if(entradas.length <= n) return entradas;
+  const top = entradas.slice(0, n);
+  const restoSuma = entradas.slice(n).reduce((acc,[,v]) => acc+v, 0);
+  if(restoSuma > 0) top.push(["Otras", restoSuma]);
+  return top;
+}
+
+const MESES_CORTOS = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
+
+function obtenerMesAnoLabel(fechaStr){
+  const f = parsearFechaDDMMYYYY(fechaStr);
+  if(!f) return null;
+  return `${MESES_CORTOS[f.getMonth()]} ${f.getFullYear()}`;
+}
+
+function obtenerMesAnoOrden(fechaStr){
+  const f = parsearFechaDDMMYYYY(fechaStr);
+  if(!f) return null;
+  return f.getFullYear()*100 + (f.getMonth()+1);
+}
+
+/** Junta cantidad y (opcional) suma de Total por mes, ordenado cronológicamente. */
+function agregarPorMes(obtenerFechaFn, obtenerTotalFn){
+  const cant = {}, total = {}, orden = {};
+  ordenes.forEach(o => {
+    const fechaStr = obtenerFechaFn(o);
+    const label = obtenerMesAnoLabel(fechaStr);
+    if(!label) return;
+    cant[label] = (cant[label] || 0) + 1;
+    if(obtenerTotalFn) total[label] = (total[label] || 0) + obtenerTotalFn(o);
+    orden[label] = obtenerMesAnoOrden(fechaStr);
+  });
+  const labels = Object.keys(cant).sort((a,b) => orden[a]-orden[b]);
+  return { labels, cant: labels.map(l => cant[l]), total: labels.map(l => total[l] || 0) };
+}
+
+function formatMoneyCorto(valor){
+  const signo = valor < 0 ? "-" : "";
+  const abs = Math.abs(valor);
+  if(abs >= 1000000) return signo + "$" + (abs/1000000).toFixed(1).replace(/\.0$/,"") + "M";
+  if(abs >= 1000) return signo + "$" + (abs/1000).toFixed(0) + "K";
+  return signo + "$" + abs.toFixed(0);
+}
+
+const PALETA = ["#0d9488","#2563eb","#f97316","#dc2626","#7c3aed","#16a34a","#d97706","#0ea5e9","#db2777","#65a30d","#94a3b8","#0f766e"];
+
+/** Rangos de fecha (Date) para cada bucket de "días hasta vencer". */
+function bucketsVencimientoRangos(){
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const addDias = (d,n) => { const r = new Date(d); r.setDate(r.getDate()+n); return r; };
+  return {
+    "Vencidos": { desde: null, hasta: addDias(hoy,-1) },
+    "0-30 días": { desde: hoy, hasta: addDias(hoy,30) },
+    "31-60 días": { desde: addDias(hoy,31), hasta: addDias(hoy,60) },
+    "61-90 días": { desde: addDias(hoy,61), hasta: addDias(hoy,90) },
+    "+90 días": { desde: addDias(hoy,91), hasta: null }
+  };
+}
+
+function calcularBucketsVencimiento(){
+  const rangos = bucketsVencimientoRangos();
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const buckets = { "Vencidos":0, "0-30 días":0, "31-60 días":0, "61-90 días":0, "+90 días":0 };
+  calcularTodosLosProductos().forEach(d => {
+    const f = parsearFechaDDMMYYYY(d.Vencimiento);
+    if(!f) return;
+    const dias = Math.floor((f - hoy) / 86400000);
+    if(dias < 0) buckets["Vencidos"]++;
+    else if(dias <= 30) buckets["0-30 días"]++;
+    else if(dias <= 60) buckets["31-60 días"]++;
+    else if(dias <= 90) buckets["61-90 días"]++;
+    else buckets["+90 días"]++;
+  });
+  return { labels: Object.keys(buckets), data: Object.values(buckets), rangos };
+}
+
+const BINS_TOTAL = [
+  { label: "Sin Total", min: -Infinity, max: 0.001 },
+  { label: "$1 - $100K", min: 0.001, max: 100000 },
+  { label: "$100K - $500K", min: 100000, max: 500000 },
+  { label: "$500K - $1M", min: 500000, max: 1000000 },
+  { label: "$1M - $3M", min: 1000000, max: 3000000 },
+  { label: "+$3M", min: 3000000, max: Infinity }
+];
+
+function calcularHistogramaTotal(){
+  const data = BINS_TOTAL.map(() => 0);
+  ordenes.forEach(o => {
+    const t = calcularTotalOrden(o);
+    const idx = BINS_TOTAL.findIndex(b => t >= b.min && t < b.max);
+    if(idx >= 0) data[idx]++;
+  });
+  return { labels: BINS_TOTAL.map(b => b.label), data };
+}
+
+/* --- Construcción genérica de cada tarjeta + gráfico --- */
+
+function crearTarjetaGrafico(id, titulo, hint){
+  const div = document.createElement("div");
+  div.className = "chart-card";
+  div.innerHTML = `
+    <div class="chart-card-titulo">${titulo}</div>
+    <div class="chart-card-canvas-wrap"><canvas id="${id}"></canvas></div>
+    ${hint ? `<div class="chart-card-hint">${hint}</div>` : ""}
+  `;
+  document.getElementById("graficosGrid").appendChild(div);
+  return div.querySelector("canvas");
+}
+
+function construirGrafico(id, titulo, tipo, labels, datasets, onClickLabel, hint){
+  const canvas = crearTarjetaGrafico(id, titulo, hint || "Click en un dato para ver esas órdenes");
+  const chart = new Chart(canvas, {
+    type: tipo,
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      indexAxis: (tipo === "bar" && datasets[0]._horizontal) ? "y" : "x",
+      plugins: {
+        legend: { display: tipo === "doughnut" || datasets.length > 1, position: "bottom", labels: { boxWidth: 11, font: { size: 10.5 } } },
+        tooltip: {
+          callbacks: datasets[0]._esMoneda ? {
+            label: (ctx) => `${ctx.dataset.label || ""}: ${formatMoneyCorto(ctx.parsed.y ?? ctx.parsed.x ?? ctx.parsed)}`
+          } : undefined
+        }
+      },
+      scales: (tipo === "doughnut") ? undefined : {
+        x: { ticks: { font: { size: 10 } } },
+        y: { ticks: { font: { size: 10 }, callback: datasets[0]._esMoneda && datasets[0]._horizontal ? (v) => formatMoneyCorto(v) : undefined } }
+      },
+      onClick: (evt, elements, chart) => {
+        if(!elements.length || !onClickLabel) return;
+        const idx = elements[0].index;
+        onClickLabel(chart.data.labels[idx]);
+      }
+    }
+  });
+  instanciasGraficos.push(chart);
+}
+
+function renderEstadisticas(){
+  // Destruir gráficos anteriores (si se recarga un archivo o se vuelve a entrar)
+  instanciasGraficos.forEach(c => c.destroy());
+  instanciasGraficos = [];
+  document.getElementById("graficosGrid").innerHTML = "";
+  document.getElementById("statsCantidadOrdenes").textContent = ordenes.length;
+
+  const filtroInst = (v) => aplicarFiltroDesdeGrafico("Institucion", v, `Institución: ${v}`);
+  const filtroOS = (v) => aplicarFiltroDesdeGrafico("ObraSocial", v, `Obra Social: ${v}`);
+  const filtroSec = (v) => aplicarFiltroDesdeGrafico("Secretaria", v, `Secretaría: ${v}`);
+  const filtroPrio = (v) => aplicarFiltroDesdeGrafico("Prioridad", v, `Prioridad: ${v}`);
+  const filtroEstado = (v) => aplicarFiltroDesdeGrafico("EstadoRecupero", v, `Estado de Recupero: ${v}`);
+
+  /* ===== INSTITUCIÓN (3) ===== */
+  const instCant = topNDeObjeto(agregarCantidadPorCampo(o => o.Institucion), 10);
+  construirGrafico("g-inst-cant", "Cantidad de órdenes por Institución", "bar",
+    instCant.map(e=>e[0]), [{ label: "Órdenes", data: instCant.map(e=>e[1]), backgroundColor: PALETA[0], _horizontal: true }],
+    filtroInst);
+
+  const instPct = topNDeObjeto(agregarCantidadPorCampo(o => o.Institucion), 7);
+  construirGrafico("g-inst-pct", "% de órdenes por Institución", "doughnut",
+    instPct.map(e=>e[0]), [{ data: instPct.map(e=>e[1]), backgroundColor: PALETA }],
+    filtroInst);
+
+  const instTotal = topNDeObjeto(agregarTotalPorCampo(o => o.Institucion), 10);
+  construirGrafico("g-inst-total", "Total $ por Institución", "bar",
+    instTotal.map(e=>e[0]), [{ label: "Total", data: instTotal.map(e=>e[1]), backgroundColor: PALETA[1], _horizontal: true, _esMoneda: true }],
+    filtroInst);
+
+  /* ===== OBRA SOCIAL (3) ===== */
+  const osCant = topNDeObjeto(agregarCantidadPorCampo(o => o.ObraSocial), 10);
+  construirGrafico("g-os-cant", "Cantidad de órdenes por Obra Social", "bar",
+    osCant.map(e=>e[0]), [{ label: "Órdenes", data: osCant.map(e=>e[1]), backgroundColor: PALETA[2], _horizontal: true }],
+    filtroOS);
+
+  const osPct = topNDeObjeto(agregarCantidadPorCampo(o => o.ObraSocial), 7);
+  construirGrafico("g-os-pct", "% de órdenes por Obra Social", "doughnut",
+    osPct.map(e=>e[0]), [{ data: osPct.map(e=>e[1]), backgroundColor: PALETA }],
+    filtroOS);
+
+  const osTotal = topNDeObjeto(agregarTotalPorCampo(o => o.ObraSocial), 10);
+  construirGrafico("g-os-total", "Total $ por Obra Social", "bar",
+    osTotal.map(e=>e[0]), [{ label: "Total", data: osTotal.map(e=>e[1]), backgroundColor: PALETA[3], _horizontal: true, _esMoneda: true }],
+    filtroOS);
+
+  /* ===== FECHA CX (2) ===== */
+  const porMesCX = agregarPorMes(o => o.FechaCX, o => calcularTotalOrden(o));
+  construirGrafico("g-fechacx-cant", "Cantidad de órdenes por mes (Fecha Cx)", "line",
+    porMesCX.labels, [{ label: "Órdenes", data: porMesCX.cant, borderColor: PALETA[0], backgroundColor: PALETA[0], tension: 0.25 }],
+    (label) => aplicarFiltroDesdeGrafico("MesFechaCX", label, `Fecha Cx: ${label}`));
+
+  construirGrafico("g-fechacx-total", "Total $ por mes (Fecha Cx)", "line",
+    porMesCX.labels, [{ label: "Total $", data: porMesCX.total, borderColor: PALETA[1], backgroundColor: PALETA[1], tension: 0.25, _esMoneda: true }],
+    (label) => aplicarFiltroDesdeGrafico("MesFechaCX", label, `Fecha Cx: ${label}`));
+
+  /* ===== FECHA DE VENCIMIENTO (3) ===== */
+  const porMesVenc = (() => {
+    const cant = {}, orden = {};
+    calcularTodosLosProductos().forEach(d => {
+      const label = obtenerMesAnoLabel(d.Vencimiento);
+      if(!label) return;
+      cant[label] = (cant[label] || 0) + 1;
+      orden[label] = obtenerMesAnoOrden(d.Vencimiento);
+    });
+    const labels = Object.keys(cant).sort((a,b) => orden[a]-orden[b]);
+    return { labels, data: labels.map(l => cant[l]) };
+  })();
+  construirGrafico("g-venc-mes", "Cantidad de productos por mes de vencimiento", "bar",
+    porMesVenc.labels, [{ label: "Productos", data: porMesVenc.data, backgroundColor: PALETA[4] }],
+    (label) => {
+      // Primer y último día del mes clickeado
+      const [mesTxt, anoTxt] = label.split(" ");
+      const mesIdx = MESES_CORTOS.indexOf(mesTxt);
+      const desde = new Date(Number(anoTxt), mesIdx, 1);
+      const hasta = new Date(Number(anoTxt), mesIdx + 1, 0);
+      irAOrdenesConFiltroFecha(`Vencimiento ${label}`, desde, hasta);
+    },
+    "Filtra órdenes con productos que vencen ese mes");
+
+  const buckets = calcularBucketsVencimiento();
+  construirGrafico("g-venc-buckets", "Productos por vencer (desde hoy)", "bar",
+    buckets.labels, [{ label: "Productos", data: buckets.data, backgroundColor: ["#dc2626","#f97316","#d97706","#eab308","#16a34a"] }],
+    (label) => {
+      const r = buckets.rangos[label];
+      irAOrdenesConFiltroFecha(`Vencimiento ${label}`, r.desde, r.hasta);
+    },
+    "Filtra órdenes con productos en ese rango de vencimiento");
+
+  construirGrafico("g-venc-linea", "Evolución de vencimientos por mes", "line",
+    porMesVenc.labels, [{ label: "Productos que vencen", data: porMesVenc.data, borderColor: PALETA[5], backgroundColor: PALETA[5], tension: 0.25, fill: true }],
+    (label) => {
+      const [mesTxt, anoTxt] = label.split(" ");
+      const mesIdx = MESES_CORTOS.indexOf(mesTxt);
+      const desde = new Date(Number(anoTxt), mesIdx, 1);
+      const hasta = new Date(Number(anoTxt), mesIdx + 1, 0);
+      irAOrdenesConFiltroFecha(`Vencimiento ${label}`, desde, hasta);
+    });
+
+  /* ===== PRIORIDAD (2) ===== */
+  const prioCant = Object.entries(agregarCantidadPorCampo(o => o.Prioridad));
+  construirGrafico("g-prio-pct", "% de órdenes por Prioridad", "doughnut",
+    prioCant.map(e=>e[0]), [{ data: prioCant.map(e=>e[1]), backgroundColor: PALETA }],
+    filtroPrio);
+
+  const prioridades = [...new Set(ordenes.map(o => o.Prioridad || "Sin dato"))];
+  const estadosParaStack = ESTADOS_RECUPERO.map((e,i) => ({
+    label: e.label,
+    data: prioridades.map(p => ordenes.filter(o => (o.Prioridad || "Sin dato") === p && o.EstadoRecupero === e.key).length),
+    backgroundColor: [ "#94a3b8", "#f97316", "#16a34a" ][i] || PALETA[i]
+  }));
+  construirGrafico("g-prio-estado", "Estado de Recupero por Prioridad", "bar",
+    prioridades, estadosParaStack.map(ds => ({...ds, stack: "s"})),
+    filtroPrio);
+
+  /* ===== SECRETARÍA (3) ===== */
+  const secCant = topNDeObjeto(agregarCantidadPorCampo(o => o.Secretaria || "Sin Asignar"), 10);
+  construirGrafico("g-sec-cant", "Cantidad de órdenes por Secretaría", "bar",
+    secCant.map(e=>e[0]), [{ label: "Órdenes", data: secCant.map(e=>e[1]), backgroundColor: PALETA[6], _horizontal: true }],
+    filtroSec);
+
+  const secPct = topNDeObjeto(agregarCantidadPorCampo(o => o.Secretaria || "Sin Asignar"), 7);
+  construirGrafico("g-sec-pct", "% de órdenes por Secretaría", "doughnut",
+    secPct.map(e=>e[0]), [{ data: secPct.map(e=>e[1]), backgroundColor: PALETA }],
+    filtroSec);
+
+  const secTotal = topNDeObjeto(agregarTotalPorCampo(o => o.Secretaria || "Sin Asignar"), 10);
+  construirGrafico("g-sec-total", "Total $ por Secretaría", "bar",
+    secTotal.map(e=>e[0]), [{ label: "Total", data: secTotal.map(e=>e[1]), backgroundColor: PALETA[7], _horizontal: true, _esMoneda: true }],
+    filtroSec);
+
+  /* ===== TOTAL / PRECIO (3) ===== */
+  const top10Ordenes = [...ordenes].sort((a,b) => calcularTotalOrden(b) - calcularTotalOrden(a)).slice(0,10);
+  construirGrafico("g-total-top10", "Top 10 órdenes por Total", "bar",
+    top10Ordenes.map(o => o.Orden), [{ label: "Total", data: top10Ordenes.map(o => calcularTotalOrden(o)), backgroundColor: PALETA[8], _horizontal: true, _esMoneda: true }],
+    (label) => aplicarFiltroDesdeGrafico("OrdenExacta", label, `Orden: ${label}`),
+    "Click para ver esa orden puntual");
+
+  const hist = calcularHistogramaTotal();
+  construirGrafico("g-total-hist", "Distribución de órdenes por monto", "bar",
+    hist.labels, [{ label: "Órdenes", data: hist.data, backgroundColor: PALETA[9] }],
+    (label) => {
+      const bin = BINS_TOTAL.find(b => b.label === label);
+      aplicarFiltroDesdeGrafico("RangoTotal", { min: bin.min, max: bin.max }, `Monto: ${label}`);
+    });
+
+  const totalPorEstado = ESTADOS_RECUPERO.map(e => ({
+    label: e.label,
+    valor: ordenes.filter(o => o.EstadoRecupero === e.key).reduce((acc,o) => acc + calcularTotalOrden(o), 0)
+  }));
+  construirGrafico("g-total-estado", "Total $ acumulado por Estado de Recupero", "doughnut",
+    totalPorEstado.map(e=>e.label), [{ data: totalPorEstado.map(e=>e.valor), backgroundColor: ["#94a3b8","#f97316","#16a34a"], _esMoneda: true }],
+    filtroEstado);
+
+  /* ===== ESTADO GENERAL (1) ===== */
+  const estadoCant = ESTADOS_RECUPERO.map(e => ({ label: e.label, valor: ordenes.filter(o => o.EstadoRecupero === e.key).length }));
+  construirGrafico("g-estado-cant", "Cantidad de órdenes por Estado de Recupero", "doughnut",
+    estadoCant.map(e=>e.label), [{ data: estadoCant.map(e=>e.valor), backgroundColor: ["#94a3b8","#f97316","#16a34a"] }],
+    filtroEstado);
+}
