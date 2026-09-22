@@ -1904,7 +1904,13 @@ function preProcesarExcel(rows) {
             return;
         }
 
-        const unidades = Math.max(cantidad, tokensBase.length);
+        // 🔴 FIX: contamos por tokens ÚNICOS, no por cantidad total de tokens.
+        // A veces una fila de "continuación" repite el MISMO Lote/Serie que ya
+        // tenía la fila principal, solo para completar un dato que faltaba
+        // (ej. el Remito). Si contáramos ese token repetido como una unidad
+        // más, se duplicaba el producto sin que hubiera una unidad extra real.
+        const tokensUnicos = [...new Set(tokensBase)];
+        const unidades = Math.max(cantidad, tokensUnicos.length);
         for (let i = 0; i < unidades; i++) {
             const token = tokensBase.length ? (tokensBase[i] || tokensBase[tokensBase.length - 1]) : "";
             const { serie, lote } = interpretarToken(token);
@@ -2322,20 +2328,27 @@ function calcularHistogramaTotal(){
 
 /* --- Construcción genérica de cada tarjeta + gráfico --- */
 
-function crearTarjetaGrafico(id, titulo, hint){
+function crearTarjetaGrafico(id, titulo, hint, anchoInterno){
   const div = document.createElement("div");
-  div.className = "chart-card";
+  div.className = anchoInterno ? "chart-card chart-card-ancho" : "chart-card";
+  const wrapInterno = anchoInterno
+    ? `<div class="chart-card-scroll-x"><div style="width:${anchoInterno}px; height:100%;"><canvas id="${id}"></canvas></div></div>`
+    : `<canvas id="${id}"></canvas>`;
   div.innerHTML = `
     <div class="chart-card-titulo">${titulo}</div>
-    <div class="chart-card-canvas-wrap"><canvas id="${id}"></canvas></div>
+    <div class="chart-card-canvas-wrap">${wrapInterno}</div>
     ${hint ? `<div class="chart-card-hint">${hint}</div>` : ""}
   `;
   document.getElementById("graficosGrid").appendChild(div);
   return div.querySelector("canvas");
 }
 
-function construirGrafico(id, titulo, tipo, labels, datasets, onClickLabel, hint){
-  const canvas = crearTarjetaGrafico(id, titulo, hint || "Click en un dato para ver esas órdenes");
+function construirGrafico(id, titulo, tipo, labels, datasets, onClickLabel, hint, anchoPorMes){
+  // Los gráficos de línea temporal (mes a mes) reciben ancho fijo por mes
+  // + scroll horizontal, para que cada mes se vea separado y legible en
+  // vez de amontonarse todos en el ancho fijo de la tarjeta.
+  const anchoInterno = anchoPorMes ? Math.max(labels.length * anchoPorMes, 320) : null;
+  const canvas = crearTarjetaGrafico(id, titulo, hint || "Click en un dato para ver esas órdenes", anchoInterno);
   const chart = new Chart(canvas, {
     type: tipo,
     data: { labels, datasets },
@@ -2414,11 +2427,13 @@ function renderEstadisticas(){
   const porMesCX = agregarPorMes(o => o.FechaCX, o => calcularTotalOrden(o));
   construirGrafico("g-fechacx-cant", "Cantidad de órdenes por mes (Fecha Cx)", "line",
     porMesCX.labels, [{ label: "Órdenes", data: porMesCX.cant, borderColor: PALETA[0], backgroundColor: PALETA[0], tension: 0.25 }],
-    (label) => aplicarFiltroDesdeGrafico("MesFechaCX", label, `Fecha Cx: ${label}`));
+    (label) => aplicarFiltroDesdeGrafico("MesFechaCX", label, `Fecha Cx: ${label}`),
+    null, 70);
 
   construirGrafico("g-fechacx-total", "Total $ por mes (Fecha Cx)", "line",
     porMesCX.labels, [{ label: "Total $", data: porMesCX.total, borderColor: PALETA[1], backgroundColor: PALETA[1], tension: 0.25, _esMoneda: true }],
-    (label) => aplicarFiltroDesdeGrafico("MesFechaCX", label, `Fecha Cx: ${label}`));
+    (label) => aplicarFiltroDesdeGrafico("MesFechaCX", label, `Fecha Cx: ${label}`),
+    null, 70);
 
   /* ===== FECHA DE VENCIMIENTO (3) ===== */
   const porMesVenc = (() => {
@@ -2442,7 +2457,7 @@ function renderEstadisticas(){
       const hasta = new Date(Number(anoTxt), mesIdx + 1, 0);
       irAOrdenesConFiltroFecha(`Vencimiento ${label}`, desde, hasta);
     },
-    "Filtra órdenes con productos que vencen ese mes");
+    "Filtra órdenes con productos que vencen ese mes", 70);
 
   const buckets = calcularBucketsVencimiento();
   construirGrafico("g-venc-buckets", "Productos por vencer (desde hoy)", "bar",
@@ -2461,7 +2476,8 @@ function renderEstadisticas(){
       const desde = new Date(Number(anoTxt), mesIdx, 1);
       const hasta = new Date(Number(anoTxt), mesIdx + 1, 0);
       irAOrdenesConFiltroFecha(`Vencimiento ${label}`, desde, hasta);
-    });
+    },
+    null, 70);
 
   /* ===== PRIORIDAD (2) ===== */
   const prioCant = Object.entries(agregarCantidadPorCampo(o => o.Prioridad));
