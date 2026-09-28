@@ -2717,6 +2717,7 @@ function inicializarResizeColumnas(){
       const mover = (eMove) => {
         const nuevoAncho = Math.max(36, anchoInicial + (obtenerX(eMove) - xInicial));
         col.style.width = `${nuevoAncho}px`;
+        actualizarAnchoTotalTabla();
       };
       const soltar = () => {
         handle.classList.remove("resizing");
@@ -2734,4 +2735,21 @@ function inicializarResizeColumnas(){
     handle.addEventListener("mousedown", iniciarResize);
     handle.addEventListener("touchstart", iniciarResize, { passive: false });
   });
+
+  actualizarAnchoTotalTabla();
+}
+
+/** Suma el ancho de todas las columnas y se lo aplica a la tabla como ancho
+ * propio. Con table-layout:fixed, si la tabla no tiene un ancho explícito
+ * que reaccione a los cambios, el navegador nunca "reflowa" el ancho total
+ * al agrandar una sola columna por JS — el cambio queda sin efecto visual,
+ * aunque el <col> sí haya cambiado. Por eso lo recalculamos a mano en
+ * cada resize. */
+function actualizarAnchoTotalTabla(){
+  const tabla = document.getElementById("tablaModoSeba");
+  if(!tabla) return;
+  const cols = tabla.querySelectorAll("colgroup col");
+  let total = 0;
+  cols.forEach(c => { total += parseFloat(c.style.width) || 0; });
+  tabla.style.width = `${total}px`;
 }
