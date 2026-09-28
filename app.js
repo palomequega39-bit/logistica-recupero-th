@@ -35,30 +35,48 @@ function buscarOrdenPorId(ordenId){
    Vive solo en este navegador (no es un backend ni la nube), así que
    no se comparte entre computadoras.
 ========================= */
-const HISTORIAL_KEY_ESTADOS = "recuperoTH_historialEstados_v1";
-
-function cargarHistorialEstados(){
-  try{
-    return JSON.parse(localStorage.getItem(HISTORIAL_KEY_ESTADOS)) || {};
-  }catch(e){
-    console.warn("Historial de estados corrupto, se descarta:", e);
-    return {};
-  }
+/** Devuelve una versión "debounced" de fn: si se la llama varias veces seguidas
+ * y rápido, solo ejecuta la última, esperando `espera` ms de pausa. Lo usamos
+ * para no re-escribir localStorage entero en cada click cuando el usuario
+ * pinta varios productos seguidos (ej. en Modo Seba). */
+function debounce(fn, espera){
+  let temporizador = null;
+  return (...args) => {
+    clearTimeout(temporizador);
+    temporizador = setTimeout(() => fn(...args), espera);
+  };
 }
 
-function actualizarHistorialEstado(ordenId, estadoKey){
-  try{
-    const historial = cargarHistorialEstados();
-    historial[ordenId] = estadoKey;
-    localStorage.setItem(HISTORIAL_KEY_ESTADOS, JSON.stringify(historial));
-  }catch(e){
-    console.warn("No se pudo guardar el historial de estados:", e);
+const HISTORIAL_KEY_ESTADOS = "recuperoTH_historialEstados_v1";
+let _cacheHistorialEstados = null;
+
+function cargarHistorialEstados(){
+  if(_cacheHistorialEstados === null){
+    try{
+      _cacheHistorialEstados = JSON.parse(localStorage.getItem(HISTORIAL_KEY_ESTADOS)) || {};
+    }catch(e){
+      console.warn("Historial de estados corrupto, se descarta:", e);
+      _cacheHistorialEstados = {};
+    }
   }
+  return _cacheHistorialEstados;
+}
+
+const _persistirHistorialEstadosDebounced = debounce(() => {
+  try{ localStorage.setItem(HISTORIAL_KEY_ESTADOS, JSON.stringify(cargarHistorialEstados())); }
+  catch(e){ console.warn("No se pudo guardar el historial de estados:", e); }
+}, 400);
+
+function actualizarHistorialEstado(ordenId, estadoKey){
+  const historial = cargarHistorialEstados();
+  historial[ordenId] = estadoKey;
+  _persistirHistorialEstadosDebounced();
 }
 
 function borrarHistorialEstados(){
   if(!confirm("¿Borrar el historial de estados de recupero guardado en este navegador? Esta acción no se puede deshacer.")) return;
   localStorage.removeItem(HISTORIAL_KEY_ESTADOS);
+  _cacheHistorialEstados = {};
   alert("Historial de estados borrado.");
 }
 
@@ -90,17 +108,25 @@ function guardarListaSecretariasLocal(lista){
 
 listaSecretarias = cargarListaSecretariasLocal();
 
+let _cacheHistorialSecretaria = null;
+
 function cargarHistorialSecretaria(){
-  try{ return JSON.parse(localStorage.getItem(HISTORIAL_KEY_SECRETARIA)) || {}; }
-  catch(e){ console.warn("Historial de secretarías corrupto, se descarta:", e); return {}; }
+  if(_cacheHistorialSecretaria === null){
+    try{ _cacheHistorialSecretaria = JSON.parse(localStorage.getItem(HISTORIAL_KEY_SECRETARIA)) || {}; }
+    catch(e){ console.warn("Historial de secretarías corrupto, se descarta:", e); _cacheHistorialSecretaria = {}; }
+  }
+  return _cacheHistorialSecretaria;
 }
 
+const _persistirHistorialSecretariaDebounced = debounce(() => {
+  try{ localStorage.setItem(HISTORIAL_KEY_SECRETARIA, JSON.stringify(cargarHistorialSecretaria())); }
+  catch(e){ console.warn("No se pudo guardar el historial de secretarías:", e); }
+}, 400);
+
 function actualizarHistorialSecretaria(ordenId, nombre){
-  try{
-    const historial = cargarHistorialSecretaria();
-    if(nombre) historial[ordenId] = nombre; else delete historial[ordenId];
-    localStorage.setItem(HISTORIAL_KEY_SECRETARIA, JSON.stringify(historial));
-  }catch(e){ console.warn("No se pudo guardar el historial de secretarías:", e); }
+  const historial = cargarHistorialSecretaria();
+  if(nombre) historial[ordenId] = nombre; else delete historial[ordenId];
+  _persistirHistorialSecretariaDebounced();
 }
 
 /**
@@ -326,17 +352,25 @@ function construirClavesProductosOrden(ordenId, detalles){
   });
 }
 
+let _cacheHistorialProducto = null;
+
 function cargarHistorialProducto(){
-  try{ return JSON.parse(localStorage.getItem(HISTORIAL_KEY_PRODUCTO)) || {}; }
-  catch(e){ console.warn("Historial de estado por producto corrupto, se descarta:", e); return {}; }
+  if(_cacheHistorialProducto === null){
+    try{ _cacheHistorialProducto = JSON.parse(localStorage.getItem(HISTORIAL_KEY_PRODUCTO)) || {}; }
+    catch(e){ console.warn("Historial de estado por producto corrupto, se descarta:", e); _cacheHistorialProducto = {}; }
+  }
+  return _cacheHistorialProducto;
 }
 
+const _persistirHistorialProductoDebounced = debounce(() => {
+  try{ localStorage.setItem(HISTORIAL_KEY_PRODUCTO, JSON.stringify(cargarHistorialProducto())); }
+  catch(e){ console.warn("No se pudo guardar el historial de estado por producto:", e); }
+}, 400);
+
 function actualizarHistorialProducto(clave, estado){
-  try{
-    const historial = cargarHistorialProducto();
-    if(estado) historial[clave] = estado; else delete historial[clave];
-    localStorage.setItem(HISTORIAL_KEY_PRODUCTO, JSON.stringify(historial));
-  }catch(e){ console.warn("No se pudo guardar el historial de estado por producto:", e); }
+  const historial = cargarHistorialProducto();
+  if(estado) historial[clave] = estado; else delete historial[clave];
+  _persistirHistorialProductoDebounced();
 }
 
 function publicarProductoEstadoRemoto(clave, estado){
@@ -609,7 +643,7 @@ function guardarBackupDatos(dataCruda){
   }
 }
 
-function guardarBackupEstados(){
+const guardarBackupEstados = debounce(() => {
   try{
     const mapaEstados = {};
     ordenes.forEach(o=>{
@@ -621,7 +655,7 @@ function guardarBackupEstados(){
   }catch(e){
     console.warn("No se pudo guardar el respaldo local (estados):", e);
   }
-}
+}, 400);
 
 function borrarBackup(){
   localStorage.removeItem(BACKUP_KEY_DATOS);
@@ -2135,8 +2169,33 @@ function toggleSeleccionarTodos(event) {
    actualizarLabelsInformativos();
 }
 
+let ultimoCheckboxClicado = null;
+
 function handleCheck(event, ordenId) {
     event.stopPropagation(); // Evita que se dispare el click de la fila (selección para detalle)
+
+    // Selección de rango con Shift: marca todo entre el checkbox anterior
+    // y este (dentro del mismo listado: tarjetas, tabla desktop o Modo Seba).
+    if (event.shiftKey && ultimoCheckboxClicado && ultimoCheckboxClicado !== event.target) {
+        const contenedor = event.target.closest("#ordenesList, #ordenesTablaDesktop, #tbodyModoSeba");
+        const contenedorAnterior = ultimoCheckboxClicado.closest("#ordenesList, #ordenesTablaDesktop, #tbodyModoSeba");
+        if (contenedor && contenedor === contenedorAnterior) {
+            const checkboxes = Array.from(contenedor.querySelectorAll(".check-orden"));
+            const idxActual = checkboxes.indexOf(event.target);
+            const idxAnterior = checkboxes.indexOf(ultimoCheckboxClicado);
+            if (idxActual !== -1 && idxAnterior !== -1) {
+                const [desde, hasta] = idxActual > idxAnterior ? [idxAnterior, idxActual] : [idxActual, idxAnterior];
+                for (let i = desde; i <= hasta; i++) {
+                    checkboxes[i].checked = true;
+                    seleccionados.add(checkboxes[i].dataset.id);
+                }
+                ultimoCheckboxClicado = event.target;
+                actualizarLabelsInformativos();
+                return;
+            }
+        }
+    }
+
     if (event.target.checked) {
         seleccionados.add(ordenId);
     } else {
@@ -2148,6 +2207,7 @@ function handleCheck(event, ordenId) {
         if (selAllDesktop) selAllDesktop.checked = false;
         if (selAllModoSeba) selAllModoSeba.checked = false;
     }
+    ultimoCheckboxClicado = event.target;
    actualizarLabelsInformativos();
 }
 
