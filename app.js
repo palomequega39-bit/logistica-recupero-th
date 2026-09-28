@@ -2250,26 +2250,38 @@ function ocultarTodasLasVistas(){
   document.getElementById("vistaModoSeba").classList.add("hidden");
 }
 
+/** El botón "Volver a Órdenes" de la barra compartida solo tiene sentido
+ * mostrarlo cuando NO estamos ya en la vista de Órdenes. */
+function actualizarBotonVolver(estamosEnOrdenes){
+  document.getElementById("btnVolverOrdenesMobile").classList.toggle("hidden", estamosEnOrdenes);
+  document.getElementById("btnVolverOrdenesDesktop").classList.toggle("hidden", estamosEnOrdenes);
+}
+
 function mostrarVistaEstadisticas(){
   ocultarTodasLasVistas();
   document.getElementById("vistaEstadisticas").classList.remove("hidden");
   document.getElementById("statsCantidadOrdenes").textContent = ordenes.length;
+  actualizarBotonVolver(false);
   renderEstadisticas();
 }
 
 function mostrarVistaOrdenes(){
   ocultarTodasLasVistas();
   document.getElementById("vistaOrdenes").classList.remove("hidden");
+  actualizarBotonVolver(true);
 }
 
 function mostrarVistaModoSeba(){
   ocultarTodasLasVistas();
   document.getElementById("vistaModoSeba").classList.remove("hidden");
+  actualizarBotonVolver(false);
   renderModoSeba();
 }
 
 document.getElementById("btnEstadisticas").onclick = mostrarVistaEstadisticas;
 document.getElementById("btnModoSeba").onclick = mostrarVistaModoSeba;
+document.getElementById("btnVolverOrdenesMobile").onclick = mostrarVistaOrdenes;
+document.getElementById("btnVolverOrdenesDesktop").onclick = mostrarVistaOrdenes;
 
 function quitarFiltroGrafico(){
   filtroExtra = null;
