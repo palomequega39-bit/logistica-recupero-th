@@ -1100,7 +1100,10 @@ svg { width: 100%; height: 100%; }
    VISTA "MODO SEBA" — tabla plana de productos, columnas
    redimensionables a mano (drag en el borde derecho de cada th)
 ========================================================= */
-.tabla-modo-seba-wrapper { max-height: 75vh; }
+.tabla-modo-seba-wrapper {
+  max-height: 75vh;
+  overflow-x: auto !important; /* acá SÍ queremos scroll horizontal: las columnas tienen ancho manual */
+}
 
 .tabla-modo-seba {
   border-collapse: collapse;
@@ -1150,13 +1153,22 @@ svg { width: 100%; height: 100%; }
   position: absolute;
   top: 0;
   right: 0;
-  width: 6px;
+  width: 10px;
   height: 100%;
   cursor: col-resize;
   user-select: none;
   touch-action: none;
+  z-index: 2;
 }
-.resize-handle:hover, .resize-handle.resizing {
+.resize-handle::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 3px;
+  width: 2px;
+  height: 100%;
+  background: transparent;
+}
+.resize-handle:hover::after, .resize-handle.resizing::after {
   background: var(--teal);
-  opacity: 0.5;
 }

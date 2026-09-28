@@ -2638,31 +2638,40 @@ function inicializarResizeColumnas(){
   const cols = tabla.querySelectorAll("colgroup col");
   const encabezados = document.querySelectorAll("#filaEncabezadoModoSeba th");
 
+  const obtenerX = (e) => (e.touches && e.touches.length) ? e.touches[0].clientX : e.clientX;
+
   encabezados.forEach((th, idx) => {
     if(idx === encabezados.length - 1) return; // a la última columna no le hace falta manija
     const handle = document.createElement("div");
     handle.className = "resize-handle";
     th.appendChild(handle);
 
-    handle.addEventListener("mousedown", (e) => {
+    const iniciarResize = (e) => {
       e.preventDefault();
       e.stopPropagation();
       const col = cols[idx];
       const anchoInicial = col.getBoundingClientRect().width;
-      const xInicial = e.clientX;
+      const xInicial = obtenerX(e);
       handle.classList.add("resizing");
 
-      const onMouseMove = (eMove) => {
-        const nuevoAncho = Math.max(36, anchoInicial + (eMove.clientX - xInicial));
+      const mover = (eMove) => {
+        const nuevoAncho = Math.max(36, anchoInicial + (obtenerX(eMove) - xInicial));
         col.style.width = `${nuevoAncho}px`;
       };
-      const onMouseUp = () => {
+      const soltar = () => {
         handle.classList.remove("resizing");
-        document.removeEventListener("mousemove", onMouseMove);
-        document.removeEventListener("mouseup", onMouseUp);
+        document.removeEventListener("mousemove", mover);
+        document.removeEventListener("mouseup", soltar);
+        document.removeEventListener("touchmove", mover);
+        document.removeEventListener("touchend", soltar);
       };
-      document.addEventListener("mousemove", onMouseMove);
-      document.addEventListener("mouseup", onMouseUp);
-    });
+      document.addEventListener("mousemove", mover);
+      document.addEventListener("mouseup", soltar);
+      document.addEventListener("touchmove", mover, { passive: false });
+      document.addEventListener("touchend", soltar);
+    };
+
+    handle.addEventListener("mousedown", iniciarResize);
+    handle.addEventListener("touchstart", iniciarResize, { passive: false });
   });
 }
