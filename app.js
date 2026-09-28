@@ -361,8 +361,8 @@ function buscarFilaProductoPorClave(clave){
   return Array.from(document.querySelectorAll(".fila-producto")).find(tr => tr.dataset.claveProducto === clave) || null;
 }
 
-function buscarFilaTablaProductoPorClave(clave){
-  return Array.from(document.querySelectorAll("#detalleProductosTablaDesktop tr")).find(tr => tr.dataset.claveProductoTabla === clave) || null;
+function buscarFilasTablaProductoPorClave(clave){
+  return Array.from(document.querySelectorAll(`tr[data-clave-producto-tabla="${CSS.escape(clave)}"]`));
 }
 
 /** Aplica un estado a una fila de producto (DOM + historial local), sin importar si vino de un click local o de otro dispositivo. */
@@ -377,11 +377,10 @@ function aplicarCambioProducto(clave, estado, { publicarRemoto = false } = {}){
     if(clase) fila.classList.add(clase);
   }
 
-  const filaTabla = buscarFilaTablaProductoPorClave(clave);
-  if(filaTabla){
+  buscarFilasTablaProductoPorClave(clave).forEach(filaTabla => {
     filaTabla.classList.remove("fila-producto-sticker", "fila-producto-devolver");
     if(clase) filaTabla.classList.add(clase);
-  }
+  });
 
   if(publicarRemoto) publicarProductoEstadoRemoto(clave, estado);
 
@@ -1210,6 +1209,10 @@ function aplicarFiltros(){
   seleccionados = new Set([...seleccionados].filter(id => filtradas.some(o => o.Orden === id)));
   renderLista();
    actualizarLabelsInformativos();
+
+  // Si Modo Seba está abierto, lo refrescamos también (comparte los mismos filtros)
+  const vistaModoSeba = document.getElementById("vistaModoSeba");
+  if(vistaModoSeba && !vistaModoSeba.classList.contains("hidden")) renderModoSeba();
 }
 
 /* =========================
@@ -2121,11 +2124,13 @@ function toggleSeleccionarTodos(event) {
         if (isChecked) seleccionados.add(ordenId);
     });
 
-    // Los dos checkboxes maestros (mobile y desktop) tienen que quedar iguales
+    // Los checkboxes maestros (mobile, desktop y Modo Seba) tienen que quedar iguales
     const selAll = document.getElementById("selectAll");
     const selAllDesktop = document.getElementById("selectAllDesktop");
+    const selAllModoSeba = document.getElementById("selectAllModoSeba");
     if (selAll) selAll.checked = isChecked;
     if (selAllDesktop) selAllDesktop.checked = isChecked;
+    if (selAllModoSeba) selAllModoSeba.checked = isChecked;
 
    actualizarLabelsInformativos();
 }
@@ -2138,8 +2143,10 @@ function handleCheck(event, ordenId) {
         seleccionados.delete(ordenId);
         const selAll = document.getElementById("selectAll");
         const selAllDesktop = document.getElementById("selectAllDesktop");
+        const selAllModoSeba = document.getElementById("selectAllModoSeba");
         if (selAll) selAll.checked = false;
         if (selAllDesktop) selAllDesktop.checked = false;
+        if (selAllModoSeba) selAllModoSeba.checked = false;
     }
    actualizarLabelsInformativos();
 }
@@ -2177,19 +2184,32 @@ intentarRestaurarBackup();
 
 let instanciasGraficos = []; // para destruir y volver a crear al recargar un archivo
 
-function mostrarVistaEstadisticas(){
+function ocultarTodasLasVistas(){
   document.getElementById("vistaOrdenes").classList.add("hidden");
+  document.getElementById("vistaEstadisticas").classList.add("hidden");
+  document.getElementById("vistaModoSeba").classList.add("hidden");
+}
+
+function mostrarVistaEstadisticas(){
+  ocultarTodasLasVistas();
   document.getElementById("vistaEstadisticas").classList.remove("hidden");
   document.getElementById("statsCantidadOrdenes").textContent = ordenes.length;
   renderEstadisticas();
 }
 
 function mostrarVistaOrdenes(){
-  document.getElementById("vistaEstadisticas").classList.add("hidden");
+  ocultarTodasLasVistas();
   document.getElementById("vistaOrdenes").classList.remove("hidden");
 }
 
+function mostrarVistaModoSeba(){
+  ocultarTodasLasVistas();
+  document.getElementById("vistaModoSeba").classList.remove("hidden");
+  renderModoSeba();
+}
+
 document.getElementById("btnEstadisticas").onclick = mostrarVistaEstadisticas;
+document.getElementById("btnModoSeba").onclick = mostrarVistaModoSeba;
 
 function quitarFiltroGrafico(){
   filtroExtra = null;
@@ -2544,4 +2564,105 @@ function renderEstadisticas(){
   construirGrafico("g-estado-cant", "Cantidad de órdenes por Estado de Recupero", "doughnut",
     estadoCant.map(e=>e.label), [{ data: estadoCant.map(e=>e.valor), backgroundColor: ["#94a3b8","#f97316","#16a34a"] }],
     filtroEstado);
+}
+
+/* =========================================================
+   MODO SEBA — lista plana de productos (una fila por producto,
+   no por orden), con las mismas columnas que ya usamos en otros
+   lados. Respeta los filtros activos y toda la interactividad
+   (click para pintar, checkbox para seleccionar) del resto del sistema.
+========================================================= */
+
+function renderModoSeba(){
+  const tbody = document.getElementById("tbodyModoSeba");
+  tbody.innerHTML = "";
+
+  let totalFilas = 0;
+
+  filtradas.forEach(o => {
+    const claves = construirClavesProductosOrden(o.Orden, o.detalles);
+    const historialProducto = cargarHistorialProducto();
+
+    (o.detalles || []).forEach((d, i) => {
+      totalFilas++;
+      const clave = claves[i];
+      const estadoActual = historialProducto[clave] || "";
+      const estaChequeado = seleccionados.has(o.Orden) ? "checked" : "";
+
+      const tr = document.createElement("tr");
+      tr.className = claseFilaProducto(estadoActual);
+      tr.dataset.claveProductoTabla = clave;
+
+      tr.innerHTML = `
+        <td class="celda-check"><input type="checkbox" class="check-orden" data-id="${o.Orden}" ${estaChequeado} onclick="handleCheck(event, '${o.Orden}')"></td>
+        <td>${o.Orden}</td>
+        <td>${formatearRemitoCorto(d.Remito)}</td>
+        <td>${d.FechaR || "-"}</td>
+        <td>${o.Apellido || ""}</td>
+        <td>${o.Nombre || ""}</td>
+        <td>${o.Dni || "-"}</td>
+        <td>${o.ObraSocial || ""}</td>
+        <td>${quitarCorchetes(d.Producto)}</td>
+        <td>${d.Q || "-"}</td>
+        <td>${d.Lote || "-"}</td>
+        <td>${d.Serie || "-"}</td>
+        <td>${d.Vencimiento || "-"}</td>
+        <td>${o.FechaCX || ""}</td>
+        <td>${o.Institucion || ""}</td>
+        <td>${o.Medico || ""}</td>
+        <td class="celda-dot"><span class="semaforo-dot ${o.CI === 'VERDADERO' ? 'si' : 'no'}"></span></td>
+        <td class="celda-dot"><span class="semaforo-dot ${o.Foja === 'VERDADERO' ? 'si' : 'no'}"></span></td>
+        <td class="celda-dot"><span class="semaforo-dot ${o.Devolucion === 'VERDADERO' ? 'dev-pendiente' : 'dev-ok'}"></span></td>
+      `;
+
+      tr.onclick = (e) => {
+        if(e.target.type === "checkbox") return;
+        cicloEstadoProducto(e, clave);
+      };
+
+      tbody.appendChild(tr);
+    });
+  });
+
+  document.getElementById("modoSebaCantidad").textContent = totalFilas;
+  inicializarResizeColumnas();
+}
+
+/** Habilita el drag-to-resize en cada columna de la tabla de Modo Seba (una sola vez; no rompe nada si se llama de nuevo). */
+let resizeYaInicializado = false;
+function inicializarResizeColumnas(){
+  if(resizeYaInicializado) return;
+  resizeYaInicializado = true;
+
+  const tabla = document.getElementById("tablaModoSeba");
+  const cols = tabla.querySelectorAll("colgroup col");
+  const encabezados = document.querySelectorAll("#filaEncabezadoModoSeba th");
+
+  encabezados.forEach((th, idx) => {
+    if(idx === encabezados.length - 1) return; // a la última columna no le hace falta manija
+    const handle = document.createElement("div");
+    handle.className = "resize-handle";
+    th.appendChild(handle);
+
+    handle.addEventListener("mousedown", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const col = cols[idx];
+      const anchoInicial = col.getBoundingClientRect().width;
+      const xInicial = e.clientX;
+      handle.classList.add("resizing");
+
+      const onMouseMove = (eMove) => {
+        const nuevoAncho = Math.max(36, anchoInicial + (eMove.clientX - xInicial));
+        col.style.width = `${nuevoAncho}px`;
+      };
+      const onMouseUp = () => {
+        handle.classList.remove("resizing");
+        document.removeEventListener("mousemove", onMouseMove);
+        document.removeEventListener("mouseup", onMouseUp);
+      };
+      document.addEventListener("mousemove", onMouseMove);
+      document.addEventListener("mouseup", onMouseUp);
+    });
+  });
 }

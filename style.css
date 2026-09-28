@@ -406,7 +406,7 @@ svg { width: 100%; height: 100%; }
   background: white;
   transition: box-shadow 0.15s;
 }
-.fila:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+.fila:hover { background: var(--azul-bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
 .fila.active {
   box-shadow: 0 0 0 2px var(--teal);
 }
@@ -830,7 +830,7 @@ svg { width: 100%; height: 100%; }
   max-width: 160px;
 }
 .tabla-desktop-ordenes tbody tr { cursor: pointer; }
-.tabla-desktop-ordenes tbody tr:hover td { background: #f8fafc; }
+.tabla-desktop-ordenes tbody tr:hover td { background: var(--azul-bg); }
 
 .tabla-desktop-ordenes tr.recupero-completo td { background: var(--verde-bg); }
 .tabla-desktop-ordenes tr.recupero-faltan td { background: var(--naranja-bg); }
@@ -1094,4 +1094,69 @@ svg { width: 100%; height: 100%; }
 .tabla-desktop-ordenes td .icono-devolucion-pendiente {
   width: 12px;
   height: 12px;
+}
+
+/* =========================================================
+   VISTA "MODO SEBA" — tabla plana de productos, columnas
+   redimensionables a mano (drag en el borde derecho de cada th)
+========================================================= */
+.tabla-modo-seba-wrapper { max-height: 75vh; }
+
+.tabla-modo-seba {
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 12.5px;
+}
+.tabla-modo-seba thead th {
+  position: sticky;
+  top: 0;
+  background: #f8fafc;
+  color: var(--texto-sec);
+  text-align: left;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.2px;
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--borde);
+  border-right: 1px solid #eef2f7;
+  white-space: nowrap;
+  overflow: hidden;
+  z-index: 1;
+  position: relative; /* para poder ubicar el handle de resize adentro */
+}
+.tabla-modo-seba thead th.th-check,
+.tabla-modo-seba thead th.th-dot { text-align: center; }
+
+.tabla-modo-seba tbody td {
+  padding: 4px 10px;
+  border-bottom: 1px solid #f1f5f9;
+  border-right: 1px solid #f6f8fb;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tabla-modo-seba tbody tr { cursor: pointer; }
+.tabla-modo-seba tbody tr:hover td { background: var(--azul-bg); }
+.tabla-modo-seba .celda-check, .tabla-modo-seba .celda-dot { text-align: center; }
+
+.tabla-modo-seba tr.fila-producto-sticker td { background: var(--sticker); color: white; }
+.tabla-modo-seba tr.fila-producto-sticker:hover td { filter: brightness(0.95); }
+.tabla-modo-seba tr.fila-producto-devolver td { background: var(--devolver); }
+.tabla-modo-seba tr.fila-producto-devolver:hover td { filter: brightness(0.95); }
+
+/* Manija de redimensionado, pegada al borde derecho de cada encabezado */
+.resize-handle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  user-select: none;
+  touch-action: none;
+}
+.resize-handle:hover, .resize-handle.resizing {
+  background: var(--teal);
+  opacity: 0.5;
 }

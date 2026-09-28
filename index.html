@@ -26,7 +26,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
 <script src="firebase-config.js"></script>
 
-<link rel="stylesheet" href="style.css?v=4.2.7">
+<link rel="stylesheet" href="style.css?v=4.3.0">
 
 </head>
 <body>
@@ -59,6 +59,10 @@
   <button id="btnEstadisticas" class="btn-topbar-outline" title="Ver estadísticas">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
     Estadísticas
+  </button>
+  <button id="btnModoSeba" class="btn-topbar-outline" title="Modo Seba: lista plana de productos">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+    Modo Seba
   </button>
   <button id="btnExportarPDFv2" class="btn-topbar-outline" title="Exportar PDF v2.0">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
@@ -397,10 +401,58 @@
     <div id="graficosGrid" class="grid-graficos"></div>
   </div>
 
+  <!-- =========================
+       VISTA "MODO SEBA" — lista plana de productos, columnas
+       redimensionables a mano (arrastrando el borde de cada encabezado)
+  ========================== -->
+  <div id="vistaModoSeba" class="hidden">
+    <div class="stats-header-bar">
+      <span class="stats-header-titulo">📋 Modo Seba</span>
+      <span class="stats-header-sub"><b id="modoSebaCantidad">0</b> productos — respeta los mismos filtros que Órdenes. Arrastrá el borde de una columna para agrandarla o achicarla.</span>
+    </div>
+    <div class="tabla-desktop-wrapper tabla-modo-seba-wrapper">
+      <table class="tabla-modo-seba" id="tablaModoSeba">
+        <colgroup>
+          <col style="width:36px">
+          <col style="width:100px"><col style="width:110px"><col style="width:100px">
+          <col style="width:130px"><col style="width:130px"><col style="width:90px">
+          <col style="width:140px"><col style="width:220px"><col style="width:50px">
+          <col style="width:100px"><col style="width:100px"><col style="width:100px">
+          <col style="width:90px"><col style="width:160px"><col style="width:140px">
+          <col style="width:36px"><col style="width:36px"><col style="width:36px">
+        </colgroup>
+        <thead>
+          <tr id="filaEncabezadoModoSeba">
+            <th class="th-check"><input type="checkbox" id="selectAllModoSeba" onclick="toggleSeleccionarTodos(event)"></th>
+            <th>N° Presupuesto</th>
+            <th>N° Remito</th>
+            <th>Fecha Remito</th>
+            <th>Apellidos</th>
+            <th>Nombres</th>
+            <th>Dni</th>
+            <th>Obra Social</th>
+            <th>Producto</th>
+            <th>Q</th>
+            <th>Lote</th>
+            <th>Serie</th>
+            <th>Vencimiento</th>
+            <th>Fecha CX</th>
+            <th>Institución</th>
+            <th>Médico</th>
+            <th class="th-dot">C</th>
+            <th class="th-dot">F</th>
+            <th class="th-dot">D</th>
+          </tr>
+        </thead>
+        <tbody id="tbodyModoSeba"></tbody>
+      </table>
+    </div>
+  </div>
+
   </main>
 </div>
 
 <script src="export.js"></script>
-<script src="app.js?v=4.2.7"></script>
+<script src="app.js?v=4.3.0"></script>
 </body>
 </html>
