@@ -1290,7 +1290,10 @@ function renderLista(){
       <div class="fila-cabecera estado-bg-${o.EstadoRecupero}">
         <input type="checkbox" class="check-orden" data-id="${o.Orden}" ${estaChequeado}
                onclick="handleCheck(event, '${o.Orden}')">
-        <span class="fila-orden-num-centrado">${o.Orden}</span>
+        <span class="fila-orden-num-centrado">
+          ${o.Orden}
+          ${o.Devolucion === 'VERDADERO' ? `<span class="icono-devolucion-pendiente" title="Devolución pendiente">${ICONS.warning}</span>` : ""}
+        </span>
         <span class="fila-secretaria-chip ${o.Secretaria ? '' : 'sin-asignar'}" title="Secretaría">${o.Secretaria || "Sin asignar"}</span>
       </div>
       <div class="fila-cuerpo">
@@ -1335,7 +1338,7 @@ function renderLista(){
 
     tr.innerHTML = `
       <td class="celda-check"><input type="checkbox" class="check-orden" data-id="${o.Orden}" ${estaChequeado} onclick="handleCheck(event, '${o.Orden}')"></td>
-      <td>${o.Orden}</td>
+      <td>${o.Orden}${o.Devolucion === 'VERDADERO' ? `<span class="icono-devolucion-pendiente" title="Devolución pendiente">${ICONS.warning}</span>` : ""}</td>
       <td>${o.Apellido || ""}</td>
       <td>${o.Nombre || ""}</td>
       <td>${o.Dni || "-"}</td>
@@ -1802,14 +1805,16 @@ function preProcesarExcel(rows) {
         const tieneProducto = r[8] && r[8].toString().trim() !== "";
 
         // 🔴 FILA DE "CONTINUACIÓN": Odoo a veces agrega una fila aparte, sin
-        // Producto, solo para sumar más Lote/Serie/Vencimiento a la línea
-        // anterior (ej. la 2da unidad de un producto con 2 series distintas).
-        // Antes esto se perdía sin más (Q quedaba vacío y se filtraba). Ahora
-        // lo acumulamos en la fila de producto a la que pertenece.
-        if (!tieneProducto && filaProductoActual && (r[10] || r[11] || r[20])) {
+        // Producto, solo para sumar más Lote/Serie/Vencimiento (o el Remito
+        // que faltaba) a la línea anterior. Antes esto se perdía sin más.
+        // Ahora lo acumulamos en la fila de producto a la que pertenece.
+        if (!tieneProducto && filaProductoActual && (r[10] || r[11] || r[20] || r[1])) {
             filaProductoActual._loteTokens = acumularTokens(filaProductoActual._loteTokens, r[10]);
             filaProductoActual._serieTokens = acumularTokens(filaProductoActual._serieTokens, r[11]);
             filaProductoActual._vencTokens = acumularTokens(filaProductoActual._vencTokens, r[20]);
+            // El Remito es un solo dato (no una lista de tokens): si la fila
+            // de producto no lo tenía, lo completamos con el de la continuación.
+            if (!filaProductoActual.Remito && r[1]) filaProductoActual.Remito = r[1];
             return;
         }
 
