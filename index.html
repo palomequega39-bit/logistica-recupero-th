@@ -26,7 +26,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
 <script src="firebase-config.js"></script>
 
-<link rel="stylesheet" href="style.css?v=4.4.0">
+<link rel="stylesheet" href="style.css?v=4.4.1">
 
 </head>
 <body>
@@ -440,24 +440,24 @@
         <thead>
           <tr id="filaEncabezadoModoSeba">
             <th class="th-check"><input type="checkbox" id="selectAllModoSeba" onclick="toggleSeleccionarTodos(event)"></th>
-            <th>N° Presupuesto</th>
-            <th>N° Remito</th>
-            <th>Fecha Remito</th>
-            <th>Apellidos</th>
-            <th>Nombres</th>
-            <th>Dni</th>
-            <th>Obra Social</th>
-            <th>Producto</th>
-            <th>Q</th>
-            <th>Lote</th>
-            <th>Serie</th>
-            <th>Vencimiento</th>
-            <th>Fecha CX</th>
-            <th>Institución</th>
-            <th>Médico</th>
-            <th class="th-dot">C</th>
-            <th class="th-dot">F</th>
-            <th class="th-dot">D</th>
+            <th onclick="sortByModoSeba('Orden')">N° Presupuesto</th>
+            <th onclick="sortByModoSeba('Remito')">N° Remito</th>
+            <th onclick="sortByModoSeba('FechaR')">Fecha Remito</th>
+            <th onclick="sortByModoSeba('Apellido')">Apellidos</th>
+            <th onclick="sortByModoSeba('Nombre')">Nombres</th>
+            <th onclick="sortByModoSeba('Dni')">Dni</th>
+            <th onclick="sortByModoSeba('ObraSocial')">Obra Social</th>
+            <th onclick="sortByModoSeba('Producto')">Producto</th>
+            <th onclick="sortByModoSeba('Q')">Q</th>
+            <th onclick="sortByModoSeba('Lote')">Lote</th>
+            <th onclick="sortByModoSeba('Serie')">Serie</th>
+            <th onclick="sortByModoSeba('Vencimiento')">Vencimiento</th>
+            <th onclick="sortByModoSeba('FechaCX')">Fecha CX</th>
+            <th onclick="sortByModoSeba('Institucion')">Institución</th>
+            <th onclick="sortByModoSeba('Medico')">Médico</th>
+            <th class="th-dot" onclick="sortByModoSeba('CI')">C</th>
+            <th class="th-dot" onclick="sortByModoSeba('Foja')">F</th>
+            <th class="th-dot" onclick="sortByModoSeba('Devolucion')">D</th>
           </tr>
         </thead>
         <tbody id="tbodyModoSeba"></tbody>
@@ -469,6 +469,6 @@
 </div>
 
 <script src="export.js"></script>
-<script src="app.js?v=4.4.0"></script>
+<script src="app.js?v=4.4.1"></script>
 </body>
 </html>

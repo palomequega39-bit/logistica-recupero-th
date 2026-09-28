@@ -2645,19 +2645,75 @@ function renderEstadisticas(){
    (click para pintar, checkbox para seleccionar) del resto del sistema.
 ========================================================= */
 
+let sortFieldModoSeba = null;
+let ordenAscModoSeba = true;
+
+/** Campos que viven en la ORDEN (el resto se toma del detalle de producto). */
+const CAMPOS_ORDEN_MODO_SEBA = new Set(["Orden","Apellido","Nombre","Dni","ObraSocial","FechaCX","Institucion","Medico","CI","Foja","Devolucion"]);
+const CAMPOS_FECHA_MODO_SEBA = new Set(["FechaR","Vencimiento","FechaCX"]);
+const CAMPOS_NUMERICOS_MODO_SEBA = new Set(["Q"]);
+
+function obtenerValorOrdenModoSeba(fila, campo){
+  const origen = CAMPOS_ORDEN_MODO_SEBA.has(campo) ? fila.o : fila.d;
+  const valor = origen[campo];
+
+  if(CAMPOS_FECHA_MODO_SEBA.has(campo)){
+    const f = parsearFechaDDMMYYYY(valor);
+    return f ? f.getTime() : -Infinity;
+  }
+  if(CAMPOS_NUMERICOS_MODO_SEBA.has(campo)){
+    const n = parseFloat(valor);
+    return isNaN(n) ? -Infinity : n;
+  }
+  return (valor || "").toString().toLowerCase();
+}
+
+function sortByModoSeba(campo){
+  if(sortFieldModoSeba === campo){ ordenAscModoSeba = !ordenAscModoSeba; }
+  else { sortFieldModoSeba = campo; ordenAscModoSeba = true; }
+
+  document.querySelectorAll("#filaEncabezadoModoSeba th").forEach(th => th.classList.remove("active","asc","desc"));
+  document.querySelectorAll("#filaEncabezadoModoSeba th").forEach(th => {
+    const onclick = th.getAttribute("onclick") || "";
+    if(onclick.includes(`'${campo}'`)){
+      th.classList.add("active");
+      th.classList.add(ordenAscModoSeba ? "asc" : "desc");
+    }
+  });
+
+  renderModoSeba();
+}
+
 function renderModoSeba(){
   const tbody = document.getElementById("tbodyModoSeba");
   tbody.innerHTML = "";
 
-  let totalFilas = 0;
-
+  // 1. Armar el arreglo plano (una entrada por producto)
+  let filas = [];
   filtradas.forEach(o => {
     const claves = construirClavesProductosOrden(o.Orden, o.detalles);
-    const historialProducto = cargarHistorialProducto();
-
     (o.detalles || []).forEach((d, i) => {
-      totalFilas++;
-      const clave = claves[i];
+      filas.push({ o, d, clave: claves[i] });
+    });
+  });
+
+  // 2. Ordenar, si hay una columna activa
+  if(sortFieldModoSeba){
+    const campo = sortFieldModoSeba;
+    const asc = ordenAscModoSeba;
+    filas.sort((a, b) => {
+      const va = obtenerValorOrdenModoSeba(a, campo);
+      const vb = obtenerValorOrdenModoSeba(b, campo);
+      if(va < vb) return asc ? -1 : 1;
+      if(va > vb) return asc ? 1 : -1;
+      return 0;
+    });
+  }
+
+  // 3. Construir las filas ya ordenadas
+  const historialProducto = cargarHistorialProducto();
+
+  filas.forEach(({ o, d, clave }) => {
       const estadoActual = historialProducto[clave] || "";
       const estaChequeado = seleccionados.has(o.Orden) ? "checked" : "";
 
@@ -2693,10 +2749,9 @@ function renderModoSeba(){
       };
 
       tbody.appendChild(tr);
-    });
   });
 
-  document.getElementById("modoSebaCantidad").textContent = totalFilas;
+  document.getElementById("modoSebaCantidad").textContent = filas.length;
   inicializarResizeColumnas();
 }
 

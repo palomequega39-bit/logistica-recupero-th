@@ -1126,6 +1126,13 @@ svg { width: 100%; height: 100%; }
   white-space: nowrap;
   overflow: hidden;
   z-index: 1;
+  cursor: pointer;
+}
+.tabla-modo-seba thead th.th-check { cursor: default; }
+.tabla-modo-seba thead th:hover { background: #f1f5f9; }
+.tabla-modo-seba thead th.active { color: var(--teal-dark); }
+.tabla-modo-seba thead th.active.asc::after { content: " ▲"; font-size: 9px; }
+.tabla-modo-seba thead th.active.desc::after { content: " ▼"; font-size: 9px; }
   position: relative; /* para poder ubicar el handle de resize adentro */
 }
 .tabla-modo-seba thead th.th-check,
